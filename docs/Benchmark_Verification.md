@@ -47,72 +47,75 @@ The status is based on the absolute difference $\lvert\Delta\rvert$.
 ### 1. MindCube
 * **Metric:** Accuracy
 
-| Model | Data | Paper | Official Code | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen2.5-VL-3B-Instruct | `MindCubeBench_tiny_raw_qa` | 37.81 | - | 37.88 | +0.07 | ✅ |
-| Qwen2.5-VL-3B-Instruct | `MindCubeBench_raw_qa` | 33.21 | 36.08 | 35.65 | -0.43 | ✅ |
-| Qwen2.5-VL-7B-Instruct | `MindCubeBench_raw_qa` | 29.26 | 31.12 | 31.48 | +0.36 | ✅ |
+| Model | Data | Paper | Official Code | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | 
+| Qwen2.5-VL-3B-Instruct | `MindCubeBench_tiny_raw_qa` | 37.81 | - | 37.88 | +0.07 | ✅ | 34.08 | +3.73 | ☑️
+| Qwen2.5-VL-3B-Instruct | `MindCubeBench_raw_qa` | 33.21 | 36.08 | 35.65 | -0.43 | ✅ | 34.97 | -1.11 | ✅
+| Qwen2.5-VL-7B-Instruct | `MindCubeBench_raw_qa` | 29.26 | 31.12 | 31.48 | +0.36 | ✅ | 30.60 | -0.52 | ✅
 
 
 ### 2. ViewSpatial
 * **Metric:** Accuracy
 
-| Model | Data | Paper | Official Code | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen2.5-VL-3B-Instruct | `ViewSpatialBench` | 35.85 | - | 31.97 | -3.89 | ☑️ |
-| Qwen2.5-VL-7B-Instruct | `ViewSpatialBench` | 36.85 | - | 36.85 | +0.00 | ✅ |
-| InternVL3-14B | `ViewSpatialBench` | 40.28 | - | 40.53 | +0.25 | ✅ |
+| Model | Data | Paper | Official Code | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Qwen2.5-VL-3B-Instruct | `ViewSpatialBench` | 35.85 | - | 31.97 | -3.88 | ☑️ | 32.23 | -3.62 | ☑️ |
+| Qwen2.5-VL-7B-Instruct | `ViewSpatialBench` | 36.85 | - | 36.85 | +0.00 | ✅ | 36.43 | -0.42 | ✅ |
+| InternVL3-14B | `ViewSpatialBench` | 40.28 | - | 40.53 | +0.25 | ✅ | 40.70 | +0.42 | ✅ |
 
 
 ### 3. EmbSpatial-Bench
 * **Metric:** Accuracy
 
-| Model | Data | Paper | Qwen3-VL-Report | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen3-VL-4B-Instruct  | `EmbSpatialBench` | - | 79.6 | 78.7 | -0.9 | ✅ |
-| Qwen3-VL-8B-Instruct  | `EmbSpatialBench` | - | 78.5 | 77.7 | -0.8 | ✅ |
+| Model | Data | Paper | Qwen3-VL-Report | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Qwen3-VL-4B-Instruct | `EmbSpatialBench` | - | 79.60 | 78.70 | -0.90 | ✅ | 76.81 | -2.79 | ☑️ |
+| Qwen3-VL-8B-Instruct | `EmbSpatialBench` | - | 78.50 | 77.70 | -0.80 | ✅ | 77.42 | -1.08 | ✅ |
 
 
 ### 4. MMSI-Bench (no circular)
 * **Metric:** Accuracy
 
-| Model | Data | Paper | Official Code | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen2.5-VL-3B-Instruct  | `MMSIBench_wo_circular` | 26.5 | - | 28.6 | +2.1 | ✅ |
-| Qwen2.5-VL-7B-Instruct  | `MMSIBench_wo_circular` | 25.9 | - | 26.8 | +0.9 | ✅ |
-| InternVL3-2B  | `MMSIBench_wo_circular` | 25.3 | - | 26.5 | +1.2 | ✅ |
-| InternVL3-8B  | `MMSIBench_wo_circular` | 25.7 | - | 28.0 | +2.3 | ✅ |
+| Model | Data | Paper | Official Code | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Qwen2.5-VL-3B-Instruct | `MMSIBench_wo_circular` | 26.50 | - | 28.60 | +2.10 | ✅ | 29.30 | +2.80 | ☑️ |
+| Qwen2.5-VL-7B-Instruct | `MMSIBench_wo_circular` | 25.90 | - | 26.80 | +0.90 | ✅ | 27.80 | +1.90 | ✅ |
+| InternVL3-2B | `MMSIBench_wo_circular` | 25.30 | - | 26.50 | +1.20 | ✅ | 25.90 | +0.60 | ✅ |
+| InternVL3-8B | `MMSIBench_wo_circular` | 25.70 | - | 28.00 | +2.30 | ✅ | 26.40 | +0.70 | ✅ |
 
 
 ### 5. VSI-Bench
 * **Metric:** Accuracy && MRA
 
-| Model | Data | Paper | Official Code | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen2.5-VL-3B-Instruct  | `VSI-Bench_128frame` | - | 26.8 | 26.6 | -0.2 | ✅ |
-| Qwen2.5-VL-7B-Instruct  | `VSI-Bench_128frame` | - | 33.5 | 33.7 | +0.2 | ✅ |
-| InternVL3_5-8B  | `VSI-Bench_128frame` | - | 56.3 | 54.2 | -2.2 | ✅ |
-| Cambrian-S-3B  | `VSI-Bench_32frame` | - | 54.73 | 56.08 | +1.35 | ✅ |
-| Cambrian-S-7B  | `VSI-Bench_32frame` | - | 63.61 | 62.93 | -0.98 | ✅ |
+| Model | Data | Paper | Official Code | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Qwen2.5-VL-3B-Instruct | `VSI-Bench_128frame` | - | 26.80 | 26.60 | -0.20 | ✅ | 29.59 | +2.79 | ☑️ |
+| Qwen2.5-VL-7B-Instruct | `VSI-Bench_128frame` | - | 33.50 | 33.70 | +0.20 | ✅ | 38.67 | +5.17 | ❌ |
+| InternVL3_5-8B | `VSI-Bench_128frame` | - | 56.30 | 54.20 | -2.10 | ✅ | 56.12 | -0.18 | ✅ |
+| Cambrian-S-3B | `VSI-Bench_32frame` | - | 54.73 | 56.08 | +1.35 | ✅ | 54.79 | +0.06 | ✅ |
+| Cambrian-S-7B | `VSI-Bench_32frame` | - | 63.61 | 62.93 | -0.68 | ✅ | 63.48 | -0.13 | ✅ |
+| SenseNova-SI-1.1-Qwen3-VL-8B | `VSI-Bench_32frame` | 62.90 | - | 62.90 | +0.00 | ✅ | 64.25 | +1.35 | ✅ |
+| SenseNova-SI-1.2-InternVL3-8B | `VSI-Bench_32frame` | 68.70 | - | 68.70 | +0.00 | ✅ | 68.35 | -0.35 | ✅ |
+| SenseNova-SI-1.1-BAGEL-7B-MoT | `VSI-Bench_32frame` | 41.60 | - | 41.60 | +0.00 | ✅ | - | - | - |
 
 
 ### 6. VSI-Bench-Debiased
 * **Metric:** Accuracy && MRA
 
-| Model | Data | Cambrian-S Paper | Official Code | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen2.5-VL-3B-Instruct  | `VSI-Bench-Debiased_128frame` | 22.7 | - | 22.8 | +0.1 | ✅ |
-| Qwen2.5-VL-7B-Instruct  | `VSI-Bench-Debiased_128frame` | 29.6 | - | 29.1| -0.5 | ✅ |
-| InternVL3_5-8B  | `VSI-Bench-Debiased_128frame` | 49.7 | - | 48.4 | -1.3 | ✅ |
-| Cambrian-S-3B  | `VSI-Bench-Debiased_32frame` | - | 46.47 | 48.76 | +2.29 | ✅ |
-| Cambrian-S-7B  | `VSI-Bench-Debiased_32frame` | - | 55.58 | 55.35 | -0.23 | ✅ |
+| Model | Data | Paper | Official Code | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Qwen2.5-VL-3B-Instruct | `VSI-Bench-Debiased_128frame` | 22.70 | - | 22.80 | +0.10 | ✅ | 25.07 | +2.37 | ✅ |
+| Qwen2.5-VL-7B-Instruct | `VSI-Bench-Debiased_128frame` | 29.60 | - | 29.10 | -0.50 | ✅ | 33.83 | +4.23 | ☑️ |
+| InternVL3_5-8B | `VSI-Bench-Debiased_128frame` | 49.70 | - | 48.40 | -1.30 | ✅ | 49.65 | -0.05 | ✅ |
+| Cambrian-S-3B | `VSI-Bench-Debiased_32frame` | - | 46.47 | 48.76 | +2.29 | ✅ | 46.55 | +0.08 | ✅ |
+| Cambrian-S-7B | `VSI-Bench-Debiased_32frame` | - | 55.58 | 55.35 | -0.23 | ✅ | 55.40 | -0.18 | ✅ |
 
 ### 7. SITE-Bench
 * **Metric:** CAA
 
-| Model | Data | Paper | Official Code | EASI | Δ | Status |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| Qwen2.5-VL-3B-Instruct  | `SiteBenchImage`<br>`SiteBenchVideo_32frame` | 29.5 | - | 33.1 | +3.6 | ☑️ |
+| Model | Data | Paper | Official Code | EASI - VLMEvalKit | Δ | Status | EASI - LMMs-Eval | Δ | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Qwen2.5-VL-3B-Instruct | `SiteBenchImage`<br>`SiteBenchVideo_32frame` | 29.50 | - | 33.10 | +3.60 | ☑️ | 29.14 | -0.36 | ✅ |
 <!-- | Qwen2.5-VL-7B-Instruct  | `SiteBenchImage`<br>`SiteBenchVideo_32frame` | 31.4 | 32.3 | 37.6 | +5.3 | ❌ | -->
 
 ### 8. SPAR-Bench
