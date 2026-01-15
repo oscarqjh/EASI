@@ -6,7 +6,7 @@
 # uv pip install ./lmms-eval spacy
 # uv pip install flash-attn --no-build-isolation
 
-# Qwen/Qwen3-VL-4B-Instruct
+# sensenova/SenseNova-SI-1.2-InternVL3-8B
 CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch \
     --num_processes=4 \
     --num_machines=1 \
@@ -14,8 +14,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch \
     --dynamo_backend=no \
     --main_process_port=12346 \
     -m lmms_eval \
-    --model qwen3_vl \
-    --model_args=pretrained=Qwen/Qwen3-VL-4B-Instruct,max_pixels=12845056,attn_implementation=flash_attention_2,interleave_visuals=False \
+    --model internvl3 \
+    --model_args=pretrained=sensenova/SenseNova-SI-1.2-InternVL3-8B \
     --tasks embspatial \
     --batch_size 1 \
     --log_samples \
