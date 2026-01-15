@@ -6,7 +6,7 @@
 # uv pip install ./lmms-eval spacy
 # uv pip install flash-attn --no-build-isolation
 
-# InternVL2-OpenGVLab/InternVL3-2B
+# OpenGVLab/InternVL3-2B
 CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch \
     --num_processes=4 \
     --num_machines=1 \
@@ -21,7 +21,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch \
     --log_samples \
     --output_path ./logs/
 
-# InternVL2-OpenGVLab/InternVL3-8B
+# OpenGVLab/InternVL3-8B
 CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch \
     --num_processes=4 \
     --num_machines=1 \
@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch \
     --dynamo_backend=no \
     --main_process_port=12346 \
     -m lmms_eval \
-    --model internvl2 \
+    --model internvl3 \
     --model_args=pretrained=OpenGVLab/InternVL3-8B \
     --tasks mmsi_bench \
     --batch_size 1 \
