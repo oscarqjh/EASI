@@ -91,7 +91,7 @@ The status is based on the absolute difference $\lvert\Delta\rvert$.
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | Qwen2.5-VL-3B-Instruct | `VSI-Bench_128frame` | - | 26.80 | 26.60 | -0.20 | ✅ | 29.59 | +2.79 | ☑️ |
 | Qwen2.5-VL-7B-Instruct | `VSI-Bench_128frame` | - | 33.50 | 33.70 | +0.20 | ✅ | 38.67 | +5.17 | ❌ |
-| InternVL3_5-8B | `VSI-Bench_128frame` | - | 56.30 | 54.20 | -2.10 | ✅ | 56.12 | -0.18 | ✅ |
+| InternVL3_5-8B | `VSI-Bench_128frame` | - | 56.30 | 54.20 | -2.10 | ✅ | 54.55 | -1.75 | ✅ |
 | Cambrian-S-3B | `VSI-Bench_32frame` | - | 54.73 | 56.08 | +1.35 | ✅ | 54.79 | +0.06 | ✅ |
 | Cambrian-S-7B | `VSI-Bench_32frame` | - | 63.61 | 62.93 | -0.68 | ✅ | 63.48 | -0.13 | ✅ |
 | SenseNova-SI-1.1-Qwen3-VL-8B | `VSI-Bench_32frame` | 62.90 | - | 62.90 | +0.00 | ✅ | 64.25 | +1.35 | ✅ |
