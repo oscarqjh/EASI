@@ -85,7 +85,7 @@ pip install -e ./lmms-eval spacy
 pip install flash-attn --no-build-isolation
 ```
 
-#### Option 4: Docker-based environment
+#### Option 3: Docker-based environment
 ```
 bash dockerfiles/EASI/build_runtime_docker.sh
 
