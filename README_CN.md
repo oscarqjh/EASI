@@ -1,8 +1,11 @@
-# EASI
+<div align="center">
+  <img src="assets/banner.jpg"/>
 
-<b>Holistic Evaluation of Multimodal LLMs on Spatial Intelligence</b>
+  <b>EASI: Holistic Evaluation of Multimodal LLMs on Spatial Intelligence</b>
 
-[English](README.md) | 简体中文
+  [English](README.md) | 简体中文
+
+</div>
 
 <p align="center">
     <a href="https://arxiv.org/abs/2508.13142" target="_blank">
