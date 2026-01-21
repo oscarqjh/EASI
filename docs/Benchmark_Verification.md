@@ -97,7 +97,7 @@ The status is based on the absolute difference $\lvert\Delta\rvert$.
 | Cambrian-S-7B | `VSI-Bench_32frame` | - | 63.61 | 62.93 | -0.68 | ✅ | 63.48 | -0.13 | ✅ |
 | SenseNova-SI-1.1-Qwen3-VL-8B | `VSI-Bench_32frame` | 62.90 | - | 62.90 | +0.00 | ✅ | 64.25 | +1.35 | ✅ |
 | SenseNova-SI-1.2-InternVL3-8B | `VSI-Bench_32frame` | 68.70 | - | 68.70 | +0.00 | ✅ | 68.35 | -0.35 | ✅ |
-| SenseNova-SI-1.1-BAGEL-7B-MoT | `VSI-Bench_32frame` | 41.60 | - | 41.60 | +0.00 | ✅ | - | - | - |
+| SenseNova-SI-1.1-BAGEL-7B-MoT | `VSI-Bench_32frame` | 41.60 | - | 41.60 | +0.00 | ✅ | 42.53 | +0.93 | ✅ |
 
 *(For the SenseNova-SI-Qwen series models, VSI-Bench should be evaluated using multiple image pathway)*
 
