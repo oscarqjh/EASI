@@ -1,0 +1,116 @@
+"""Bridge subprocess for AI2-THOR v2.1.0 (legacy API).
+
+This script runs inside the ai2thor v2.1.0 conda environment.
+It communicates with the parent via filesystem IPC.
+
+NOTE: This is a stub. The actual AI2-THOR interaction will be implemented
+when integrating with embodiedbench. The structure demonstrates how a real
+bridge would work.
+
+Usage:
+    python bridge.py --workspace /tmp/easi_xxx
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from pathlib import Path
+
+# Add repo root to path for easi imports
+_repo_root = Path(__file__).resolve().parents[4]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
+from easi.communication.filesystem import (
+    poll_for_command,
+    write_response,
+    write_status,
+)
+from easi.communication.schemas import (
+    make_error_response,
+    make_observation_response,
+    parse_action_from_command,
+)
+
+logger = logging.getLogger("easi.bridge.ai2thor_v2_1_0")
+
+
+def run_bridge(workspace: Path) -> None:
+    """Main bridge loop for AI2-THOR v2.1.0."""
+    logger.info("AI2-THOR v2.1.0 bridge starting (workspace: %s)", workspace)
+
+    # In a real implementation:
+    # from ai2thor.controller import Controller
+    # controller = Controller(scene="FloorPlan28", gridSize=0.25)
+
+    write_status(workspace, ready=True)
+
+    step_count = 0
+
+    while True:
+        try:
+            command = poll_for_command(workspace, timeout=300.0)
+        except Exception as e:
+            logger.error("Failed to read command: %s", e)
+            break
+
+        cmd_type = command.get("type")
+
+        if cmd_type == "reset":
+            episode_id = command.get("episode_id", "unknown")
+            reset_config = command.get("reset_config", {})
+            logger.info("Reset: episode_id=%s, scene=%s", episode_id, reset_config.get("scene", "?"))
+
+            # Stub: In real impl, would call controller.reset(scene=...)
+            step_count = 0
+
+            response = make_observation_response(
+                rgb_path=str(workspace / "rgb_0000.png"),
+                agent_pose=[0.0, 0.9, 0.0, 0.0, 0.0, 0.0],
+                metadata={"episode_id": episode_id, "step": "0", "scene": reset_config.get("scene", "unknown")},
+            )
+            # Stub: write a placeholder image
+            (workspace / "rgb_0000.png").write_bytes(b"STUB_IMAGE")
+            write_response(workspace, response)
+
+        elif cmd_type == "step":
+            step_count += 1
+            action = parse_action_from_command(command)
+            logger.debug("Step %d: action=%s", step_count, action.action_name)
+
+            # Stub: In real impl, would call controller.step(action=action_name, **params)
+
+            rgb_name = f"rgb_{step_count:04d}.png"
+            (workspace / rgb_name).write_bytes(b"STUB_IMAGE")
+
+            response = make_observation_response(
+                rgb_path=str(workspace / rgb_name),
+                agent_pose=[float(step_count) * 0.25, 0.9, 0.0, 0.0, 0.0, 0.0],
+                metadata={"step": str(step_count)},
+                done=action.action_name == "Stop",
+            )
+            write_response(workspace, response)
+
+        elif cmd_type == "close":
+            logger.info("Close command received")
+            # Stub: controller.stop() would go here
+            write_response(workspace, {"status": "ok"})
+            break
+
+        else:
+            write_response(workspace, make_error_response(f"Unknown command: {cmd_type}"))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="AI2-THOR v2.1.0 bridge")
+    parser.add_argument("--workspace", type=Path, required=True)
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    run_bridge(workspace=args.workspace)
+
+
+if __name__ == "__main__":
+    main()

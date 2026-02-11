@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "easi"
+version = "0.1.0"
+description = "EASI - Embodied Reasoning Evaluation for Spatial Intelligence"
+requires-python = ">=3.10"
+dependencies = [
+    "Pillow>=10.0",
+    "requests>=2.28",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+hf = [
+    "huggingface_hub>=0.20",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-timeout>=2.0",
+]
+
+[project.scripts]
+easi = "easi.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["easi*"]
+exclude = ["VLMEvalKit*", "lmms-eval*"]
+
+[tool.setuptools.package-data]
+"easi" = [
+    "simulators/*/manifest.yaml",
+    "simulators/*/*/conda_env.yaml",
+    "simulators/*/*/requirements.txt",
+    "tasks/*/task.yaml",
+]
