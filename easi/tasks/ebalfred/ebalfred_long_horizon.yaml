@@ -22,3 +22,7 @@ simulator_configs:
     - "opencv-python"
 agent:
   prompt_builder: "easi.tasks.ebalfred.prompts.EBAlfredPromptBuilder"
+  prompt_builder_kwargs:
+    n_shot: 10
+    split: "long_horizon"
+    use_feedback: true

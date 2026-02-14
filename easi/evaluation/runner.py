@@ -191,6 +191,12 @@ class EvaluationRunner:
             episode_output_dir=str(episode_dir),
         )
 
+        # Propagate dynamic action space from bridge (e.g., EB-Alfred per-episode actions)
+        dynamic_actions_json = observation.metadata.get("dynamic_action_space")
+        if dynamic_actions_json and hasattr(agent, 'update_action_space'):
+            dynamic_actions = json.loads(dynamic_actions_json)
+            agent.update_action_space(dynamic_actions)
+
         # Write reset entry to trajectory
         trajectory_path = episode_dir / "trajectory.jsonl"
         self._write_trajectory_entry(trajectory_path, {
@@ -348,7 +354,8 @@ class EvaluationRunner:
             builder_class_name = agent_config.get("prompt_builder")
             if builder_class_name:
                 BuilderClass = import_class(builder_class_name)
-                prompt_builder = BuilderClass()
+                builder_kwargs = agent_config.get("prompt_builder_kwargs", {})
+                prompt_builder = BuilderClass(**builder_kwargs)
 
             return ReActAgent(
                 llm_client=llm,

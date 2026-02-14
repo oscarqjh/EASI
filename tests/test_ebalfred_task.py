@@ -126,30 +126,42 @@ class TestEBAlfredTask:
 
 
 class TestEBAlfredPromptBuilder:
-    def test_system_prompt_returns_messages(self):
+    def test_build_messages_first_turn(self):
+        """First turn: full system prompt in user message."""
         from easi.tasks.ebalfred.prompts import EBAlfredPromptBuilder
+        from easi.core.memory import AgentMemory
         builder = EBAlfredPromptBuilder()
-        messages = builder.build_system_prompt(
-            action_space=get_global_action_space(),
+        actions = get_global_action_space()
+        memory = AgentMemory(
             task_description="Put a mug on the shelf.",
+            action_space=actions,
+            current_observation=Observation(rgb_path="/tmp/rgb.png"),
         )
+        messages = builder.build_messages(memory)
         assert isinstance(messages, list)
-        assert messages[0]["role"] == "system"
-        content = messages[0]["content"]
-        assert "find a" in content
-        assert "pick up" in content
-        assert "Put a mug on the shelf" in content
-        assert "household" in content.lower()
+        assert messages[0]["role"] == "user"
+        text_content = messages[0]["content"][-1]["text"]
+        assert "You are a robot operating in a home" in text_content
+        # Action space should be initialized internally
+        assert builder.action_name_to_id("find a Cart") == 0
 
-    def test_step_prompt_returns_messages_with_history(self):
+    def test_build_messages_with_history(self):
         from easi.tasks.ebalfred.prompts import EBAlfredPromptBuilder
+        from easi.core.memory import AgentMemory
+        from easi.core.episode import Action
         builder = EBAlfredPromptBuilder()
-        obs = Observation(rgb_path="/tmp/rgb.png")
-        messages = builder.build_step_prompt(
-            observation=obs,
+        actions = get_global_action_space()
+        memory = AgentMemory(
             task_description="Put a mug on the shelf.",
-            action_history=[("find a Mug", "success"), ("pick up the Mug", "failed: not close enough")],
+            action_space=actions,
+            current_observation=Observation(rgb_path="/tmp/rgb.png"),
         )
+        obs = Observation(rgb_path="/tmp/rgb.png")
+        memory.record_step(obs, Action(action_name="find a Mug"), llm_response="r1")
+        memory.record_feedback("success")
+        memory.record_step(obs, Action(action_name="pick up the Mug"), llm_response="r2")
+        memory.record_feedback("failed: not close enough")
+        messages = builder.build_messages(memory)
         assert isinstance(messages, list)
         assert messages[0]["role"] == "user"
         text_content = ""
@@ -157,7 +169,7 @@ class TestEBAlfredPromptBuilder:
             if part["type"] == "text":
                 text_content += part["text"]
         assert "find a Mug" in text_content
-        assert "FAILED" in text_content
+        assert "failed: not close enough" in text_content
 
     def test_conforms_to_protocol(self):
         from easi.tasks.ebalfred.prompts import EBAlfredPromptBuilder

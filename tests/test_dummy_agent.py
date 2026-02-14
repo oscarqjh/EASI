@@ -1,5 +1,4 @@
 """Tests for the dummy agent."""
-
 import pytest
 
 from easi.agents.dummy_agent import DummyAgent
@@ -29,26 +28,9 @@ class TestDummyAgent:
             a2 = agent2.act(obs, "test")
             assert a1.action_name == a2.action_name
 
-    def test_reset_clears_history(self, agent):
+    def test_reset(self, agent):
         obs = Observation(rgb_path="/tmp/rgb.png")
         agent.act(obs, "test")
-        assert len(agent.chat_history) > 0
-
+        assert agent._step_count == 1
         agent.reset()
-        assert len(agent.chat_history) == 0
-
-    def test_chat_history_grows(self, agent):
-        obs = Observation(rgb_path="/tmp/rgb.png")
-        agent.act(obs, "test")
-        assert len(agent.chat_history) == 2  # user + assistant
-
-        agent.act(obs, "test")
-        assert len(agent.chat_history) == 4
-
-    def test_chat_history_is_copy(self, agent):
-        obs = Observation(rgb_path="/tmp/rgb.png")
-        agent.act(obs, "test")
-
-        history = agent.chat_history
-        history.clear()
-        assert len(agent.chat_history) == 2  # original unchanged
+        assert agent._step_count == 0

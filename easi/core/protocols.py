@@ -50,9 +50,6 @@ class AgentProtocol(Protocol):
     def act(self, observation: Observation, task_description: str) -> Action: ...
     def add_feedback(self, action_name: str, feedback: str) -> None: ...
 
-    @property
-    def chat_history(self) -> list[dict]: ...
-
 
 @runtime_checkable
 class TaskProtocol(Protocol):

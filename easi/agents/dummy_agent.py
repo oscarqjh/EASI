@@ -1,5 +1,4 @@
 """Dummy agent for testing — returns random actions without calling an LLM."""
-
 from __future__ import annotations
 
 import random
@@ -19,31 +18,7 @@ class DummyAgent(BaseAgent):
         super().__init__(llm_client=None, action_space=action_space)
         self._rng = random.Random(seed)
 
-    def _build_system_prompt(self, task_description: str) -> str:
-        return ""  # no system prompt needed
-
-    def _build_step_prompt(self, observation: Observation) -> str:
-        return "Choose an action."
-
-    def _parse_action(self, llm_response: str) -> Action:
-        """Pick a random action from the action space."""
-        action_name = self._rng.choice(self.action_space)
-        return Action(action_name=action_name)
-
     def act(self, observation: Observation, task_description: str) -> Action:
-        """Override to skip LLM call entirely."""
+        """Pick a random action from the action space."""
         self._step_count += 1
-
-        action = self._parse_action("")
-
-        # Still maintain chat history for compatibility
-        self._chat_history.append({
-            "role": "user",
-            "content": f"Step {self._step_count}. Observation at {observation.rgb_path}",
-        })
-        self._chat_history.append({
-            "role": "assistant",
-            "content": f"Action: {action.action_name}",
-        })
-
-        return action
+        return Action(action_name=self._rng.choice(self.action_space))
