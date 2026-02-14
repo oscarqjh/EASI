@@ -1,0 +1,62 @@
+# tests/test_cli_llm_args.py
+"""Tests for CLI LLM-related arguments."""
+import pytest
+
+
+class TestBuildParser:
+    def test_run_has_backend_arg(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task", "--backend", "vllm"])
+        assert args.backend == "vllm"
+
+    def test_run_backend_default_is_none(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task"])
+        assert args.backend is None
+
+    def test_run_has_model_arg(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task", "--model", "gpt-4o"])
+        assert args.model == "gpt-4o"
+
+    def test_run_model_default(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task"])
+        assert args.model == "default"
+
+    def test_run_has_port_arg(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task", "--port", "9090"])
+        assert args.port == 9090
+
+    def test_run_port_default(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task"])
+        assert args.port == 8080
+
+    def test_run_has_llm_kwargs(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args([
+            "run", "dummy_task",
+            "--llm-kwargs", '{"tensor_parallel_size": 4}',
+        ])
+        assert args.llm_kwargs == '{"tensor_parallel_size": 4}'
+
+    def test_run_llm_kwargs_default_none(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task"])
+        assert args.llm_kwargs is None
+
+    def test_backward_compat_llm_url_still_works(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["run", "dummy_task", "--llm-url", "http://localhost:8000"])
+        assert args.llm_url == "http://localhost:8000"

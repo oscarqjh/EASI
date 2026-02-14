@@ -87,6 +87,15 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--max-episodes", type=int, default=None)
     run_parser.add_argument("--llm-url", type=str, default=None, help="LLM server URL")
     run_parser.add_argument("--seed", type=int, default=None)
+    # New LLM backend args
+    run_parser.add_argument("--backend", type=str, default=None,
+                            help="LLM backend: vllm, openai, anthropic, gemini, dummy")
+    run_parser.add_argument("--model", type=str, default="default",
+                            help="Model name (HF path for vLLM, API name for proprietary)")
+    run_parser.add_argument("--port", type=int, default=8080,
+                            help="Port for local inference server (default: 8080)")
+    run_parser.add_argument("--llm-kwargs", type=str, default=None,
+                            help='JSON string of extra kwargs, e.g. \'{"tensor_parallel_size": 4}\'')
 
     # --- llm-server command ---
     llm_parser = subparsers.add_parser("llm-server", help="Start dummy LLM server", parents=[common])
@@ -276,7 +285,8 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float) -> None:
         sys.exit(1)
 
 
-def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes, llm_url, seed):
+def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes,
+            llm_url, seed, backend, model, port, llm_kwargs_raw):
     from easi.evaluation.runner import EvaluationRunner
 
     runner = EvaluationRunner(
@@ -286,6 +296,10 @@ def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes, llm_url, 
         data_dir=data_dir,
         llm_base_url=llm_url,
         agent_seed=seed,
+        backend=backend,
+        model=model,
+        port=port,
+        llm_kwargs_raw=llm_kwargs_raw,
     )
     results = runner.run(max_episodes=max_episodes)
     logger.info("Completed %d episodes.", len(results))
@@ -345,7 +359,8 @@ def main() -> None:
 
     elif args.command == "run":
         cmd_run(args.task, args.agent, args.output_dir, args.data_dir,
-                args.max_episodes, args.llm_url, args.seed)
+                args.max_episodes, args.llm_url, args.seed,
+                args.backend, args.model, args.port, args.llm_kwargs)
 
     elif args.command == "llm-server":
         cmd_llm_server(args.host, args.port, args.mode, args.action_space)
