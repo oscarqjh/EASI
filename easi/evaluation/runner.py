@@ -52,6 +52,10 @@ class EvaluationRunner:
         data_dir: Path | str = "./datasets",
         llm_base_url: str | None = None,
         agent_seed: int | None = None,
+        backend: str | None = None,
+        model: str = "default",
+        port: int = 8080,
+        llm_kwargs_raw: str | None = None,
     ):
         self.task_name = task_name
         self.agent_type = agent_type
@@ -59,11 +63,36 @@ class EvaluationRunner:
         self.data_dir = Path(data_dir)
         self.llm_base_url = llm_base_url
         self.agent_seed = agent_seed
+        self.backend = backend
+        self.model = model
+        self.port = port
+        self.llm_kwargs_raw = llm_kwargs_raw
         self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def _resolve_llm_backend(self) -> tuple[str | None, str | None]:
+        """Resolve which LLM backend to use.
+
+        Returns (backend, base_url):
+            - (None, None) for dummy agent
+            - ("legacy", url) for --llm-url without --backend
+            - (backend_name, url_or_none) for --backend
+        """
+        if self.agent_type == "dummy":
+            return None, None
+
+        if self.backend:
+            return self.backend, self.llm_base_url
+
+        if self.llm_base_url:
+            return "legacy", self.llm_base_url
+
+        raise ValueError(
+            f"Agent '{self.agent_type}' requires --backend or --llm-url. "
+            f"Use --backend vllm|openai|anthropic|gemini or --llm-url <url>."
+        )
 
     def run(self, max_episodes: int | None = None) -> list[dict]:
         """Run evaluation and return per-episode metric dicts."""
-        # Create structured output directory
         run_dir = self.output_dir / self.task_name / self.run_id
         episodes_dir = run_dir / "episodes"
         episodes_dir.mkdir(parents=True, exist_ok=True)
@@ -74,6 +103,21 @@ class EvaluationRunner:
         if max_episodes is not None:
             episodes = episodes[:max_episodes]
 
+        # 2. Resolve LLM backend and optionally start server
+        backend, base_url = self._resolve_llm_backend()
+        server = None
+        if backend == "vllm" and base_url is None:
+            from easi.llm.server_manager import ServerManager
+            from easi.llm.utils import parse_llm_kwargs, split_kwargs
+
+            all_kwargs = parse_llm_kwargs(self.llm_kwargs_raw)
+            server_kwargs, _ = split_kwargs(all_kwargs)
+            server = ServerManager(
+                "vllm", self.model, port=self.port,
+                server_kwargs=server_kwargs, log_dir=run_dir,
+            )
+            base_url = server.start()
+
         # Save run config
         config = {
             "task_name": self.task_name,
@@ -82,14 +126,17 @@ class EvaluationRunner:
             "run_id": self.run_id,
             "max_episodes": max_episodes,
             "total_episodes": len(episodes),
+            "backend": backend,
+            "model": self.model,
         }
         (run_dir / "config.json").write_text(json.dumps(config, indent=2))
 
-        # 2. Create agent
-        agent = self._create_agent(task.action_space, task._config)
+        # 3. Create agent
+        agent = self._create_agent(task.action_space, task._config,
+                                   backend=backend, base_url=base_url)
 
-        # 3. Start simulator
-        sim, runner = self._create_simulator(task.simulator_key, task=task)
+        # 4. Start simulator
+        sim, sim_runner = self._create_simulator(task.simulator_key, task=task)
 
         all_results = []
         try:
@@ -99,9 +146,7 @@ class EvaluationRunner:
                     "Episode %d/%d: %s", i + 1, len(episodes), episode_id,
                 )
 
-                # Create episode output directory
-                safe_id = _sanitize_dirname(episode_id)
-                episode_dir = episodes_dir / f"{i:03d}_{safe_id}"
+                episode_dir = episodes_dir / f"{i:03d}_{_sanitize_dirname(episode_id)}"
                 episode_dir.mkdir(exist_ok=True)
 
                 result = self._run_episode(
@@ -109,16 +154,21 @@ class EvaluationRunner:
                 )
                 all_results.append(result)
 
-                # Save per-episode result
                 (episode_dir / "result.json").write_text(
                     json.dumps(result, indent=2)
                 )
 
         finally:
             sim.close()
+            if server:
+                server.stop()
 
-        # 4. Aggregate and save summary
+        # 5. Aggregate and save summary
         summary = aggregate_metrics(all_results)
+        if backend and backend != "legacy":
+            summary["llm_usage"] = self._aggregate_llm_usage(all_results)
+            summary["model"] = self.model
+            summary["backend"] = backend
         (run_dir / "summary.json").write_text(json.dumps(summary, indent=2))
         logger.info("Results saved to: %s", run_dir)
         logger.info("Summary: %s", summary)
@@ -195,6 +245,11 @@ class EvaluationRunner:
         metrics["episode_id"] = episode_id
         metrics["elapsed_seconds"] = round(elapsed, 2)
 
+        # Snapshot LLM usage for this episode
+        if hasattr(agent, 'llm_client') and hasattr(agent.llm_client, 'get_usage'):
+            metrics["llm_usage"] = agent.llm_client.get_usage()
+            agent.llm_client.reset_usage()
+
         return metrics
 
     @staticmethod
@@ -202,6 +257,28 @@ class EvaluationRunner:
         """Append a single JSON line to the trajectory file."""
         with path.open("a") as f:
             f.write(json.dumps(entry) + "\n")
+
+    @staticmethod
+    def _aggregate_llm_usage(results: list[dict]) -> dict:
+        """Sum up llm_usage from per-episode results."""
+        total = {
+            "total_calls": 0,
+            "total_prompt_tokens": 0,
+            "total_completion_tokens": 0,
+            "total_tokens": 0,
+            "total_cost_usd": 0.0,
+        }
+        for r in results:
+            usage = r.get("llm_usage", {})
+            total["total_calls"] += usage.get("num_calls", 0)
+            total["total_prompt_tokens"] += usage.get("prompt_tokens", 0)
+            total["total_completion_tokens"] += usage.get("completion_tokens", 0)
+            total["total_cost_usd"] += usage.get("cost_usd", 0.0)
+        total["total_tokens"] = total["total_prompt_tokens"] + total["total_completion_tokens"]
+        n = len(results) or 1
+        total["avg_prompt_tokens_per_episode"] = round(total["total_prompt_tokens"] / n)
+        total["avg_cost_per_episode_usd"] = round(total["total_cost_usd"] / n, 6)
+        return total
 
     def _create_task(self):
         from easi.tasks.registry import get_task_entry, load_task_class
@@ -213,22 +290,59 @@ class EvaluationRunner:
             data_dir=self.data_dir,
         )
 
-    def _create_agent(self, action_space: list[str], task_config: dict):
+    def _create_agent(self, action_space: list[str], task_config: dict,
+                      backend: str | None = None, base_url: str | None = None):
         from easi.utils.import_utils import import_class
 
         if self.agent_type == "dummy":
             from easi.agents.dummy_agent import DummyAgent
-
             return DummyAgent(action_space=action_space, seed=self.agent_seed)
+
         elif self.agent_type == "react":
             from easi.agents.react_agent import ReActAgent
-            from easi.llm.api_client import LLMApiClient
 
-            llm = LLMApiClient(
-                base_url=self.llm_base_url or "http://127.0.0.1:8000"
-            )
+            # Create LLM client based on backend
+            if backend and backend != "legacy":
+                from easi.llm.client import LLMClient
+                from easi.llm.utils import (
+                    build_litellm_model, parse_llm_kwargs,
+                    split_kwargs, validate_backend,
+                )
 
-            # Load task-specific prompt builder if configured in yaml
+                validate_backend(backend)
+                litellm_model = build_litellm_model(backend, self.model)
+                all_kwargs = parse_llm_kwargs(self.llm_kwargs_raw)
+                _, client_kwargs = split_kwargs(all_kwargs)
+
+                llm = LLMClient(
+                    model=litellm_model,
+                    base_url=base_url,
+                    **client_kwargs,
+                )
+
+                # Wrap for structured output if configured
+                agent_config = task_config.get("agent", {})
+                schema_class_name = agent_config.get("response_schema")
+                if schema_class_name:
+                    import json as _json
+                    SchemaClass = import_class(schema_class_name)
+
+                    def _structured_generate(messages):
+                        result = llm.generate_structured(messages, response_model=SchemaClass)
+                        actions = result.get_actions()
+                        return _json.dumps({
+                            "executable_plan": [{"action": a} for a in actions]
+                        })
+
+                    llm.generate = _structured_generate
+            else:
+                # Legacy path: existing LLMApiClient
+                from easi.llm.api_client import LLMApiClient
+                llm = LLMApiClient(
+                    base_url=base_url or "http://127.0.0.1:8000"
+                )
+
+            # Load task-specific prompt builder
             prompt_builder = None
             agent_config = task_config.get("agent", {})
             builder_class_name = agent_config.get("prompt_builder")
