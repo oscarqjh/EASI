@@ -81,7 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("task", type=str, nargs="?", default=None,
                             help="Task name (e.g., 'dummy_task', 'ebalfred_base'). "
                                  "Optional when --resume is provided.")
-    run_parser.add_argument("--agent", type=str, default="dummy", choices=["dummy", "react"])
+    run_parser.add_argument("--agent", type=str, default="react", choices=["dummy", "react"])
     run_parser.add_argument("--output-dir", type=str, default="./logs",
                             help="Base output directory (creates <dir>/<task>/<run_id>/)")
     run_parser.add_argument("--data-dir", type=str, default="./datasets",
