@@ -13,6 +13,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -65,6 +66,17 @@ class EBAlfredBridge(BaseBridge):
             "last_action_success": float(info.get("last_action_success", 0.0)),
             "feedback": str(info.get("env_feedback", "")),
         }
+
+    def _make_response(self, obs, reward=0.0, done=False, info=None):
+        """Override to include dynamic action space in reset response metadata."""
+        response = super()._make_response(obs, reward, done, info)
+        # After reset, env.language_skill_set contains the per-episode
+        # dynamic action space (global actions + scene-specific instances).
+        if self.env is not None and hasattr(self.env, 'language_skill_set'):
+            response["observation"]["metadata"]["dynamic_action_space"] = json.dumps(
+                self.env.language_skill_set
+            )
+        return response
 
 
 if __name__ == "__main__":

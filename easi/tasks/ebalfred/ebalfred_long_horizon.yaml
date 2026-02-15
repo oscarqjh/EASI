@@ -23,6 +23,7 @@ simulator_configs:
 agent:
   prompt_builder: "easi.tasks.ebalfred.prompts.EBAlfredPromptBuilder"
   prompt_builder_kwargs:
-    n_shot: 10
+    n_shot: 7
     split: "long_horizon"
     use_feedback: true
+    chat_history: true

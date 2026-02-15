@@ -26,3 +26,4 @@ agent:
     n_shot: 10
     split: "base"
     use_feedback: true
+    chat_history: false
