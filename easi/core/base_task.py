@@ -74,6 +74,19 @@ class BaseTask(ABC):
         """
         ...
 
+    # --- Hooks ---
+
+    def on_episode_reset(self, observation, agent) -> None:
+        """Called after simulator reset, before the agent-simulator loop.
+
+        Override in subclasses to perform task-specific setup, e.g. updating
+        the agent's action space from bridge metadata.
+
+        Args:
+            observation: The initial observation from sim.reset().
+            agent: The agent instance (may have update_action_space, etc.).
+        """
+
     # --- Shared implementation ---
 
     def get_bridge_script_path(self) -> Path | None:

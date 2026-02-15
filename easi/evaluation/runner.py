@@ -191,11 +191,8 @@ class EvaluationRunner:
             episode_output_dir=str(episode_dir),
         )
 
-        # Propagate dynamic action space from bridge (e.g., EB-Alfred per-episode actions)
-        dynamic_actions_json = observation.metadata.get("dynamic_action_space")
-        if dynamic_actions_json and hasattr(agent, 'update_action_space'):
-            dynamic_actions = json.loads(dynamic_actions_json)
-            agent.update_action_space(dynamic_actions)
+        # Task-specific post-reset setup (e.g., per-episode action space)
+        task.on_episode_reset(observation, agent)
 
         # Write reset entry to trajectory
         trajectory_path = episode_dir / "trajectory.jsonl"

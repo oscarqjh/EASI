@@ -13,6 +13,7 @@ reset_config → EBAlfEnv.reset(episode). Each episode dict must have 'task',
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from easi.core.base_task import BaseTask
@@ -36,6 +37,13 @@ class EBAlfredTask(BaseTask):
     def get_bridge_script_path(self) -> Path:
         """Return path to the EB-Alfred-specific bridge script."""
         return Path(__file__).parent / "bridge.py"
+
+    def on_episode_reset(self, observation, agent) -> None:
+        """Update agent action space from per-episode bridge metadata."""
+        dynamic_actions_json = observation.metadata.get("dynamic_action_space")
+        if dynamic_actions_json and hasattr(agent, 'update_action_space'):
+            dynamic_actions = json.loads(dynamic_actions_json)
+            agent.update_action_space(dynamic_actions)
 
     def get_instruction(self, episode: dict) -> str:
         """EB-Alfred uses 'instruction' field from HF row."""
