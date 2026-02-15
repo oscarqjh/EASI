@@ -56,6 +56,8 @@ class EvaluationRunner:
         model: str = "default",
         port: int = 8080,
         llm_kwargs_raw: str | None = None,
+        max_retries: int = 3,
+        resume_dir: Path | str | None = None,
     ):
         self.task_name = task_name
         self.agent_type = agent_type
@@ -67,6 +69,8 @@ class EvaluationRunner:
         self.model = model
         self.port = port
         self.llm_kwargs_raw = llm_kwargs_raw
+        self.max_retries = max_retries
+        self.resume_dir = Path(resume_dir) if resume_dir else None
         self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     def _resolve_llm_backend(self) -> tuple[str | None, str | None]:
@@ -93,7 +97,19 @@ class EvaluationRunner:
 
     def run(self, max_episodes: int | None = None) -> list[dict]:
         """Run evaluation and return per-episode metric dicts."""
-        run_dir = self.output_dir / self.task_name / self.run_id
+        if self.resume_dir:
+            run_dir = self.resume_dir
+            all_results = self._load_completed_results(run_dir)
+            start_index = len(all_results)
+            logger.info(
+                "Resuming from %s — %d completed episodes, starting from %d",
+                run_dir, len(all_results), start_index,
+            )
+        else:
+            run_dir = self.output_dir / self.task_name / self.run_id
+            all_results = []
+            start_index = 0
+
         episodes_dir = run_dir / "episodes"
         episodes_dir.mkdir(parents=True, exist_ok=True)
 
@@ -134,6 +150,7 @@ class EvaluationRunner:
                 "model": self.model,
                 "port": self.port,
                 "llm_kwargs_raw": self.llm_kwargs_raw,
+                "max_retries": self.max_retries,
             },
             "resolved_backend": backend,
             "task_config": task._config,
@@ -147,9 +164,10 @@ class EvaluationRunner:
         # 4. Start simulator
         sim, sim_runner = self._create_simulator(task.simulator_key, task=task)
 
-        all_results = []
         try:
             for i, episode in enumerate(episodes):
+                if i < start_index:
+                    continue
                 episode_id = episode.get("episode_id", f"ep_{i}")
                 logger.info(
                     "Episode %d/%d: %s", i + 1, len(episodes), episode_id,
@@ -181,6 +199,33 @@ class EvaluationRunner:
         (run_dir / "summary.json").write_text(json.dumps(summary, indent=2))
         logger.info("Results saved to: %s", run_dir)
         logger.info("Summary: %s", summary)
+
+        return all_results
+
+    def _load_completed_results(self, run_dir: Path) -> list[dict]:
+        """Load results from a previous run for resume.
+
+        Returns results from all completed episodes except the last one.
+        The last episode directory is cleared for re-run (it may have been
+        interrupted mid-way).
+        """
+        episodes_dir = run_dir / "episodes"
+        if not episodes_dir.exists():
+            return []
+
+        result_files = sorted(episodes_dir.glob("*/result.json"))
+        if not result_files:
+            return []
+
+        # Load all completed results except the last
+        all_results = []
+        for rf in result_files[:-1]:
+            all_results.append(json.loads(rf.read_text()))
+
+        # Clear the last episode directory for re-run
+        last_episode_dir = result_files[-1].parent
+        for f in last_episode_dir.iterdir():
+            f.unlink()
 
         return all_results
 
@@ -338,6 +383,7 @@ class EvaluationRunner:
                 llm = LLMClient(
                     model=litellm_model,
                     base_url=base_url,
+                    num_retries=self.max_retries,
                     **client_kwargs,
                 )
             else:

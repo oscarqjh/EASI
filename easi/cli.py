@@ -78,7 +78,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- run command ---
     run_parser = subparsers.add_parser("run", help="Run a full evaluation", parents=[common])
-    run_parser.add_argument("task", type=str, help="Task name (e.g., 'dummy_task', 'ebalfred_base')")
+    run_parser.add_argument("task", type=str, nargs="?", default=None,
+                            help="Task name (e.g., 'dummy_task', 'ebalfred_base'). "
+                                 "Optional when --resume is provided.")
     run_parser.add_argument("--agent", type=str, default="dummy", choices=["dummy", "react"])
     run_parser.add_argument("--output-dir", type=str, default="./logs",
                             help="Base output directory (creates <dir>/<task>/<run_id>/)")
@@ -96,6 +98,10 @@ def build_parser() -> argparse.ArgumentParser:
                             help="Port for local inference server (default: 8080)")
     run_parser.add_argument("--llm-kwargs", type=str, default=None,
                             help='JSON string of extra kwargs, e.g. \'{"tensor_parallel_size": 4}\'')
+    run_parser.add_argument("--max-retries", type=int, default=3,
+                            help="Max LLM retry attempts on transient errors (default: 3)")
+    run_parser.add_argument("--resume", type=str, default=None,
+                            help="Path to a previous run directory to resume from")
 
     # --- llm-server command ---
     llm_parser = subparsers.add_parser("llm-server", help="Start dummy LLM server", parents=[common])
@@ -286,8 +292,48 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float) -> None:
 
 
 def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes,
-            llm_url, seed, backend, model, port, llm_kwargs_raw):
+            llm_url, seed, backend, model, port, llm_kwargs_raw,
+            max_retries, resume):
+    import json as _json
+    from pathlib import Path
+
     from easi.evaluation.runner import EvaluationRunner
+
+    # When resuming, load saved config and use as defaults
+    if resume:
+        config_path = Path(resume) / "config.json"
+        if not config_path.exists():
+            logger.error("Resume directory has no config.json: %s", resume)
+            sys.exit(1)
+        saved = _json.loads(config_path.read_text())
+        opts = saved.get("cli_options", {})
+
+        # Saved config provides defaults; CLI args override
+        task_name = task_name or opts.get("task_name")
+        if agent_type == "dummy" and opts.get("agent_type"):
+            agent_type = opts["agent_type"]
+        if output_dir == "./logs" and opts.get("output_dir"):
+            output_dir = opts["output_dir"]
+        if data_dir == "./datasets" and opts.get("data_dir"):
+            data_dir = opts["data_dir"]
+        if llm_url is None:
+            llm_url = opts.get("llm_base_url")
+        if seed is None:
+            seed = opts.get("agent_seed")
+        if backend is None:
+            backend = opts.get("backend")
+        if model == "default" and opts.get("model", "default") != "default":
+            model = opts["model"]
+        if port == 8080 and opts.get("port", 8080) != 8080:
+            port = opts["port"]
+        if llm_kwargs_raw is None:
+            llm_kwargs_raw = opts.get("llm_kwargs_raw")
+        if max_retries == 3 and opts.get("max_retries", 3) != 3:
+            max_retries = opts["max_retries"]
+
+    if not task_name:
+        logger.error("Task name is required. Provide it as a positional arg or use --resume.")
+        sys.exit(1)
 
     runner = EvaluationRunner(
         task_name=task_name,
@@ -300,6 +346,8 @@ def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes,
         model=model,
         port=port,
         llm_kwargs_raw=llm_kwargs_raw,
+        max_retries=max_retries,
+        resume_dir=resume,
     )
     results = runner.run(max_episodes=max_episodes)
     logger.info("Completed %d episodes.", len(results))
@@ -360,7 +408,8 @@ def main() -> None:
     elif args.command == "run":
         cmd_run(args.task, args.agent, args.output_dir, args.data_dir,
                 args.max_episodes, args.llm_url, args.seed,
-                args.backend, args.model, args.port, args.llm_kwargs)
+                args.backend, args.model, args.port, args.llm_kwargs,
+                args.max_retries, args.resume)
 
     elif args.command == "llm-server":
         cmd_llm_server(args.host, args.port, args.mode, args.action_space)

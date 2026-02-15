@@ -40,10 +40,12 @@ class LLMClient:
         self,
         model: str,
         base_url: str | None = None,
+        num_retries: int = 3,
         **kwargs: Any,
     ):
         self.model = model
         self.base_url = base_url
+        self.num_retries = num_retries
         self.default_kwargs = kwargs
         self._usage = {
             "prompt_tokens": 0,
@@ -59,6 +61,7 @@ class LLMClient:
         call_kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
+            "num_retries": self.num_retries,
             **self.default_kwargs,
         }
         if self.base_url:

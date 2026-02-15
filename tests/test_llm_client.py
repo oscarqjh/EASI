@@ -147,6 +147,56 @@ class TestLLMClientGenerate:
         assert "response_format" not in call_kwargs.kwargs
 
 
+class TestLLMClientRetries:
+    def test_default_num_retries(self):
+        from easi.llm.client import LLMClient
+        client = LLMClient(model="openai/gpt-4o")
+        assert client.num_retries == 3
+
+    def test_custom_num_retries(self):
+        from easi.llm.client import LLMClient
+        client = LLMClient(model="openai/gpt-4o", num_retries=5)
+        assert client.num_retries == 5
+
+    @patch("easi.llm.client.litellm")
+    def test_num_retries_passed_to_litellm(self, mock_litellm):
+        from easi.llm.client import LLMClient
+
+        mock_choice = MagicMock()
+        mock_choice.message.content = "ok"
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_litellm.completion.return_value = mock_response
+        mock_litellm.completion_cost.return_value = 0.0
+
+        client = LLMClient(model="openai/gpt-4o", num_retries=7)
+        client.generate([{"role": "user", "content": "hi"}])
+
+        call_kwargs = mock_litellm.completion.call_args
+        assert call_kwargs.kwargs.get("num_retries") == 7
+
+    @patch("easi.llm.client.litellm")
+    def test_zero_retries_passed_through(self, mock_litellm):
+        from easi.llm.client import LLMClient
+
+        mock_choice = MagicMock()
+        mock_choice.message.content = "ok"
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_litellm.completion.return_value = mock_response
+        mock_litellm.completion_cost.return_value = 0.0
+
+        client = LLMClient(model="openai/gpt-4o", num_retries=0)
+        client.generate([{"role": "user", "content": "hi"}])
+
+        call_kwargs = mock_litellm.completion.call_args
+        assert call_kwargs.kwargs.get("num_retries") == 0
+
+
 class TestLLMClientProtocolCompat:
     def test_satisfies_llm_client_protocol(self):
         from easi.core.protocols import LLMClientProtocol
