@@ -46,16 +46,15 @@ After the target object appears, start navigation and avoid using rotation until
 '''
 
 # Output template from EmbodiedBench planner_utils.py (template, not template_lang).
-OUTPUT_TEMPLATE = '''
-The output json format should be {'visual_state_description':str, 'reasoning_and_reflection':str, 'language_plan':str, 'executable_plan':List[{'action_id':int, 'action_name':str}...]}
-The fields in above JSON follows the purpose below:
-1. visual_state_description is for description of current state from the visual image,
-2. reasoning_and_reflection is for summarizing the history of interactions and any available environmental feedback. Additionally, provide reasoning as to why the last action or plan failed and did not finish the task,
-3. language_plan is for describing a list of actions to achieve the user instruction. Each action is started by the step number and the action name,
-4. executable_plan is a list of actions needed to achieve the user instruction, with each action having an action ID and a name.
-5. keep your plan efficient and concise.
-!!! When generating content for JSON strings, avoid using any contractions or abbreviated forms (like 's, 're, 've, 'll, 'd, n't) that use apostrophes. Instead, write out full forms (is, are, have, will, would, not) to prevent parsing errors in JSON. Please do not output any other thing more than the above-mentioned JSON, do not include ```json and ```!!!.
-'''
+OUTPUT_TEMPLATE = "\n" \
+"The output json format should be {'visual_state_description':str, 'reasoning_and_reflection':str, 'language_plan':str, 'executable_plan':List[{'action_id':int, 'action_name':str}...]}\n" \
+"The fields in above JSON follows the purpose below:\n" \
+"1. visual_state_description is for description of current state from the visual image, \n" \
+"2. reasoning_and_reflection is for summarizing the history of interactions and any available environmental feedback. Additionally, provide reasoning as to why the last action or plan failed and did not finish the task, \n" \
+"3. language_plan is for describing a list of actions to achieve the user instruction. Each action is started by the step number and the action name, \n" \
+"4. executable_plan is a list of actions needed to achieve the user instruction, with each action having an action ID and a name.\n" \
+"5. keep your plan efficient and concise.\n" \
+"!!! When generating content for JSON strings, avoid using any contractions or abbreviated forms (like 's, 're, 've, 'll, 'd, n't) that use apostrophes. Instead, write out full forms (is, are, have, will, would, not) to prevent parsing errors in JSON. Please do not output any other thing more than the above-mentioned JSON, do not include ```json and ```!!!.\n"
 
 # JSON schema matching EmbodiedBench navigation output format.
 EBNAVIGATION_RESPONSE_SCHEMA = {
