@@ -345,18 +345,36 @@ class BaseTask(ABC):
                         "Install with: pip install huggingface_hub"
                     )
 
-                logger.info("Downloading dataset %s from HuggingFace...", repo_id)
-                try:
-                    snapshot_download(
-                        repo_id=repo_id,
-                        local_dir=str(target),
-                        repo_type="dataset",
+                import time as _time
+
+                max_attempts = 5
+                for attempt in range(1, max_attempts + 1):
+                    logger.info(
+                        "Downloading dataset %s from HuggingFace (attempt %d/%d)...",
+                        repo_id, attempt, max_attempts,
                     )
-                except Exception as e:
-                    if target.exists():
-                        import shutil
-                        shutil.rmtree(target, ignore_errors=True)
-                    raise DatasetError(f"Failed to download {repo_id}: {e}")
+                    try:
+                        snapshot_download(
+                            repo_id=repo_id,
+                            local_dir=str(target),
+                            repo_type="dataset",
+                        )
+                        break  # success
+                    except Exception as e:
+                        if attempt < max_attempts:
+                            wait = 2 ** attempt  # 2, 4, 8, 16s
+                            logger.warning(
+                                "Download attempt %d failed: %s. Retrying in %ds...",
+                                attempt, e, wait,
+                            )
+                            _time.sleep(wait)
+                        else:
+                            if target.exists():
+                                import shutil
+                                shutil.rmtree(target, ignore_errors=True)
+                            raise DatasetError(
+                                f"Failed to download {repo_id} after {max_attempts} attempts: {e}"
+                            )
 
                 logger.info("Downloaded dataset %s to %s", repo_id, target)
             else:
