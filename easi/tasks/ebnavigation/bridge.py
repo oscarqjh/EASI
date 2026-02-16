@@ -36,6 +36,7 @@ class EBNavigationBridge(BaseBridge):
         success_threshold = simulator_kwargs.get("success_threshold", 1.0)
         grid_size = simulator_kwargs.get("grid_size", 0.1)
         visibility_distance = simulator_kwargs.get("visibility_distance", 10.0)
+        boundingbox = simulator_kwargs.get("boundingbox", False)
         return EBNavEnv(
             resolution=resolution,
             fov=fov,
@@ -43,6 +44,7 @@ class EBNavigationBridge(BaseBridge):
             success_threshold=success_threshold,
             grid_size=grid_size,
             visibility_distance=visibility_distance,
+            boundingbox=boundingbox,
         )
 
     def _on_reset(self, env, reset_config):

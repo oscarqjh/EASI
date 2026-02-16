@@ -16,6 +16,7 @@ simulator_configs:
   success_threshold: 1.0
   grid_size: 0.1
   visibility_distance: 10.0
+  boundingbox: false
 agent:
   prompt_builder: "easi.tasks.ebnavigation.prompts.EBNavigationPromptBuilder"
   prompt_builder_kwargs:

@@ -11,6 +11,39 @@ import math
 import ai2thor.controller
 import numpy as np
 from ai2thor.platform import Linux64
+from PIL import Image, ImageDraw
+
+# Objects eligible for bounding box drawing
+# Reference: EmbodiedBench/embodiedbench/envs/eb_navigation/utils.py
+VALID_OBJS = {
+    'Cart', 'Potato', 'Faucet', 'Ottoman', 'CoffeeMachine', 'Candle', 'CD',
+    'Pan', 'Watch', 'HandTowel', 'SprayBottle', 'BaseballBat', 'CellPhone',
+    'Kettle', 'Mug', 'StoveBurner', 'Bowl', 'Spoon', 'TissueBox', 'Apple',
+    'TennisRacket', 'SoapBar', 'Cloth', 'Plunger', 'FloorLamp',
+    'ToiletPaperHanger', 'Spatula', 'Plate', 'Glassbottle', 'Knife', 'Tomato',
+    'ButterKnife', 'Dresser', 'Microwave', 'GarbageCan', 'WateringCan',
+    'Vase', 'ArmChair', 'Safe', 'KeyChain', 'Pot', 'Pen', 'Newspaper',
+    'Bread', 'Book', 'Lettuce', 'CreditCard', 'AlarmClock', 'ToiletPaper',
+    'SideTable', 'Fork', 'Box', 'Egg', 'DeskLamp', 'Ladle', 'WineBottle',
+    'Pencil', 'Laptop', 'RemoteControl', 'BasketBall', 'DishSponge', 'Cup',
+    'SaltShaker', 'PepperShaker', 'Pillow', 'Bathtub', 'SoapBottle', 'Statue',
+    'Fridge', 'Toaster', 'LaundryHamper',
+}
+
+
+def _draw_boxes(frame: np.ndarray, instance_detections: dict) -> np.ndarray:
+    """Draw bounding boxes on frame for all valid objects.
+
+    Reference: EmbodiedBench/embodiedbench/envs/eb_navigation/utils.py:draw_boxes
+    """
+    img = Image.fromarray(frame)
+    draw = ImageDraw.Draw(img)
+    for class_name, box in instance_detections.items():
+        if class_name.split('|')[0] in VALID_OBJS:
+            color = tuple(np.random.randint(0, 256, size=3).tolist())
+            x1, y1, x2, y2 = box[0], box[1], box[2], box[3]
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=1)
+    return np.array(img)
 
 class EBNavEnv:
     """AI2-THOR navigation environment for EB-Navigation benchmark."""
@@ -23,9 +56,11 @@ class EBNavEnv:
         success_threshold: float = 1.0,
         grid_size: float = 0.1,
         visibility_distance: float = 10.0,
+        boundingbox: bool = False,
     ):
         self.resolution = resolution
         self._success_threshold = success_threshold
+        self.boundingbox = boundingbox
         self.config = {
             "agentMode": "default",
             "gridSize": grid_size,
@@ -74,7 +109,7 @@ class EBNavEnv:
         )
 
         self._current_step = 0
-        return {"head_rgb": self.env.last_event.frame}
+        return {"head_rgb": self._get_frame()}
 
     def step(self, action_id: int) -> tuple[dict, float, bool, dict]:
         """Execute one discrete action.
@@ -95,7 +130,7 @@ class EBNavEnv:
 
         done = self._current_step >= self._max_episode_steps or reward > 0
 
-        obs = {"head_rgb": self.env.last_event.frame}
+        obs = {"head_rgb": self._get_frame()}
         info = {
             "task_success": reward,
             "distance": distance,
@@ -159,6 +194,15 @@ class EBNavEnv:
             return f"Last action {last_action} executed successfully."
         else:
             return f"Last action {last_action} is invalid. {error}"
+
+    def _get_frame(self) -> np.ndarray:
+        """Return the current frame, with bounding boxes if enabled."""
+        frame = self.env.last_event.frame
+        if self.boundingbox:
+            detections = self.env.last_event.instance_detections2D
+            if detections:
+                frame = _draw_boxes(frame, detections)
+        return frame
 
     def close(self) -> None:
         """Shut down the AI2-THOR controller."""
