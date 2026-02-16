@@ -32,4 +32,4 @@ class HabitatEnvManagerV030(BaseEnvironmentManager):
         return ["conda"]
 
     def get_validation_import(self) -> str:
-        return "import habitat_sim; import habitat"
+        return "import habitat_sim"
