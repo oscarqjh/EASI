@@ -33,7 +33,17 @@ class EBNavigationBridge(BaseBridge):
         resolution = simulator_kwargs.get("screen_height", 500)
         max_steps = simulator_kwargs.get("max_steps", 20)
         fov = simulator_kwargs.get("fov", 100)
-        return EBNavEnv(resolution=resolution, fov=fov, max_steps=max_steps)
+        success_threshold = simulator_kwargs.get("success_threshold", 1.0)
+        grid_size = simulator_kwargs.get("grid_size", 0.1)
+        visibility_distance = simulator_kwargs.get("visibility_distance", 10.0)
+        return EBNavEnv(
+            resolution=resolution,
+            fov=fov,
+            max_steps=max_steps,
+            success_threshold=success_threshold,
+            grid_size=grid_size,
+            visibility_distance=visibility_distance,
+        )
 
     def _on_reset(self, env, reset_config):
         episode = {

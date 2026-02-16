@@ -12,18 +12,24 @@ import ai2thor.controller
 import numpy as np
 from ai2thor.platform import Linux64
 
-SUCCESS_THRESHOLD = 1  # meters (horizontal distance)
-
-
 class EBNavEnv:
     """AI2-THOR navigation environment for EB-Navigation benchmark."""
 
-    def __init__(self, resolution: int = 500, fov: int = 100, max_steps: int = 20):
+    def __init__(
+        self,
+        resolution: int = 500,
+        fov: int = 100,
+        max_steps: int = 20,
+        success_threshold: float = 1.0,
+        grid_size: float = 0.1,
+        visibility_distance: float = 10.0,
+    ):
         self.resolution = resolution
+        self._success_threshold = success_threshold
         self.config = {
             "agentMode": "default",
-            "gridSize": 0.1,
-            "visibilityDistance": 10,
+            "gridSize": grid_size,
+            "visibilityDistance": visibility_distance,
             "renderDepthImage": True,
             "renderInstanceSegmentation": True,
             "width": resolution,
@@ -136,7 +142,7 @@ class EBNavEnv:
             (agent_position["x"] - target_position["x"]) ** 2
             + (agent_position["z"] - target_position["z"]) ** 2
         )
-        success = float(dist <= SUCCESS_THRESHOLD)
+        success = float(dist <= self._success_threshold)
         return success, dist
 
     def _get_env_feedback(self) -> str:

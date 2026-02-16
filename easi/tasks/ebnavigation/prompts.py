@@ -105,8 +105,6 @@ EBNAVIGATION_RESPONSE_SCHEMA = {
     },
 }
 
-MESSAGE_WINDOW_LEN = 5
-
 _CONFIG_DIR = Path(__file__).parent / "config"
 
 
@@ -116,7 +114,7 @@ class EBNavigationPromptBuilder:
     Supports two modes:
     - chat_history=False (default): Stateless. Every turn sends a single user
       message with the full system prompt, examples, instruction, and history.
-    - chat_history=True: Messages accumulate with sliding window (5 messages).
+    - chat_history=True: Messages accumulate with sliding window.
       Each user message still includes the full system prompt and examples.
     """
 
@@ -126,11 +124,13 @@ class EBNavigationPromptBuilder:
         split: str = "base",
         use_feedback: bool = True,
         chat_history: bool = True,
+        message_window_len: int = 5,
     ):
         self.n_shot = n_shot
         self.split = split
         self.use_feedback = use_feedback
         self.chat_history = chat_history
+        self.message_window_len = message_window_len
 
         # Load examples
         examples_file = _CONFIG_DIR / "navigation_examples.json"
@@ -340,7 +340,7 @@ class EBNavigationPromptBuilder:
         )
 
         # Apply sliding window
-        return messages[-MESSAGE_WINDOW_LEN:]
+        return messages[-self.message_window_len:]
 
     def _build_first_turn_full_prompt(self, task_description: str) -> str:
         """Build first-turn prompt (identical for both modes)."""
