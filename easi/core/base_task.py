@@ -150,8 +150,11 @@ class BaseTask(ABC):
     def max_steps(self) -> int:
         return self._config.get("max_steps", 500)
 
-    def download_dataset(self) -> Path:
+    def download_dataset(self, force: bool = False) -> Path:
         """Download dataset if needed. Returns path to local data directory.
+
+        Args:
+            force: If True, delete cached dataset and re-download.
 
         - source=local: validate path exists, return it
         - source=huggingface: download via huggingface_hub, cache locally
@@ -170,7 +173,7 @@ class BaseTask(ABC):
             return local_path
 
         elif source == "huggingface":
-            return self._download_huggingface(dataset_config)
+            return self._download_huggingface(dataset_config, force=force)
 
         else:
             raise DatasetError(f"Unknown dataset source: {source}")
@@ -306,7 +309,7 @@ class BaseTask(ABC):
         """
         return []
 
-    def _download_huggingface(self, config: dict) -> Path:
+    def _download_huggingface(self, config: dict, force: bool = False) -> Path:
         """Download a dataset from HuggingFace Hub with file-based locking.
 
         Uses snapshot_download to get the full repo (including .zip files),
@@ -327,6 +330,12 @@ class BaseTask(ABC):
 
         with file_lock(lock_path):
             target = base_dir / repo_id.replace("/", "_")
+
+            if force and target.exists():
+                import shutil
+                logger.info("Force re-download: removing cached %s", target)
+                shutil.rmtree(target, ignore_errors=True)
+
             if not target.exists():
                 try:
                     from huggingface_hub import snapshot_download

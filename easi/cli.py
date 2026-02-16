@@ -59,6 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     task_download = task_sub.add_parser("download", help="Download task dataset", parents=[common])
     task_download.add_argument("task", type=str)
+    task_download.add_argument("--redownload", action="store_true",
+                               help="Delete cached dataset and re-download from source")
 
     task_scaffold = task_sub.add_parser("scaffold", help="Generate boilerplate for a new benchmark", parents=[common])
     task_scaffold.add_argument("name", type=str, help="Task name in snake_case (e.g., 'my_benchmark')")
@@ -102,6 +104,8 @@ def build_parser() -> argparse.ArgumentParser:
                             help="Max LLM retry attempts on transient errors (default: 3)")
     run_parser.add_argument("--resume", type=str, default=None,
                             help="Path to a previous run directory to resume from")
+    run_parser.add_argument("--redownload", action="store_true",
+                            help="Delete cached dataset and re-download from source")
 
     # --- llm-server command ---
     llm_parser = subparsers.add_parser("llm-server", help="Start dummy LLM server", parents=[common])
@@ -224,12 +228,12 @@ def cmd_task_scaffold(name: str, simulator: str, max_steps: int) -> None:
     logger.info("  4. Run tests: pytest tests/test_%s.py -v", name)
 
 
-def cmd_task_download(task_name: str) -> None:
+def cmd_task_download(task_name: str, redownload: bool = False) -> None:
     from easi.tasks.registry import load_task_class
 
     TaskClass = load_task_class(task_name)
     task = TaskClass()
-    path = task.download_dataset()
+    path = task.download_dataset(force=redownload)
     if path and str(path):
         logger.info("Dataset ready at: %s", path)
     else:
@@ -292,7 +296,7 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float) -> None:
 
 def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes,
             llm_url, seed, backend, model, port, llm_kwargs_raw,
-            max_retries, resume):
+            max_retries, resume, redownload=False):
     import json as _json
     from pathlib import Path
 
@@ -347,6 +351,7 @@ def cmd_run(task_name, agent_type, output_dir, data_dir, max_episodes,
         llm_kwargs_raw=llm_kwargs_raw,
         max_retries=max_retries,
         resume_dir=resume,
+        redownload=redownload,
     )
     results = runner.run(max_episodes=max_episodes)
     logger.info("Completed %d episodes.", len(results))
@@ -392,7 +397,7 @@ def main() -> None:
         elif args.task_action == "info":
             cmd_task_info(args.task)
         elif args.task_action == "download":
-            cmd_task_download(args.task)
+            cmd_task_download(args.task, redownload=args.redownload)
         elif args.task_action == "scaffold":
             cmd_task_scaffold(args.name, args.simulator, args.max_steps)
         else:
@@ -408,7 +413,7 @@ def main() -> None:
         cmd_run(args.task, args.agent, args.output_dir, args.data_dir,
                 args.max_episodes, args.llm_url, args.seed,
                 args.backend, args.model, args.port, args.llm_kwargs,
-                args.max_retries, args.resume)
+                args.max_retries, args.resume, args.redownload)
 
     elif args.command == "llm-server":
         cmd_llm_server(args.host, args.port, args.mode, args.action_space)

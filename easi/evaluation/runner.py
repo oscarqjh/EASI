@@ -58,6 +58,7 @@ class EvaluationRunner:
         llm_kwargs_raw: str | None = None,
         max_retries: int = 3,
         resume_dir: Path | str | None = None,
+        redownload: bool = False,
     ):
         self.task_name = task_name
         self.agent_type = agent_type
@@ -71,6 +72,7 @@ class EvaluationRunner:
         self.llm_kwargs_raw = llm_kwargs_raw
         self.max_retries = max_retries
         self.resume_dir = Path(resume_dir) if resume_dir else None
+        self.redownload = redownload
         self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     def _resolve_llm_backend(self) -> tuple[str | None, str | None]:
@@ -115,6 +117,8 @@ class EvaluationRunner:
 
         # 1. Load task
         task = self._create_task()
+        if self.redownload:
+            task.download_dataset(force=True)
         episodes = task.load_episodes()
         if max_episodes is not None:
             episodes = episodes[:max_episodes]
