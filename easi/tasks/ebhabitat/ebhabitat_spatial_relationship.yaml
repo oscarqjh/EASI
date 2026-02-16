@@ -17,6 +17,7 @@ simulator_configs:
   screen_width: 500
   max_invalid_actions: 10
   feedback_verbosity: 1
+  gpu_device_id: -1
   additional_deps:
     - "gym"
     - "hydra-core>=1.3"

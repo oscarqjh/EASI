@@ -53,6 +53,7 @@ class EBHabitatBridge(BaseBridge):
         max_steps = simulator_kwargs.get("max_steps", 30)
         max_invalid_actions = simulator_kwargs.get("max_invalid_actions", 10)
         feedback_verbosity = simulator_kwargs.get("feedback_verbosity", 1)
+        gpu_device_id = simulator_kwargs.get("gpu_device_id", None)
 
         env = EBHabEnv(
             eval_set=eval_set,
@@ -62,6 +63,7 @@ class EBHabitatBridge(BaseBridge):
             max_steps=max_steps,
             max_invalid_actions=max_invalid_actions,
             feedback_verbosity=feedback_verbosity,
+            gpu_device_id=gpu_device_id,
         )
 
         # Extract dynamic action space

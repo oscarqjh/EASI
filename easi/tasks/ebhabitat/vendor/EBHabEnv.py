@@ -116,7 +116,8 @@ class EBHabEnv(gym.Env):
     def __init__(self, eval_set='train', exp_name='', down_sample_ratio=1.0,
                  start_epi_index=0, resolution=500, recording=False,
                  data_dir=None, dataset_dir=None,
-                 max_steps=30, max_invalid_actions=10, feedback_verbosity=1):
+                 max_steps=30, max_invalid_actions=10, feedback_verbosity=1,
+                 gpu_device_id=None):
         """
         Initialize the HabitatRearrange environment.
 
@@ -151,9 +152,12 @@ class EBHabEnv(gym.Env):
         self.resolution = resolution
 
         # Set GPU device for rendering.
-        # Default to 0 (first GPU). Use HABITAT_SIM_GPU_ID env var to override.
-        # The headless conda build may need the NVIDIA EGL ICD installed.
-        gpu_id = int(os.environ.get("HABITAT_SIM_GPU_ID", "0"))
+        # Priority: constructor param > HABITAT_SIM_GPU_ID env var > default 0.
+        # Use -1 for software rendering (Mesa llvmpipe) on machines without CUDA.
+        if gpu_device_id is not None:
+            gpu_id = gpu_device_id
+        else:
+            gpu_id = int(os.environ.get("HABITAT_SIM_GPU_ID", "0"))
         self.config.habitat.simulator.habitat_sim_v0.gpu_device_id = gpu_id
 
         # modify config path to ease data loading
