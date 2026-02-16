@@ -406,7 +406,7 @@ class EBNavigationPromptBuilder:
         Uses 'Aim for about 1-2 actions'.
         """
         return (
-            f'''To achieve the task, 1. Reason about the current visual state and your final goal, and 2. Reflect on the effect of previous actions. 3. Summarize how you learn from the Strategy and Examples provided '''
+            f'''\nTo achieve the task, 1. Reason about the current visual state and your final goal, and 2. Reflect on the effect of previous actions. 3. Summarize how you learn from the Strategy and Examples provided '''
             f'''\nAim for about 1-2 actions in this step. !!!Notice: you cannot assess the situation until the whole plan in this planning step is finished executed, so plan accordingly.'''
             f'''\nAt last, output the action id(s) (0 ~ {max_id}) from the available actions to execute. '''
             f'''\n\nThe input given to you is an first person view observation. Plan accordingly based on the visual observation.'''
@@ -419,7 +419,7 @@ class EBNavigationPromptBuilder:
         Uses 'Aim for about 5-6 actions'.
         """
         return (
-            f'''To achieve the task, 1. Reason about the current visual state and your final goal, and 2. Reflect on the effect of previous actions. 3. Summarize how you learn from the Strategy and Examples provided '''
+            f'''\nTo achieve the task, 1. Reason about the current visual state and your final goal, and 2. Reflect on the effect of previous actions. 3. Summarize how you learn from the Strategy and Examples provided '''
             f'''\nAim for about 5-6 actions in this step to be closer to the target object. !!!Notice: you cannot assess the situation until the whole plan in this planning step is finished executed, so plan accordingly.'''
             f'''\nAt last, output the action id(s) (0 ~ {max_id}) from the available actions to execute. '''
             f'''\n\nThe input given to you is an first person view observation. Plan accordingly based on the visual observation.'''
