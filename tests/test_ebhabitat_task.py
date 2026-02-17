@@ -56,7 +56,7 @@ class TestEBHabitatTask:
         assert len(task.action_space) == len(PLACEHOLDER_ACTIONS)
 
     def test_max_steps(self, task):
-        assert task.max_steps == 30
+        assert task.max_steps == 50
 
     def test_format_reset_config(self, task):
         """Test the adapter from EB-Habitat HF row to bridge reset config."""

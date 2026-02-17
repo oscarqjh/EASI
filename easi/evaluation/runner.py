@@ -304,6 +304,12 @@ class EvaluationRunner:
 
         for step in range(task.max_steps):
             action = agent.act(observation, task_description)
+
+            # Handle stop signal (e.g., empty plan from LLM)
+            if action.action_name == "<<STOP>>":
+                logger.info("Agent signalled stop (empty plan), ending episode")
+                break
+
             step_result = sim.step(action)
             trajectory.append(step_result)
 
@@ -424,11 +430,15 @@ class EvaluationRunner:
                 all_kwargs = parse_llm_kwargs(self.llm_kwargs_raw)
                 _, client_kwargs = split_kwargs(all_kwargs)
 
+                # Merge YAML generation_kwargs with CLI kwargs (CLI overrides)
+                yaml_gen_kwargs = agent_config.get("generation_kwargs", {})
+                merged_kwargs = {**yaml_gen_kwargs, **client_kwargs}
+
                 llm = LLMClient(
                     model=litellm_model,
                     base_url=base_url,
                     num_retries=self.max_retries,
-                    **client_kwargs,
+                    **merged_kwargs,
                 )
             else:
                 # Legacy path: existing LLMApiClient
