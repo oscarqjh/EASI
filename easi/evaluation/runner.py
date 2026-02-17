@@ -73,7 +73,12 @@ class EvaluationRunner:
         self.max_retries = max_retries
         self.resume_dir = Path(resume_dir) if resume_dir else None
         self.redownload = redownload
-        self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if self.model:
+            safe_model = self.model.replace("/", "_")
+            self.run_id = f"{timestamp}_{safe_model}"
+        else:
+            self.run_id = timestamp
 
     def _resolve_llm_backend(self) -> tuple[str | None, str | None]:
         """Resolve which LLM backend to use.

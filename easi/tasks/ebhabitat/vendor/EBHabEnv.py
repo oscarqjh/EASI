@@ -160,6 +160,12 @@ class EBHabEnv(gym.Env):
             gpu_id = int(os.environ.get("HABITAT_SIM_GPU_ID", "0"))
         self.config.habitat.simulator.habitat_sim_v0.gpu_device_id = gpu_id
 
+        # Disable episode shuffling — EASI controls episode ordering via HF dataset.
+        # The default CustomEpisodeIterator shuffles episodes which would cause a
+        # mismatch between the HF instruction sent to the LLM and the actual
+        # simulator episode.
+        self.config.habitat.environment.iterator_options.shuffle = False
+
         # modify config path to ease data loading
         self.dataset = make_dataset(self.config.habitat.dataset.type, config=self.config.habitat.dataset)
 
