@@ -212,9 +212,8 @@ class SubprocessRunner:
         return cmd
 
     def _has_display(self) -> bool:
-        """Check if a real display is available."""
-        display = os.environ.get("DISPLAY", "")
-        return bool(display) and not display.startswith(":")
+        """Check if an X display is available."""
+        return bool(os.environ.get("DISPLAY", ""))
 
     def _stream_output(self) -> None:
         """Read bridge stdout line-by-line and log at DEBUG level.
