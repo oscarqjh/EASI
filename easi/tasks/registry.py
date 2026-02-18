@@ -14,7 +14,7 @@ import importlib
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
+from easi.tasks.yaml_utils import resolve_task_yaml
 
 from easi.utils.logging import get_logger
 
@@ -57,7 +57,7 @@ def _discover_tasks(tasks_dir: Path | None = None) -> dict[str, TaskEntry]:
 
         for task_yaml_path in yaml_files:
             try:
-                config = yaml.safe_load(task_yaml_path.read_text())
+                config = resolve_task_yaml(task_yaml_path)
             except Exception as e:
                 logger.warning("Failed to load %s: %s", task_yaml_path, e)
                 continue

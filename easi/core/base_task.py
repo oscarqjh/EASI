@@ -19,10 +19,9 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-import yaml
-
 from easi.core.episode import StepResult
 from easi.core.exceptions import DatasetError
+from easi.tasks.yaml_utils import resolve_task_yaml
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -209,7 +208,7 @@ class BaseTask(ABC):
         yaml_path = self._split_yaml_path or self.get_task_yaml_path()
         if not yaml_path.exists():
             raise DatasetError(f"Task config not found: {yaml_path}")
-        return yaml.safe_load(yaml_path.read_text())
+        return resolve_task_yaml(yaml_path)
 
     def _load_episodes_from_config(self) -> list[dict]:
         """Load episodes from the dataset.

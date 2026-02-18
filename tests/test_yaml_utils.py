@@ -178,3 +178,37 @@ class TestResolveTaskYaml:
         assert config["agent"]["prompt_builder_kwargs"]["n_shot"] == 10
         assert config["agent"]["prompt_builder_kwargs"]["split"] == "visual"
         assert config["agent"]["prompt_builder_kwargs"]["use_feedback"] is True
+
+
+class TestRegistryExtendsIntegration:
+    """Test that the registry resolves extends during discovery."""
+
+    def test_registry_discovers_split_with_extends(self, tmp_path):
+        from easi.tasks.registry import _discover_tasks
+        task_dir = tmp_path / "my_bench"
+        task_dir.mkdir()
+        (task_dir / "_base.yaml").write_text(
+            "simulator: dummy:v1\n"
+            "task_class: easi.tasks.dummy_task.task.DummyTask\n"
+            "max_steps: 50\n"
+        )
+        (task_dir / "my_bench_base.yaml").write_text(
+            "extends: _base.yaml\n"
+            "name: my_bench_base\n"
+            "display_name: My Bench Base\n"
+            "description: Base split\n"
+        )
+        entries = _discover_tasks(tasks_dir=tmp_path)
+        assert "my_bench_base" in entries
+        assert entries["my_bench_base"].simulator_key == "dummy:v1"
+        assert entries["my_bench_base"].max_steps == 50
+
+    def test_registry_skips_base_yaml_without_name(self, tmp_path):
+        from easi.tasks.registry import _discover_tasks
+        task_dir = tmp_path / "my_bench"
+        task_dir.mkdir()
+        (task_dir / "_base.yaml").write_text(
+            "simulator: dummy:v1\nmax_steps: 50\n"
+        )
+        entries = _discover_tasks(tasks_dir=tmp_path)
+        assert len(entries) == 0
