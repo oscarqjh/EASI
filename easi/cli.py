@@ -108,6 +108,9 @@ def build_parser() -> argparse.ArgumentParser:
                               help='JSON string of extra kwargs, e.g. \'{"tensor_parallel_size": 4}\'')
     start_parser.add_argument("--max-retries", type=int, default=None,
                               help="Max LLM retry attempts on transient errors (default: 3)")
+    start_parser.add_argument("--num-parallel", type=int, default=None, dest="num_parallel",
+                              help="Number of parallel simulator instances (default: 1, sequential). "
+                                   "Only supported with proprietary API backends (openai, anthropic, gemini).")
     start_parser.add_argument("--resume", type=str, default=None, dest="resume_dir",
                               help="Path to a previous run directory to resume from")
     start_parser.add_argument("--redownload", action="store_true",
@@ -352,6 +355,7 @@ def cmd_start(args):
 
     # Remove task_name from run_kwargs; it's passed per-task below
     run_kwargs.pop("task_name", None)
+    num_parallel = run_kwargs.pop("num_parallel", None) or 1
 
     from easi.evaluation.metrics import aggregate_metrics
 
@@ -359,12 +363,24 @@ def cmd_start(args):
 
     for task_name in task_list:
         logger.info("=== Starting evaluation: %s ===", task_name)
-        runner = EvaluationRunner(
-            task_name=task_name,
-            **run_kwargs,
-            resume_dir=resume_dir,
-            redownload=redownload,
-        )
+
+        if num_parallel > 1:
+            from easi.evaluation.parallel_runner import ParallelRunner
+            runner = ParallelRunner(
+                task_name=task_name,
+                num_parallel=num_parallel,
+                **run_kwargs,
+                resume_dir=resume_dir,
+                redownload=redownload,
+            )
+        else:
+            runner = EvaluationRunner(
+                task_name=task_name,
+                **run_kwargs,
+                resume_dir=resume_dir,
+                redownload=redownload,
+            )
+
         results = runner.run()
         logger.info("Completed %d episodes for %s.", len(results), task_name)
 
