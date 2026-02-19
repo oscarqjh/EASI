@@ -491,9 +491,9 @@ class TestEpisodeRetry:
 
 class TestResumeConfigLoading:
     def test_resume_loads_config_from_run_dir(self, tmp_path):
-        """cmd_run with --resume loads task_name and options from config.json."""
+        """cmd_start with --resume loads task_name and options from config.json."""
         from argparse import Namespace
-        from easi.cli import cmd_run
+        from easi.cli import cmd_start
 
         output_dir = tmp_path / "logs"
 
@@ -512,9 +512,10 @@ class TestResumeConfigLoading:
         # Resume with higher max_episodes to complete remaining
         # Saved config has max_episodes=2; override to 3 to run all.
         args = Namespace(
-            command="run",
+            command="start",
             verbosity="INFO",
-            task_name=None,
+            task_names_positional=[],
+            tasks_csv=None,
             agent_type="dummy",
             output_dir=None,
             data_dir=None,
@@ -529,7 +530,7 @@ class TestResumeConfigLoading:
             resume_dir=str(run_dir),
             redownload=False,
         )
-        cmd_run(args)
+        cmd_start(args)
 
         # Should have completed all 3 episodes (2 from first run + 1 from resume)
         summary = json.loads((run_dir / "summary.json").read_text())
@@ -537,43 +538,45 @@ class TestResumeConfigLoading:
 
 
 class TestCLIParsing:
-    def test_cli_max_retries_default(self):
+    def test_cli_single_task_positional(self):
         from easi.cli import build_parser
         parser = build_parser()
-        args = parser.parse_args(["run", "dummy_task"])
-        assert args.max_retries is None
+        args = parser.parse_args(["start", "dummy_task"])
+        assert args.task_names_positional == ["dummy_task"]
+        assert args.tasks_csv is None
 
-    def test_cli_max_retries_custom(self):
+    def test_cli_multiple_tasks_positional(self):
         from easi.cli import build_parser
         parser = build_parser()
-        args = parser.parse_args(["run", "dummy_task", "--max-retries", "5"])
-        assert args.max_retries == 5
+        args = parser.parse_args(["start", "dummy_task", "ebalfred_base"])
+        assert args.task_names_positional == ["dummy_task", "ebalfred_base"]
 
-    def test_cli_resume_default(self):
+    def test_cli_tasks_flag_csv(self):
         from easi.cli import build_parser
         parser = build_parser()
-        args = parser.parse_args(["run", "dummy_task"])
-        assert args.resume_dir is None
+        args = parser.parse_args(["start", "--tasks", "dummy_task,ebalfred_base"])
+        assert args.tasks_csv == "dummy_task,ebalfred_base"
 
-    def test_cli_resume_custom(self):
-        from easi.cli import build_parser
-        parser = build_parser()
-        args = parser.parse_args(["run", "dummy_task", "--resume", "/tmp/logs/run_123"])
-        assert args.resume_dir == "/tmp/logs/run_123"
+    def test_cli_tasks_flag_wins_over_positional(self):
+        from easi.cli import _resolve_task_list
+        from argparse import Namespace
+        args = Namespace(
+            task_names_positional=["dummy_task"],
+            tasks_csv="ebalfred_base,ebnavigation_base",
+        )
+        assert _resolve_task_list(args) == ["ebalfred_base", "ebnavigation_base"]
 
     def test_cli_resume_without_task(self):
-        """--resume should work without specifying a task name."""
         from easi.cli import build_parser
         parser = build_parser()
-        args = parser.parse_args(["run", "--resume", "/tmp/logs/run_123"])
+        args = parser.parse_args(["start", "--resume", "/tmp/logs/run_123"])
         assert args.resume_dir == "/tmp/logs/run_123"
-        assert args.task_name is None
+        assert args.task_names_positional == []
 
     def test_cli_all_defaults_are_none(self):
-        """All argparse defaults should be None (real defaults in __init__)."""
         from easi.cli import build_parser
         parser = build_parser()
-        args = parser.parse_args(["run", "dummy_task"])
+        args = parser.parse_args(["start", "dummy_task"])
         assert args.agent_type is None
         assert args.output_dir is None
         assert args.data_dir is None
@@ -583,3 +586,88 @@ class TestCLIParsing:
         assert args.llm_base_url is None
         assert args.agent_seed is None
         assert args.llm_kwargs_raw is None
+
+    def test_cli_max_retries_default(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["start", "dummy_task"])
+        assert args.max_retries is None
+
+    def test_cli_max_retries_custom(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["start", "dummy_task", "--max-retries", "5"])
+        assert args.max_retries == 5
+
+    def test_cli_resume_default(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["start", "dummy_task"])
+        assert args.resume_dir is None
+
+    def test_cli_resume_custom(self):
+        from easi.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["start", "dummy_task", "--resume", "/tmp/logs/run_123"])
+        assert args.resume_dir == "/tmp/logs/run_123"
+
+
+class TestMultiTaskRun:
+    def test_sequential_single_task_via_flag(self, tmp_path):
+        """Run a single task via --tasks flag."""
+        from argparse import Namespace
+        from easi.cli import cmd_start
+
+        output_dir = tmp_path / "logs"
+        args = Namespace(
+            command="start",
+            verbosity="INFO",
+            task_names_positional=[],
+            tasks_csv="dummy_task",
+            agent_type="dummy",
+            output_dir=str(output_dir),
+            data_dir=None,
+            max_episodes=1,
+            llm_base_url=None,
+            agent_seed=None,
+            backend=None,
+            model=None,
+            port=None,
+            llm_kwargs_raw=None,
+            max_retries=None,
+            resume_dir=None,
+            redownload=False,
+        )
+        cmd_start(args)
+
+        task_dir = output_dir / "dummy_task"
+        assert task_dir.exists()
+        run_dirs = list(task_dir.iterdir())
+        assert len(run_dirs) == 1
+
+    def test_resume_blocked_with_multi_task(self):
+        """--resume with multiple tasks should fail."""
+        from argparse import Namespace
+        from easi.cli import cmd_start
+
+        args = Namespace(
+            command="start",
+            verbosity="INFO",
+            task_names_positional=[],
+            tasks_csv="dummy_task,ebalfred_base",
+            agent_type="dummy",
+            output_dir="./logs",
+            data_dir=None,
+            max_episodes=1,
+            llm_base_url=None,
+            agent_seed=None,
+            backend=None,
+            model=None,
+            port=None,
+            llm_kwargs_raw=None,
+            max_retries=None,
+            resume_dir="/tmp/some/path",
+            redownload=False,
+        )
+        with pytest.raises(SystemExit):
+            cmd_start(args)

@@ -103,7 +103,8 @@ easi/
 easi env list|install|check <simulator>    # Manage simulator environments
 easi task list|info|download <task>        # Manage tasks
 easi sim test <simulator>                  # Smoke test a simulator
-easi run <task> --agent dummy|react        # Run evaluation
+easi start <task> --agent dummy|react      # Run evaluation (single task)
+easi start --tasks t1,t2 --agent react    # Run evaluation (multi-task)
 easi llm-server [--port PORT]              # Start dummy LLM server
 ```
 
