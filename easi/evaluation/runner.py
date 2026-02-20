@@ -30,8 +30,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from easi.core.episode import StepResult
-from easi.evaluation.metrics import aggregate_metrics
+from easi.core.episode import EpisodeRecord, StepResult
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -252,8 +251,13 @@ class EvaluationRunner:
 
                     all_results.append(result)
 
+                    # Save per-episode result (strip internal keys)
+                    result_to_save = {
+                        k: v for k, v in result.items()
+                        if not k.startswith("_")
+                    }
                     (episode_dir / "result.json").write_text(
-                        json.dumps(result, indent=2)
+                        json.dumps(result_to_save, indent=2)
                     )
 
             finally:
@@ -261,8 +265,20 @@ class EvaluationRunner:
                 if server:
                     server.stop()
 
-        # 5. Aggregate and save summary
-        summary = aggregate_metrics(all_results)
+        # 5. Build EpisodeRecords for aggregate_results
+        records = []
+        for r in all_results:
+            trajectory = r.pop("_trajectory", [])
+            episode = r.pop("_episode", {})
+            records.append(EpisodeRecord(
+                episode=episode,
+                trajectory=trajectory,
+                episode_results=r,
+            ))
+
+        # 6. Aggregate and save summary
+        metric_results = task.aggregate_results(records)
+        summary = {"num_episodes": len(all_results), "metrics": metric_results}
         if backend and backend != "legacy":
             summary["llm_usage"] = self._aggregate_llm_usage(all_results)
             summary["model"] = self.model
@@ -416,6 +432,10 @@ class EvaluationRunner:
         metrics["episode_id"] = episode_id
         metrics["instruction"] = task_description
         metrics["elapsed_seconds"] = round(elapsed, 2)
+
+        # Attach trajectory and episode for aggregate_results()
+        metrics["_trajectory"] = trajectory
+        metrics["_episode"] = episode
 
         # Snapshot LLM usage for this episode
         if hasattr(agent, 'llm_client') and hasattr(agent.llm_client, 'get_usage'):

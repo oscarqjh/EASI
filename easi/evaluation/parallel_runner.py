@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from easi.evaluation.metrics import aggregate_metrics
+from easi.core.episode import EpisodeRecord
 from easi.evaluation.runner import EvaluationRunner, _sanitize_dirname
 from easi.utils.logging import get_logger
 
@@ -235,9 +235,13 @@ class ParallelRunner(EvaluationRunner):
                                         "error": str(exc),
                                     }
 
-                        # Save per-episode result
+                        # Save per-episode result (strip internal keys)
+                        result_to_save = {
+                            k: v for k, v in result.items()
+                            if not k.startswith("_")
+                        }
                         (episode_dir / "result.json").write_text(
-                            json.dumps(result, indent=2)
+                            json.dumps(result_to_save, indent=2)
                         )
 
                         # Thread-safe results collection
@@ -302,8 +306,20 @@ class ParallelRunner(EvaluationRunner):
             num_successful, num_failed,
         )
 
+        # Build EpisodeRecords for aggregate_results
+        records = []
+        for r in all_results:
+            trajectory = r.pop("_trajectory", [])
+            episode = r.pop("_episode", {})
+            records.append(EpisodeRecord(
+                episode=episode,
+                trajectory=trajectory,
+                episode_results=r,
+            ))
+
         # Aggregate and save summary
-        summary = aggregate_metrics(all_results)
+        metric_results = task.aggregate_results(records)
+        summary = {"num_episodes": len(all_results), "metrics": metric_results}
         summary["num_parallel"] = self.num_parallel
         summary["wall_clock_seconds"] = wall_seconds
         if backend and backend != "legacy":

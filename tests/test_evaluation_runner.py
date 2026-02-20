@@ -68,7 +68,7 @@ class TestEvaluationRunner:
         assert (ep_dir / "rgb_0000.png").exists()  # Reset observation
 
     def test_summary_aggregates_metrics(self, tmp_path):
-        """Verify summary.json contains averaged metrics."""
+        """Verify summary.json contains averaged metrics nested under 'metrics'."""
         output_dir = tmp_path / "logs"
         runner = EvaluationRunner(
             task_name="dummy_task",
@@ -79,9 +79,10 @@ class TestEvaluationRunner:
 
         run_dir = _find_run_dir(output_dir)
         summary = json.loads((run_dir / "summary.json").read_text())
-        assert "success_rate" in summary
-        assert "avg_steps" in summary
         assert "num_episodes" in summary
+        assert "metrics" in summary
+        assert "success_rate" in summary["metrics"]
+        assert "avg_steps" in summary["metrics"]
 
 
 class TestCliOptionsCapture:

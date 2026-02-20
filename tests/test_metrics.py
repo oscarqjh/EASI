@@ -153,3 +153,35 @@ class TestAggregateMetricsBackwardCompat:
         assert summary["num_episodes"] == 2
         assert summary["avg_success"] == 0.5
         assert summary["success_rate"] == 0.5
+
+
+class TestSummaryJsonStructure:
+    """Test that summary.json nests metrics under 'metrics' key."""
+
+    def test_metrics_nested_in_summary(self, tmp_path):
+        """Run dummy_task and verify metrics are under summary['metrics']."""
+        from easi.evaluation.runner import EvaluationRunner
+
+        runner = EvaluationRunner(
+            task_name="dummy_task",
+            agent_type="dummy",
+            output_dir=str(tmp_path),
+            max_episodes=2,
+        )
+        runner.run()
+
+        import json
+        summary_path = list(tmp_path.rglob("summary.json"))[0]
+        summary = json.loads(summary_path.read_text())
+
+        # Metrics should be nested
+        assert "metrics" in summary
+        assert isinstance(summary["metrics"], dict)
+        assert len(summary["metrics"]) > 0
+
+        # Metadata should be at top level
+        assert summary["num_episodes"] == 2
+
+        # Metric keys should NOT be at the top level
+        assert "avg_success" not in summary
+        assert "success_rate" not in summary

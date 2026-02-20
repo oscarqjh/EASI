@@ -37,7 +37,8 @@ class TestE2EEvaluation:
         run_dir = _find_run_dir(tmp_path / "logs")
         summary = json.loads((run_dir / "summary.json").read_text())
         assert summary["num_episodes"] == 3
-        assert "success_rate" in summary or "avg_success" in summary
+        assert "metrics" in summary
+        assert "success_rate" in summary["metrics"] or "avg_success" in summary["metrics"]
 
     def test_max_episodes_limit(self, tmp_path):
         """Verify max_episodes limits the run."""
@@ -104,9 +105,10 @@ class TestE2EEvaluation:
         run_dir = _find_run_dir(output_dir)
         summary = json.loads((run_dir / "summary.json").read_text())
         assert summary["num_episodes"] == 3
-        # These come from averaging per-episode numeric keys
-        assert "avg_num_steps" in summary
-        assert "avg_elapsed_seconds" in summary
+        # These come from averaging per-episode numeric keys (nested under "metrics")
+        assert "metrics" in summary
+        assert "avg_num_steps" in summary["metrics"]
+        assert "avg_elapsed_seconds" in summary["metrics"]
 
     def test_deterministic_with_seed(self, tmp_path):
         """Two runs with the same seed should produce identical results."""
