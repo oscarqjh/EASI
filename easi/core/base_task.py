@@ -19,7 +19,7 @@ import json
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from easi.core.episode import StepResult
+from easi.core.episode import EpisodeRecord, StepResult
 from easi.core.exceptions import DatasetError
 from easi.tasks.yaml_utils import resolve_task_yaml
 from easi.utils.logging import get_logger
@@ -73,6 +73,33 @@ class BaseTask(ABC):
         Example return: {"success": 1.0, "spl": 0.73, "distance_to_goal": 0.15}
         """
         ...
+
+    def aggregate_results(
+        self, records: list["EpisodeRecord"]
+    ) -> dict[str, float]:
+        """Aggregate metrics across all completed episodes.
+
+        Default implementation: averages all numeric keys from each
+        record's episode_results. Override in subclasses for custom
+        aggregation logic (e.g., weighted scores, category breakdowns,
+        trajectory-level analysis).
+
+        Args:
+            records: List of EpisodeRecord objects. Each contains:
+                - episode: raw dataset row dict
+                - trajectory: list of StepResult objects
+                - episode_results: dict from evaluate_episode()
+
+        Returns:
+            Summary metrics dict (placed under "metrics" in summary.json).
+        """
+        from easi.evaluation.metrics import default_aggregate
+        logger.info(
+            "Using default_aggregate for task '%s'. "
+            "Override aggregate_results() in your task class for custom aggregation.",
+            self.name,
+        )
+        return default_aggregate(records)
 
     # --- Hooks ---
 

@@ -31,3 +31,16 @@ class StepResult:
     reward: float = 0.0
     done: bool = False
     info: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
+class EpisodeRecord:
+    """Bundles all data for one completed episode.
+
+    Used by aggregate_results() to give the aggregation function
+    access to both the raw episode data and the full trajectory.
+    """
+
+    episode: dict
+    trajectory: list[StepResult]
+    episode_results: dict[str, float]
