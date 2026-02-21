@@ -586,6 +586,14 @@ class EvaluationRunner:
         if task and task.extra_env_vars:
             env_vars = {**env_vars, **task.extra_env_vars}
 
+        # Extract runner-level timeouts from simulator_configs
+        sim_configs = task.simulator_configs if task else {}
+        runner_kwargs = {}
+        if sim_configs.get("command_timeout"):
+            runner_kwargs["command_timeout"] = float(sim_configs["command_timeout"])
+        if sim_configs.get("startup_timeout"):
+            runner_kwargs["startup_timeout"] = float(sim_configs["startup_timeout"])
+
         runner = SubprocessRunner(
             python_executable=env_manager.get_python_executable(),
             bridge_script_path=bridge_path,
@@ -593,6 +601,7 @@ class EvaluationRunner:
             xvfb_screen_config=env_manager.xvfb_screen_config,
             extra_args=extra_args,
             extra_env=env_vars or None,
+            **runner_kwargs,
         )
         runner.launch()
         sim.set_runner(runner)

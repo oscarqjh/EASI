@@ -103,10 +103,10 @@ class TestCliOptionsCapture:
         runner = EvaluationRunner(
             task_name="dummy_task",
             resume_dir="/some/path",
-            redownload=True,
+            refresh_data=True,
         )
         assert "resume_dir" not in runner._cli_options
-        assert "redownload" not in runner._cli_options
+        assert "refresh_data" not in runner._cli_options
 
     def test_cli_options_captures_raw_values(self):
         """Values are captured before Path conversion."""

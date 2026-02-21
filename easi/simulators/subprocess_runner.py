@@ -49,7 +49,7 @@ class SubprocessRunner:
         needs_display: bool = False,
         xvfb_screen_config: str = "1024x768x24",
         startup_timeout: float = 30.0,
-        command_timeout: float = 60.0,
+        command_timeout: float = 300.0,
         poll_interval: float = 0.1,
         extra_args: list[str] | None = None,
         extra_env: dict[str, str] | None = None,

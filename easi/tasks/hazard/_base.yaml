@@ -12,6 +12,7 @@ simulator_configs:
   screen_size: 512
   port: 1071
   use_cached_assets: false
+  command_timeout: 600
   additional_deps:
     - "opencv-python"
     - "gym"

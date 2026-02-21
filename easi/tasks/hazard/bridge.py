@@ -14,10 +14,7 @@ from __future__ import annotations
 import json
 import math
 import os
-import socket
-import subprocess
 import sys
-import time
 from pathlib import Path
 
 import numpy as np
@@ -68,97 +65,48 @@ class HAZARDBridge(BaseBridge):
         self._env_change_record = {}  # {str(obj_id): [temp/water_level values]}
         self._cached_plans = []       # plan descriptions from previous step
         self._cached_plan_actions = [] # action tuples from previous step
-        self._tdw_process = None       # TDW Unity build subprocess
 
-    def _launch_tdw_build(self, port):
-        """Launch TDW Unity build if TDW_BUILD_PATH is available.
+    @staticmethod
+    def _configure_tdw_build_path():
+        """Point TDW's Build.BUILD_PATH to our downloaded binary.
 
-        The build path comes from:
-        1. TDW_BUILD_PATH env var (set by TDWEnvManager.get_env_vars)
-        2. simulator_kwargs["tdw_build_path"] (manual override)
-
-        The bridge runs inside xvfb-run (from SubprocessRunner), so DISPLAY
-        is inherited by the TDW build process.
-
-        The TDW build is a child of this bridge process. SubprocessRunner
-        already kills the entire process group on shutdown, so no separate
-        cleanup is needed.
+        The TDW Controller uses Build.BUILD_PATH to find and launch the
+        Unity build when launch_build=True. By default it points to
+        ~/tdw_build/TDW/TDW.x86_64. We override it to use the binary
+        downloaded by TDWEnvManager (via TDW_BUILD_PATH env var).
         """
-        build_path = os.environ.get("TDW_BUILD_PATH") or self.simulator_kwargs.get(
-            "tdw_build_path"
-        )
-        logger.trace(
-            "TDW build lookup: TDW_BUILD_PATH=%s, simulator_kwargs.tdw_build_path=%s",
-            os.environ.get("TDW_BUILD_PATH"),
-            self.simulator_kwargs.get("tdw_build_path"),
-        )
-        if not build_path:
-            logger.warning(
-                "TDW_BUILD_PATH not set — assuming TDW build is already running. "
-                "Run 'easi env install tdw:v1_11_23' to auto-download the build."
-            )
+        build_dir = os.environ.get("TDW_BUILD_PATH")
+        if not build_dir:
+            logger.trace("TDW_BUILD_PATH not set, using TDW default build path")
             return
 
-        build_dir = Path(build_path)
-        binary = build_dir / "TDW.x86_64"
-        logger.trace("TDW build dir: %s (exists=%s)", build_dir, build_dir.exists())
-        if build_dir.exists():
-            items = sorted(p.name for p in build_dir.iterdir())
-            logger.trace("TDW build dir contents: %s", items)
+        binary = Path(build_dir) / "TDW.x86_64"
+        logger.trace("TDW_BUILD_PATH=%s, binary exists=%s", build_dir, binary.exists())
         if not binary.exists():
             logger.warning(
-                "TDW build binary not found at %s — assuming TDW build is already running.",
+                "TDW build binary not found at %s — TDW Controller will use its default path. "
+                "Run 'easi env install tdw:v1_11_23' to download the build.",
                 binary,
             )
             return
 
-        logger.trace("DISPLAY=%s", os.environ.get("DISPLAY", "<unset>"))
-        cmd = [str(binary), "-port", str(port)]
-        logger.info("Launching TDW build: %s (port %d)", binary, port)
-        logger.trace("TDW launch command: %s", cmd)
-        self._tdw_process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        logger.trace("TDW build process started (pid %d)", self._tdw_process.pid)
+        from tdw.release.build import Build
+        Build.BUILD_PATH = binary
+        logger.info("Set TDW Build.BUILD_PATH to %s", binary)
 
-        # Wait for TDW to start listening on the port
-        self._wait_for_port(port, timeout=60)
-
-        # Check if process is still alive after port wait
-        retcode = self._tdw_process.poll()
-        if retcode is not None:
-            logger.error("TDW build process exited with code %d before becoming ready", retcode)
-            self._tdw_process = None
-            return
-
-        logger.info("TDW build is ready on port %d (pid %d)", port, self._tdw_process.pid)
-
-    @staticmethod
-    def _wait_for_port(port, timeout=60, interval=1.0):
-        """Poll until a TCP port is accepting connections."""
-        logger.trace("Waiting for port %d (timeout=%ds, interval=%.1fs)", port, timeout, interval)
-        deadline = time.time() + timeout
-        attempts = 0
-        while time.time() < deadline:
-            attempts += 1
-            try:
-                with socket.create_connection(("127.0.0.1", port), timeout=2):
-                    logger.trace("Port %d is ready after %d attempts", port, attempts)
-                    return
-            except OSError as e:
-                if attempts <= 3 or attempts % 10 == 0:
-                    logger.trace("Port %d not ready (attempt %d): %s", port, attempts, e)
-                time.sleep(interval)
-        logger.warning("TDW build did not become ready on port %d within %ds (%d attempts)", port, timeout, attempts)
+    def reset(self, reset_config):
+        """Reset env and return observation with initial info for prompt."""
+        if self.env is None:
+            self.env = self._create_env(reset_config, self.simulator_kwargs)
+        self.step_count = 0
+        obs = self._on_reset(self.env, reset_config)
+        return self._make_response(obs, info=self._reset_info)
 
     def _create_env(self, reset_config, simulator_kwargs):
         """Create the appropriate HAZARD env (Fire/Flood/Wind).
 
-        Launches the TDW Unity build first (if TDW_BUILD_PATH is available),
-        then creates the HAZARD env with launch_build=False so the env
-        connects to the already-running build.
+        Point TDW's Build.BUILD_PATH to our downloaded binary (if available),
+        then let the TDW Controller handle build launch via launch_build=True.
         """
         scenario = simulator_kwargs.get("scenario", "fire")
         port = simulator_kwargs.get("port", 1071)
@@ -166,28 +114,27 @@ class HAZARDBridge(BaseBridge):
         use_cached_assets = simulator_kwargs.get("use_cached_assets", False)
         use_gt = simulator_kwargs.get("use_gt", True)
 
-        # Launch TDW Unity build (no-op if TDW_BUILD_PATH not set)
-        self._launch_tdw_build(port)
-        launch_build = self._tdw_process is None
+        # Point TDW to our downloaded build binary
+        self._configure_tdw_build_path()
 
         if scenario == "fire":
             from HAZARD.envs.fire import FireEnv
             env = FireEnv(
-                launch_build=launch_build, screen_size=screen_size, port=port,
+                launch_build=True, screen_size=screen_size, port=port,
                 use_local_resources=use_cached_assets,
                 check_version=False, use_gt=use_gt,
             )
         elif scenario == "flood":
             from HAZARD.envs.flood import FloodEnv
             env = FloodEnv(
-                launch_build=launch_build, screen_size=screen_size, port=port,
+                launch_build=True, screen_size=screen_size, port=port,
                 use_local_resources=use_cached_assets,
                 check_version=False, use_gt=use_gt,
             )
         elif scenario == "wind":
             from HAZARD.envs.wind import WindEnv
             env = WindEnv(
-                launch_build=launch_build, screen_size=screen_size, port=port,
+                launch_build=True, screen_size=screen_size, port=port,
                 use_local_resources=use_cached_assets,
                 check_version=False, use_gt=use_gt,
             )
@@ -198,7 +145,11 @@ class HAZARDBridge(BaseBridge):
         return env
 
     def _on_reset(self, env, reset_config):
-        """Reset HAZARD env with episode data."""
+        """Reset HAZARD env with episode data.
+
+        Replicates the logic of fire_gym.py/flood_gym.py/wind_gym.py reset()
+        with trace logging around each step to aid debugging.
+        """
         # Reset bridge state
         self.holding_object = []
         self.nearest_object = None
@@ -210,10 +161,57 @@ class HAZARDBridge(BaseBridge):
         self._cached_plans = []
         self._cached_plan_actions = []
 
-        # Load scene via HAZARD env
         source_dir = reset_config["source_dir"]
         logger.info("Resetting HAZARD env with source_dir: %s", source_dir)
-        env.reset(data_dir=source_dir)
+
+        # --- Replicate env.reset() with trace logging ---
+        from HAZARD.utils.scene_setup import SceneSetup
+
+        logger.trace("Creating SceneSetup from data_dir=%s (scenario=%s)", source_dir, self.scenario)
+        scene_kwargs = {"data_dir": source_dir}
+        if self.scenario == "flood":
+            scene_kwargs["is_flood"] = True
+        env.setup = SceneSetup(**scene_kwargs)
+        logger.trace("SceneSetup created (targets=%s)", getattr(env.setup, 'target_names', []))
+
+        # Terminate existing controller if re-using the env
+        if env.controller is not None:
+            logger.trace("Terminating existing controller")
+            env.controller.communicate({"$type": "terminate"})
+            env.controller.socket.close()
+            logger.trace("Existing controller terminated")
+
+        # Create new controller — this is where TDW build launches + ZMQ connects.
+        # TDW Controller.__init__ calls socket.recv() which blocks until the
+        # build binary connects. If the build fails to start, this hangs forever.
+        logger.trace(
+            "Creating controller (scenario=%s, port=%s, launch_build=%s)",
+            self.scenario, env.controller_args.get("port"),
+            env.controller_args.get("launch_build"),
+        )
+
+        controller_cls = self._get_controller_class()
+        env.controller = controller_cls(**env.controller_args)
+        logger.trace("Controller created and connected to TDW build")
+
+        env.controller.seed(env.RNG.randint(1000000))
+        logger.info(
+            "Loading scene (this may take several minutes on first run "
+            "while TDW downloads 3D assets — subsequent runs will be faster)"
+        )
+
+        env.controller.init_scene(env.setup)
+        logger.info("Scene loaded successfully")
+
+        env.num_step = 0
+        env.last_action = None
+        env.last_target = None
+
+        if not getattr(env, 'record_only', False):
+            logger.trace("Performing initial turn_by(0)")
+            env.controller.do_action(0, "turn_by", {"angle": 0})
+            env.controller.next_key_frame()
+            logger.trace("Initial turn complete")
 
         # Initialize target tracking
         self.target_ids = [int(tid) for tid in reset_config.get("target_object_ids", [])]
@@ -223,8 +221,53 @@ class HAZARDBridge(BaseBridge):
         # Initial communicate + observation
         env.controller.communicate([])
         state = env.controller._obs()
+        self._update_seen_objects(state)
+
+        # Compute initial available plans so the first prompt has actions
+        available_plans, plan_actions = self._get_available_plans()
+        self._cached_plans = available_plans
+        self._cached_plan_actions = plan_actions
+
+        object_distances = self._compute_object_distances(state)
+
+        self._reset_info = {
+            "task_success": 0.0,
+            "frame_count": 0.0,
+            "max_steps": float(self._max_steps),
+            "max_rescue_frame": 0.0,
+            "last_action_success": 1.0,
+            "feedback": "episode started",
+            "holding_objects": json.dumps(self.holding_object),
+            "available_plans": json.dumps(available_plans),
+            "plan_actions": json.dumps(plan_actions),
+            "targets_rescued": 0.0,
+            "targets_total": float(len(self.target_status)),
+            "value_score": 0.0,
+            "max_value": 0.0,
+            "rescued_count": 0.0,
+            "damaged_count": 0.0,
+            "object_list": json.dumps(self.object_list),
+            "current_seen_objects_id": json.dumps(self.current_seen_objects_id),
+            "object_distances": json.dumps(object_distances),
+            "env_change_record": json.dumps({}),
+            "target_categories": json.dumps(self.target_categories),
+        }
 
         return self._wrap_obs(state, is_reset=True)
+
+    def _get_controller_class(self):
+        """Return the correct AgentController class for the current scenario."""
+        if self.scenario == "fire":
+            from HAZARD.envs.fire.fireagent_controller import FireAgentController
+            return FireAgentController
+        elif self.scenario == "flood":
+            from HAZARD.envs.flood.floodagent_controller import FloodAgentController
+            return FloodAgentController
+        elif self.scenario == "wind":
+            from HAZARD.envs.wind.windagent_controller import WindAgentController
+            return WindAgentController
+        else:
+            raise ValueError(f"Unknown scenario: {self.scenario}")
 
     def _on_step(self, env, action_text):
         """Execute a HAZARD action and return (obs, reward, done, info)."""

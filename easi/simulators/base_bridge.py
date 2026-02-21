@@ -211,7 +211,7 @@ class BaseBridge:
         parser.add_argument("--simulator-kwargs", type=str, default=None)
         args, _ = parser.parse_known_args()
 
-        setup_logging("DEBUG")
+        setup_logging("TRACE")
 
         sim_kwargs = json.loads(args.simulator_kwargs) if args.simulator_kwargs else {}
         if args.data_dir:

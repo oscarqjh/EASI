@@ -136,10 +136,12 @@ class BaseTask(ABC):
 
     @property
     def simulator_kwargs(self) -> dict:
-        """Bridge-facing kwargs (simulator_configs minus additional_deps/env_vars + max_steps)."""
+        """Bridge-facing kwargs (simulator_configs minus runner/infra keys + max_steps)."""
         cfg = dict(self.simulator_configs)
         cfg.pop("additional_deps", None)
         cfg.pop("env_vars", None)
+        cfg.pop("command_timeout", None)
+        cfg.pop("startup_timeout", None)
         cfg["max_steps"] = self.max_steps
         return cfg
 

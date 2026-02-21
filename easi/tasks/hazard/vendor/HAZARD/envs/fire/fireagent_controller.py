@@ -132,8 +132,10 @@ class FireAgentController(FireController):
         self.communicate([{"$type": "destroy_all_objects"}])
 
     def init_scene(self, setup: SceneSetup):
+        print("[init_scene] Starting reset_scene", flush=True)
         self.reset_scene()
-            
+        print("[init_scene] reset_scene done", flush=True)
+
         if self.log_path is not None:
             logger = Logger(self.log_path)
             self.add_ons.append(logger)
@@ -151,7 +153,8 @@ class FireAgentController(FireController):
         self.extinguishers = []
         self.containers = setup.containers
         self.other_containers = {}
-        for commands in setup.commands_list:
+        print(f"[init_scene] Processing {len(setup.commands_list)} command batches", flush=True)
+        for batch_idx, commands in enumerate(setup.commands_list):
             filtered_commands = []
             tp = None
             for command in commands:
@@ -176,12 +179,15 @@ class FireAgentController(FireController):
                 if tp.startswith("add_") and tp.endswith("_container"):
                     self.other_containers[command['id']] = command['container_id']
                 filtered_commands.append(command)
+            print(f"[init_scene] Sending batch {batch_idx} ({len(filtered_commands)} cmds)", flush=True)
             self.communicate(filtered_commands)
             if tp == "terminate":
                 break
+        print(f"[init_scene] All command batches sent, adding {len(setup.other.get('fire', []))} fire positions", flush=True)
         for fire_pos in setup.other["fire"]:
             self.add_fire_floor(fire_pos)
 
+        print("[init_scene] Fire positions added, creating agents", flush=True)
         if not self.record_only:
             if len(self.agents) == 0:
                 self.agents: List[FireAgent] = []
@@ -200,6 +206,7 @@ class FireAgentController(FireController):
                     self.add_ons.append(self.agents[i])
                     self.add_agent(idx, setup.agent_positions[i])
 
+        print(f"[init_scene] Agents ready ({len(self.agents)} agents)", flush=True)
         self.maps = [None] * len(self.agents)
         self.add_ons.append(self.manager)
         self.target = setup.targets
@@ -234,9 +241,11 @@ class FireAgentController(FireController):
             commands.extend([{"$type": "set_floorplan_roof", "show": False}])
 
         # Capture when running after init_scene. (Because screen size may be modified)
+        print("[init_scene] Requesting scene_regions", flush=True)
         resp = self.communicate([{"$type": "send_scene_regions"}])
         self.set_scene_bounds(resp)
 
+        print("[init_scene] Setting up segmentation + kinematic state", flush=True)
         self.manager.prepare_segmentation_data()
         self.initialized = True
         for obj in self.target_ids:
@@ -246,6 +255,7 @@ class FireAgentController(FireController):
         if len(self.extinguishers) > 0:
             self.init_obi()
 
+        print("[init_scene] Setting up agent equipment (backpack/FoV)", flush=True)
         if not self.record_only and len(self.extinguishers) == 0:
             commands = [
                 {"$type": "set_field_of_view", "field_of_view": 120.0, "avatar_id": str(self.agents[0].replicant_id)}]
@@ -258,13 +268,20 @@ class FireAgentController(FireController):
             commands.append(self.get_add_object(model_name=self.container_name, object_id=self.container_id,
                                                 position=TDWUtils.array_to_vector3(agent_pos)))
             self.communicate(commands)
+            print("[init_scene] Agent grasping backpack", flush=True)
             self.agents[0].grasp(target=self.container_id, arm=Arm.left, axis=None, angle=None)
+            print("[init_scene] grasp() issued, waiting for key frame...", flush=True)
             self.next_key_frame()
+            print("[init_scene] Grasp done. Agent reaching position", flush=True)
             self.agents[0].reach_for(target=TDWUtils.array_to_vector3([-0.3, 1.0, 0.3]), absolute=False, arrived_at=0.1,
                                      arm=Arm.left)
+            print("[init_scene] reach_for() issued, waiting for key frame...", flush=True)
             self.next_key_frame()
+            print("[init_scene] Reach done. Agent resetting arm", flush=True)
             self.agents[0].reset_arm(arm=Arm.left)
+            print("[init_scene] reset_arm() issued, waiting for key frame...", flush=True)
             self.next_key_frame()
+            print("[init_scene] init_scene complete", flush=True)
 
     def set_scene_bounds(self, resp=None):
         self.scene_bounds = SceneBounds(resp=resp)
@@ -291,6 +308,8 @@ class FireAgentController(FireController):
         num_step = 0
         while True:
             num_step += 1
+            if num_step % 100 == 0:
+                print(f"[next_key_frame] step {num_step}, status={[a.action.status if a.action else None for a in self.agents]}", flush=True)
             if num_step > 10000:
                 raise RuntimeError("num_step > 10000")
             self.communicate([])
@@ -550,7 +569,7 @@ class FireAgentController(FireController):
         if agent_pos[0] > 0 and agent_pos[0] < self.map_size_h - 1 and agent_pos[1] > 0 and agent_pos[1] < self.map_size_v - 1:
             goal_map[agent_pos[0], agent_pos[1]] = -2
             rad = self.agents[agent_idx].get_facing()
-            rad = int(rad / (np.math.pi / 4))
+            rad = int(rad / (np.pi / 4))
             if rad < 0:
                 rad += 8
             dx = list([1, 1, 0, -1, -1, -1, 0, 1])[rad]

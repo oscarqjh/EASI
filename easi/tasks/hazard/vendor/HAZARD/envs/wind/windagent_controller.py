@@ -432,7 +432,7 @@ class WindAgentController(WindController):
         if agent_pos[0] > 0 and agent_pos[0] < self.map_size_h - 1 and agent_pos[1] > 0 and agent_pos[1] < self.map_size_v - 1:
             goal_map[agent_pos[0], agent_pos[1]] = -2
             rad = self.agents[agent_idx].get_facing()
-            rad = int(rad / (np.math.pi / 4))
+            rad = int(rad / (np.pi / 4))
             if rad < 0:
                 rad += 8
             dx = list([1, 1, 0, -1, -1, -1, 0, 1])[rad]

@@ -78,11 +78,14 @@ def make_status_response(ready: bool) -> dict:
 
 def parse_observation(data: dict) -> Observation:
     obs = data["observation"]
+    # Merge top-level info into metadata so prompt builders can read it
+    metadata = dict(obs.get("metadata", {}))
+    metadata.update(data.get("info", {}))
     return Observation(
         rgb_path=obs["rgb_path"],
         depth_path=obs.get("depth_path"),
         agent_pose=obs.get("agent_pose", []),
-        metadata=obs.get("metadata", {}),
+        metadata=metadata,
     )
 
 
