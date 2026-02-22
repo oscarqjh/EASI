@@ -14,10 +14,17 @@ Replicates the BEHAVIOR-1K setup.sh install process:
 
 Headless mode: OMNIGIBSON_HEADLESS=1 uses Isaac Sim's native headless rendering
 (no Xvfb needed).
+
+NFS workaround: On NFS/FUSE filesystems, /proc/self/exe can resolve to
+"python3.10 (deleted)" which crashes Isaac Sim's Carbonite library. The
+get_python_executable() override copies the Python binary to /tmp (local
+filesystem) where /proc/self/exe resolves correctly.
 """
 from __future__ import annotations
 
+import atexit
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -61,6 +68,8 @@ ISAAC_SIM_PACKAGES = [
 class OmniGibsonEnvManager(BaseEnvironmentManager):
     """Environment manager for OmniGibson 3.7.2 + Isaac Sim 4.5.0."""
 
+    _local_python_dir: str | None = None  # Cached /tmp copy directory
+
     @property
     def simulator_name(self) -> str:
         return "omnigibson"
@@ -85,9 +94,58 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
     def get_validation_import(self) -> str:
         return "import omnigibson; assert omnigibson.__version__.startswith('3.7')"
 
+    def _get_conda_python(self) -> str:
+        """Return the real conda env Python path (for install-time use)."""
+        return super().get_python_executable()
+
+    def get_python_executable(self) -> str:
+        """Return a local /tmp copy of the Python binary.
+
+        On NFS/FUSE filesystems, /proc/self/exe resolves to
+        "python3.10 (deleted)" which causes Isaac Sim's Carbonite library
+        to abort. Copying the binary to /tmp (a local filesystem) ensures
+        /proc/self/exe resolves correctly.
+
+        The copy is cached for the lifetime of this env manager instance
+        and cleaned up via atexit.
+        """
+        if self._local_python_dir is not None:
+            local_python = Path(self._local_python_dir) / "python3"
+            if local_python.exists():
+                return str(local_python)
+
+        conda_python = self._get_conda_python()
+        # Resolve symlinks to get the real binary
+        real_binary = str(Path(conda_python).resolve())
+
+        tmp_dir = tempfile.mkdtemp(prefix="easi_python_")
+        local_python = Path(tmp_dir) / "python3"
+        shutil.copy2(real_binary, str(local_python))
+        local_python.chmod(0o755)
+
+        self._local_python_dir = tmp_dir
+        atexit.register(shutil.rmtree, tmp_dir, True)
+
+        logger.trace(
+            "Copied Python to local filesystem: %s -> %s",
+            real_binary, local_python,
+        )
+        return str(local_python)
+
     def get_env_vars(self) -> dict[str, str]:
-        """Export OMNIGIBSON_HEADLESS=1 for headless rendering."""
-        return {"OMNIGIBSON_HEADLESS": "1"}
+        """Export env vars for headless rendering, EULA, and PYTHONHOME.
+
+        PYTHONHOME is set to the conda env directory so the /tmp Python
+        copy can find the conda env's stdlib and site-packages.
+        """
+        conda_python = self._get_conda_python()
+        # conda env dir is two levels up from bin/python
+        conda_env_dir = str(Path(conda_python).resolve().parent.parent)
+        return {
+            "OMNIGIBSON_HEADLESS": "1",
+            "OMNI_KIT_ACCEPT_EULA": "YES",
+            "PYTHONHOME": conda_env_dir,
+        }
 
     def post_install(self, context: dict) -> None:
         """Replicate BEHAVIOR-1K setup.sh install process.
@@ -97,7 +155,7 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
         """
         extras_dir = Path(context["extras_dir"])
         extras_dir.mkdir(parents=True, exist_ok=True)
-        python = self.get_python_executable()
+        python = self._get_conda_python()
 
         # Step 1: Git clone BEHAVIOR-1K
         self._clone_behavior_1k(extras_dir)

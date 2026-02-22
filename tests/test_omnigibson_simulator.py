@@ -58,7 +58,25 @@ class TestOmniGibsonEnvManager:
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
         mgr = OmniGibsonEnvManager()
         env_vars = mgr.get_env_vars()
-        assert env_vars == {"OMNIGIBSON_HEADLESS": "1"}
+        assert env_vars["OMNIGIBSON_HEADLESS"] == "1"
+        assert env_vars["OMNI_KIT_ACCEPT_EULA"] == "YES"
+        assert "PYTHONHOME" in env_vars
+
+    def test_get_python_executable_is_local(self):
+        """Python executable should be a /tmp copy (NFS workaround)."""
+        from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
+        mgr = OmniGibsonEnvManager()
+        python_path = mgr.get_python_executable()
+        assert python_path.startswith("/tmp/easi_python_")
+        assert Path(python_path).exists()
+
+    def test_get_conda_python_is_conda_env(self):
+        """_get_conda_python() returns the real conda env path."""
+        from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
+        mgr = OmniGibsonEnvManager()
+        conda_python = mgr._get_conda_python()
+        assert "easi_omnigibson_v3_7_2" in conda_python
+        assert conda_python.endswith("bin/python")
 
     def test_system_deps(self):
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
