@@ -160,3 +160,37 @@ class TestOmniGibsonRegistry:
         mgr = create_env_manager("omnigibson")
         assert mgr.installation_kwargs["cuda_version"] == "12.4"
         assert "BEHAVIOR-1K" in mgr.installation_kwargs["behavior_1k_repo"]
+
+
+class TestOmniGibsonRenderPlatforms:
+    """Test OmniGibsonNativePlatform and OmniGibsonAutoPlatform."""
+
+    def test_native_platform_name(self):
+        from easi.simulators.omnigibson.v3_7_2.render_platforms import OmniGibsonNativePlatform
+        assert OmniGibsonNativePlatform().name == "native"
+
+    def test_native_platform_sets_headless_0(self):
+        from easi.simulators.omnigibson.v3_7_2.render_platforms import OmniGibsonNativePlatform
+        ev = OmniGibsonNativePlatform().get_env_vars()
+        assert ev.replace["OMNIGIBSON_HEADLESS"] == "0"
+
+    def test_native_platform_no_wrap(self):
+        from easi.simulators.omnigibson.v3_7_2.render_platforms import OmniGibsonNativePlatform
+        cmd = ["python", "bridge.py"]
+        assert OmniGibsonNativePlatform().wrap_command(cmd, "1024x768x24") == cmd
+
+    def test_auto_platform_name(self):
+        from easi.simulators.omnigibson.v3_7_2.render_platforms import OmniGibsonAutoPlatform
+        assert OmniGibsonAutoPlatform().name == "auto"
+
+    def test_auto_platform_with_display(self, monkeypatch):
+        monkeypatch.setenv("DISPLAY", ":1")
+        from easi.simulators.omnigibson.v3_7_2.render_platforms import OmniGibsonAutoPlatform
+        ev = OmniGibsonAutoPlatform().get_env_vars()
+        assert ev.replace["OMNIGIBSON_HEADLESS"] == "0"
+
+    def test_auto_platform_without_display(self, monkeypatch):
+        monkeypatch.delenv("DISPLAY", raising=False)
+        from easi.simulators.omnigibson.v3_7_2.render_platforms import OmniGibsonAutoPlatform
+        ev = OmniGibsonAutoPlatform().get_env_vars()
+        assert ev.replace["OMNIGIBSON_HEADLESS"] == "1"
