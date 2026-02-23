@@ -338,6 +338,12 @@ class HAZARDBridge(BaseBridge):
             if values:
                 env_record_snapshot[obj_id] = values[-1]
 
+        # Full history for object state history section
+        env_record_history = {}
+        for obj_id, values in self._env_change_record.items():
+            if values:
+                env_record_history[obj_id] = values
+
         # Build info
         info = {
             "task_success": float(all_targets_done),
@@ -361,6 +367,7 @@ class HAZARDBridge(BaseBridge):
             "current_seen_objects_id": json.dumps(self.current_seen_objects_id),
             "object_distances": json.dumps(object_distances),
             "env_change_record": json.dumps(env_record_snapshot),
+            "env_change_record_history": json.dumps(env_record_history),
             "target_categories": json.dumps(self.target_categories),
         }
 

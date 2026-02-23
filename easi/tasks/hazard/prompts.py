@@ -46,9 +46,11 @@ class HAZARDPromptBuilder:
         self,
         scenario: str = "fire",
         cot: bool = False,
+        show_object_history: bool = False,
     ):
         self.scenario = scenario
         self.cot = cot
+        self.show_object_history = show_object_history
         self._templates = _load_prompt_templates()
         self._value_dict = json.loads((_CONFIG_DIR / "value.json").read_text())
         self._fire_dict = json.loads((_CONFIG_DIR / "fire.json").read_text())
@@ -76,8 +78,8 @@ class HAZARDPromptBuilder:
         # Build action history (from memory, matching original format)
         history_desc = self._build_action_history(memory)
 
-        # Build object state history (empty -- original bug, see docstring)
-        object_history = self._build_object_state_history()
+        # Build object state history (tracking temperature/water level changes)
+        object_history = self._build_object_state_history(info)
 
         # Build available actions
         actions_desc = self._build_available_actions(available_plans)
@@ -302,14 +304,37 @@ class HAZARDPromptBuilder:
             return "paused after taking 100 steps"
         return f"fail, because {feedback}"
 
-    def _build_object_state_history(self) -> str:
+    def _build_object_state_history(self, info: dict) -> str:
         """Build object state history section.
 
-        NOTE: In the original llm.py:run(), $OBJECT_HISTORY$ is never replaced
-        -- it remains as literal text in the prompt. This is a bug in the original.
-        We replicate by returning empty string (slightly better than literal placeholder).
+        Shows how object temperature/water_level has changed over time.
+        Format: "Object <id>: <val1> -> <val2> -> <val3> Celsius"
+
+        Controlled by show_object_history config (default: False for benchmark parity).
         """
-        return ""
+        if not self.show_object_history:
+            return ""
+
+        history = json.loads(info.get("env_change_record_history", "{}"))
+        if not history:
+            return ""
+
+        lines = []
+        for obj_id, values in history.items():
+            if len(values) <= 1:
+                continue  # No change to report
+            if self.scenario == "fire":
+                # Convert log_temp to Celsius and show progression
+                temps = [round(math.exp(v), 1) for v in values[-5:]]  # Last 5 readings
+                progression = " -> ".join(str(t) for t in temps)
+                lines.append(f"Object {obj_id}: {progression} Celsius")
+            elif self.scenario == "flood":
+                # Show water level progression
+                levels = [round(v, 2) for v in values[-5:]]
+                progression = " -> ".join(str(l) for l in levels)
+                lines.append(f"Object {obj_id}: water level {progression} m")
+
+        return "\n".join(lines)
 
     def _build_available_actions(self, plans: list[str]) -> str:
         """Format available plans as lettered options."""

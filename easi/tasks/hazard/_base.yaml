@@ -25,6 +25,7 @@ agent:
   prompt_builder: "easi.tasks.hazard.prompts.HAZARDPromptBuilder"
   prompt_builder_kwargs:
     cot: false
+    show_object_history: false  # Set to true to show temperature/water level changes over time
   generation_kwargs:
     temperature: 0.7
     max_tokens: 512
