@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -82,6 +83,13 @@ class EBManipulationBridge(BaseBridge):
         scene_bounds = simulator_kwargs.get(
             "scene_bounds", [-0.3, -0.5, 0.6, 0.7, 0.5, 1.6]
         )
+        # COPPELIASIM_HEADLESS is set by CoppeliaSim's custom render platform classes.
+        # Falls back to simulator_kwargs, then defaults to True (EBManEnv default).
+        headless_env = os.environ.get("COPPELIASIM_HEADLESS")
+        if headless_env is not None:
+            headless = headless_env != "0"
+        else:
+            headless = simulator_kwargs.get("headless", True)
 
         self._resolution = resolution
         self._detection_box = simulator_kwargs.get("detection_box", True)
@@ -92,6 +100,7 @@ class EBManipulationBridge(BaseBridge):
             scene_bounds=scene_bounds,
             voxel_size=voxel_size,
             rotation_resolution=rotation_resolution,
+            headless=headless,
         )
 
     def _on_reset(self, env, reset_config):

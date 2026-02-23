@@ -554,7 +554,7 @@ class TestCoppeliaSimCustomPlatforms:
         ).replace("{env_dir}", t["env_dir"])
         return mgr
 
-    def test_native_no_qt_plugin_path(self):
+    def test_native_has_qt_plugin_path_and_headless_false(self):
         from easi.simulators.coppeliasim.v4_1_0.render_platforms import (
             CoppeliaSimNativePlatform,
         )
@@ -563,9 +563,11 @@ class TestCoppeliaSimCustomPlatforms:
         p = CoppeliaSimNativePlatform(env_manager=mgr)
         assert p.name == "native"
         ev = p.get_env_vars()
-        assert not ev  # native platform returns empty env vars
+        assert "QT_QPA_PLATFORM_PLUGIN_PATH" in ev.prepend
+        assert ev.replace["COPPELIASIM_HEADLESS"] == "0"
+        assert "__EGL_VENDOR_LIBRARY_FILENAMES" not in ev.replace
 
-    def test_xvfb_has_qt_plugin_path(self):
+    def test_xvfb_has_qt_plugin_path_and_headless_true(self):
         from easi.simulators.coppeliasim.v4_1_0.render_platforms import (
             CoppeliaSimXvfbPlatform,
         )
@@ -576,6 +578,7 @@ class TestCoppeliaSimCustomPlatforms:
         ev = p.get_env_vars()
         assert "QT_QPA_PLATFORM_PLUGIN_PATH" in ev.prepend
         assert "CoppeliaSim" in ev.prepend["QT_QPA_PLATFORM_PLUGIN_PATH"]
+        assert ev.replace["COPPELIASIM_HEADLESS"] == "1"
 
     def test_xvfb_wraps_command(self):
         from easi.simulators.coppeliasim.v4_1_0.render_platforms import (
@@ -597,7 +600,8 @@ class TestCoppeliaSimCustomPlatforms:
         assert p.name == "auto"
         with patch.dict(os.environ, {"DISPLAY": ":0"}):
             ev = p.get_env_vars()
-            assert not ev  # native mode: no Qt plugin path
+            assert "QT_QPA_PLATFORM_PLUGIN_PATH" in ev.prepend
+            assert ev.replace["COPPELIASIM_HEADLESS"] == "0"
 
     def test_auto_xvfb_when_no_display(self):
         from easi.simulators.coppeliasim.v4_1_0.render_platforms import (
@@ -611,6 +615,7 @@ class TestCoppeliaSimCustomPlatforms:
         with patch.dict(os.environ, env, clear=True):
             ev = p.get_env_vars()
             assert "QT_QPA_PLATFORM_PLUGIN_PATH" in ev.prepend
+            assert ev.replace["COPPELIASIM_HEADLESS"] == "1"
 
     def test_xvfb_no_env_manager_returns_empty(self):
         from easi.simulators.coppeliasim.v4_1_0.render_platforms import (
