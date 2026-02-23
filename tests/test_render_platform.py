@@ -529,3 +529,52 @@ class TestRunnerRenderPlatformWiring:
              patch("easi.simulators.registry.load_simulator_class", return_value=mock_sim_cls), \
              pytest.raises(ValueError, match="not supported"):
             runner._create_simulator("fake:v1")
+
+
+class TestRenderPlatformEndToEnd:
+    """End-to-end: platform flows through runner to subprocess."""
+
+    def test_egl_env_vars_in_subprocess(self):
+        from easi.core.render_platform import get_render_platform
+        from easi.simulators.subprocess_runner import SubprocessRunner
+
+        platform = get_render_platform("egl")
+        runner = SubprocessRunner(
+            python_executable="/usr/bin/python3",
+            bridge_script_path=Path("/fake/bridge.py"),
+            render_platform=platform,
+            extra_env={"SIM_ROOT": "/opt/sim"},
+        )
+        env = runner._build_subprocess_env()
+        assert env["PYOPENGL_PLATFORM"] == "egl"
+        assert env["SIM_ROOT"] == "/opt/sim"
+
+    def test_auto_wraps_xvfb_when_no_display(self):
+        from easi.core.render_platform import get_render_platform
+        from easi.simulators.subprocess_runner import SubprocessRunner
+
+        platform = get_render_platform("auto")
+        runner = SubprocessRunner(
+            python_executable="/usr/bin/python3",
+            bridge_script_path=Path("/fake/bridge.py"),
+            render_platform=platform,
+            screen_config="1280x720x24",
+        )
+        runner._workspace = Path("/tmp/fake_ws")
+
+        env = os.environ.copy()
+        env.pop("DISPLAY", None)
+        with patch.dict(os.environ, env, clear=True):
+            cmd = runner._build_launch_command()
+            assert cmd[0] == "xvfb-run"
+            assert "1280x720x24" in cmd[3]
+
+    def test_render_platform_saved_in_config(self):
+        """render_platform should be captured in _cli_options for config.json."""
+        from easi.evaluation.runner import EvaluationRunner
+
+        runner = EvaluationRunner(
+            task_name="dummy_task",
+            render_platform="egl",
+        )
+        assert runner._cli_options["render_platform"] == "egl"
