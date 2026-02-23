@@ -82,6 +82,7 @@ class EBManipulationBridge(BaseBridge):
         scene_bounds = simulator_kwargs.get(
             "scene_bounds", [-0.3, -0.5, 0.6, 0.7, 0.5, 1.6]
         )
+        headless = simulator_kwargs.get("headless", True)
 
         self._resolution = resolution
         self._detection_box = simulator_kwargs.get("detection_box", True)
@@ -92,6 +93,7 @@ class EBManipulationBridge(BaseBridge):
             scene_bounds=scene_bounds,
             voxel_size=voxel_size,
             rotation_resolution=rotation_resolution,
+            headless=headless,
         )
 
     def _on_reset(self, env, reset_config):

@@ -39,7 +39,7 @@ class SubprocessRunner:
     # Path-like env vars that should prepend rather than replace
     _PREPEND_ENV_VARS = frozenset({
         "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "PATH",
-        "PYTHONPATH", "QT_QPA_PLATFORM_PLUGIN_PATH",
+        "PYTHONPATH",
     })
 
     def __init__(
