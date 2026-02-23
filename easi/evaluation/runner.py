@@ -610,11 +610,13 @@ class EvaluationRunner:
         render_platform = get_render_platform(platform_name)
 
         # Pass platform name to get_env_vars for conditional logic
+        from easi.core.render_platform import EnvVars
+
         env_vars = env_manager.get_env_vars(render_platform_name=platform_name)
 
         # Merge task-level env_vars from simulator_configs.env_vars
         if task and task.extra_env_vars:
-            env_vars = {**env_vars, **task.extra_env_vars}
+            env_vars = EnvVars.merge(env_vars, EnvVars(replace=task.extra_env_vars))
 
         runner = SubprocessRunner(
             python_executable=env_manager.get_python_executable(),
@@ -622,7 +624,7 @@ class EvaluationRunner:
             render_platform=render_platform,
             screen_config=env_manager.screen_config,
             extra_args=extra_args,
-            extra_env=env_vars or None,
+            extra_env=env_vars if env_vars else None,
             **runner_kwargs,
         )
         runner.launch()

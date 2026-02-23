@@ -47,15 +47,15 @@ class TestEnvManagerConfig:
         mgr = create_env_manager("coppeliasim")
         assert mgr.get_env_name() == "easi_coppeliasim_v4_1_0"
 
-    def test_needs_display(self):
+    def test_default_render_platform(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        assert mgr.needs_display is True
+        assert mgr.default_render_platform == "auto"
 
-    def test_xvfb_screen_config(self):
+    def test_screen_config(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        assert mgr.xvfb_screen_config == "1280x720x24"
+        assert mgr.screen_config == "1280x720x24"
 
     def test_system_deps(self):
         from easi.simulators.registry import create_env_manager
@@ -86,48 +86,48 @@ class TestEnvVars:
     def test_env_vars_has_coppeliasim_root(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        assert "COPPELIASIM_ROOT" in mgr.get_env_vars()
+        assert "COPPELIASIM_ROOT" in mgr.get_env_vars().replace
 
     def test_env_vars_has_ld_library_path(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        assert "LD_LIBRARY_PATH" in mgr.get_env_vars()
+        assert "LD_LIBRARY_PATH" in mgr.get_env_vars().prepend
 
     def test_env_vars_has_qt_platform(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        assert "QT_QPA_PLATFORM_PLUGIN_PATH" in mgr.get_env_vars()
+        assert "QT_QPA_PLATFORM_PLUGIN_PATH" in mgr.get_env_vars().prepend
 
     def test_env_vars_no_unresolved_templates(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        for key, val in mgr.get_env_vars().items():
+        for key, val in mgr.get_env_vars().to_flat_dict().items():
             assert "{" not in val, f"Unresolved template in {key}: {val}"
 
     def test_env_vars_contain_coppeliasim_dir(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        root = mgr.get_env_vars()["COPPELIASIM_ROOT"]
+        root = mgr.get_env_vars().replace["COPPELIASIM_ROOT"]
         assert "CoppeliaSim_Pro_V4_1_0_Ubuntu20_04" in root
         assert "extras" in root
 
     def test_ld_library_path_includes_coppeliasim_root(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        env_vars = mgr.get_env_vars()
-        assert env_vars["COPPELIASIM_ROOT"] in env_vars["LD_LIBRARY_PATH"]
-        assert env_vars["COPPELIASIM_ROOT"] == env_vars["QT_QPA_PLATFORM_PLUGIN_PATH"]
+        ev = mgr.get_env_vars()
+        assert ev.replace["COPPELIASIM_ROOT"] in ev.prepend["LD_LIBRARY_PATH"]
+        assert ev.replace["COPPELIASIM_ROOT"] == ev.prepend["QT_QPA_PLATFORM_PLUGIN_PATH"]
 
     def test_ld_library_path_includes_conda_lib(self):
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("coppeliasim")
-        env_vars = mgr.get_env_vars()
-        assert "/lib" in env_vars["LD_LIBRARY_PATH"]
+        ev = mgr.get_env_vars()
+        assert "/lib" in ev.prepend["LD_LIBRARY_PATH"]
 
     def test_empty_installation_kwargs_returns_empty_env_vars(self):
         from easi.simulators.coppeliasim.v4_1_0.env_manager import CoppeliaSimEnvManagerV410
         mgr = CoppeliaSimEnvManagerV410()  # No installation_kwargs
-        assert mgr.get_env_vars() == {}
+        assert not mgr.get_env_vars()
 
 
 class TestSimulatorClass:

@@ -142,6 +142,7 @@ class BaseTask(ABC):
         cfg.pop("env_vars", None)
         cfg.pop("command_timeout", None)
         cfg.pop("startup_timeout", None)
+        cfg.pop("render_platform", None)
         cfg["max_steps"] = self.max_steps
         return cfg
 

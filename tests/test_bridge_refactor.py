@@ -301,11 +301,12 @@ class TestSimulatorConfigs:
         kwargs = task.simulator_kwargs
         assert "eval_set" not in kwargs
 
-    def test_dummy_task_empty_simulator_configs(self):
+    def test_dummy_task_simulator_configs(self):
         from easi.tasks.dummy_task.task import DummyTask
         task = DummyTask()
-        assert task.simulator_configs == {}
+        assert task.simulator_configs == {"render_platform": "headless"}
         assert task.additional_deps == []
+        # render_platform is stripped from simulator_kwargs (infra-only key)
         assert task.simulator_kwargs == {"max_steps": 100}
 
     def test_all_ebalfred_splits_have_configs(self):

@@ -11,6 +11,7 @@ dataset:
     - "simulator_data.zip"
     - "datasets.zip"
 simulator_configs:
+  render_platform: auto
   screen_height: 500
   screen_width: 500
   max_invalid_actions: 10

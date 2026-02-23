@@ -58,10 +58,10 @@ class TestTDWEnvManager:
         mgr = TDWEnvManager()
         assert mgr.get_env_name() == "easi_tdw_v1_11_23"
 
-    def test_needs_display(self):
+    def test_default_render_platform(self):
         from easi.simulators.tdw.v1_11_23.env_manager import TDWEnvManager
         mgr = TDWEnvManager()
-        assert mgr.needs_display is True
+        assert mgr.default_render_platform == "auto"
 
     def test_system_deps(self):
         from easi.simulators.tdw.v1_11_23.env_manager import TDWEnvManager
@@ -114,4 +114,4 @@ class TestTDWRegistry:
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("tdw:v1_11_23")
         assert mgr.simulator_name == "tdw"
-        assert mgr.needs_display is True
+        assert mgr.default_render_platform == "auto"

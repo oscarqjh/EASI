@@ -102,20 +102,7 @@ class BaseEnvironmentManager(ABC):
         """
         return "1024x768x24"
 
-    @property
-    def needs_display(self) -> bool:
-        """Whether this simulator requires a display (backward compat).
-
-        Derived from ``default_render_platform``.
-        """
-        return self.default_render_platform != "headless"
-
-    @property
-    def xvfb_screen_config(self) -> str:
-        """Backward compat alias for ``screen_config``."""
-        return self.screen_config
-
-    def get_env_vars(self, render_platform_name: str | None = None) -> dict[str, str]:
+    def get_env_vars(self, render_platform_name: str | None = None) -> "EnvVars":
         """Return environment variables to inject into the bridge subprocess.
 
         Override in subclasses to provide simulator-specific env vars.
@@ -125,9 +112,11 @@ class BaseEnvironmentManager(ABC):
                 Subclasses can use this to conditionally set env vars.
 
         Returns:
-            Dict of env var name -> value. Empty dict by default.
+            EnvVars instance. Empty by default.
         """
-        return {}
+        from easi.core.render_platform import EnvVars
+
+        return EnvVars()
 
     def get_env_name(self) -> str:
         """Conda environment name for this simulator version."""
@@ -153,8 +142,7 @@ class BaseEnvironmentManager(ABC):
         run_env = None
         if env_vars:
             import os
-            run_env = os.environ.copy()
-            run_env.update(env_vars)
+            run_env = env_vars.apply_to_env(os.environ.copy())
 
         try:
             result = subprocess.run(
@@ -249,8 +237,7 @@ class BaseEnvironmentManager(ABC):
         validation_env = None
         if env_vars:
             import os
-            validation_env = os.environ.copy()
-            validation_env.update(env_vars)
+            validation_env = env_vars.apply_to_env(os.environ.copy())
         with spinner("Validating environment"):
             self._run_command(
                 [python_exec, "-c", self.get_validation_import()],
@@ -307,7 +294,7 @@ class BaseEnvironmentManager(ABC):
     def _run_post_install(self) -> None:
         """Build context and call post_install() hook."""
         ctx = self._get_template_variables()
-        ctx["env_vars"] = self.get_env_vars()
+        ctx["env_vars"] = self.get_env_vars().to_flat_dict()
         self.post_install(ctx)
 
     def _download_and_extract(

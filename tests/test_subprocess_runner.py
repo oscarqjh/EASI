@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from easi.core.render_platform import EnvVars, get_render_platform
 from easi.simulators.subprocess_runner import SubprocessRunner
 
 
@@ -15,14 +16,16 @@ class TestSubprocessRunnerEnvVars:
         runner = SubprocessRunner(
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/dev/null"),
-            extra_env={"MY_VAR": "my_value"},
+            render_platform=get_render_platform("headless"),
+            extra_env=EnvVars(replace={"MY_VAR": "my_value"}),
         )
-        assert runner.extra_env == {"MY_VAR": "my_value"}
+        assert runner.extra_env.replace == {"MY_VAR": "my_value"}
 
     def test_default_env_is_none(self):
         runner = SubprocessRunner(
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/dev/null"),
+            render_platform=get_render_platform("headless"),
         )
         assert runner.extra_env is None
 
@@ -30,7 +33,8 @@ class TestSubprocessRunnerEnvVars:
         runner = SubprocessRunner(
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/dev/null"),
-            extra_env={"COPPELIASIM_ROOT": "/opt/coppeliasim"},
+            render_platform=get_render_platform("headless"),
+            extra_env=EnvVars(replace={"COPPELIASIM_ROOT": "/opt/coppeliasim"}),
         )
         env = runner._build_subprocess_env()
         assert env["COPPELIASIM_ROOT"] == "/opt/coppeliasim"
@@ -40,6 +44,7 @@ class TestSubprocessRunnerEnvVars:
         runner = SubprocessRunner(
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/dev/null"),
+            render_platform=get_render_platform("headless"),
         )
         assert runner._build_subprocess_env() is None
 
@@ -47,7 +52,8 @@ class TestSubprocessRunnerEnvVars:
         runner = SubprocessRunner(
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/dev/null"),
-            extra_env={"LD_LIBRARY_PATH": "/opt/sim/lib"},
+            render_platform=get_render_platform("headless"),
+            extra_env=EnvVars(prepend={"LD_LIBRARY_PATH": "/opt/sim/lib"}),
         )
         env = runner._build_subprocess_env()
         ld_path = env.get("LD_LIBRARY_PATH", "")
@@ -60,7 +66,8 @@ class TestSubprocessRunnerEnvVars:
             runner = SubprocessRunner(
                 python_executable="/usr/bin/python3",
                 bridge_script_path=Path("/dev/null"),
-                extra_env={"MY_EXISTING": "new_value"},
+                render_platform=get_render_platform("headless"),
+                extra_env=EnvVars(replace={"MY_EXISTING": "new_value"}),
             )
             env = runner._build_subprocess_env()
             assert env["MY_EXISTING"] == "new_value"

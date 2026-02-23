@@ -286,7 +286,7 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float, render_platform_nam
         screen_config=env_manager.screen_config,
         startup_timeout=timeout,
         command_timeout=timeout,
-        extra_env=env_vars or None,
+        extra_env=env_vars if env_vars else None,
     )
 
     try:

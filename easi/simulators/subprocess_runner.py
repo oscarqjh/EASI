@@ -28,7 +28,7 @@ from easi.communication.filesystem import (
     write_command,
 )
 from easi.core.exceptions import SimulatorError, SimulatorTimeoutError
-from easi.core.render_platform import RenderPlatform, get_render_platform
+from easi.core.render_platform import EnvVars, RenderPlatform
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -37,43 +37,22 @@ logger = get_logger(__name__)
 class SubprocessRunner:
     """Manages a bridge subprocess for a single simulator instance."""
 
-    # Path-like env vars that should prepend rather than replace
-    _PREPEND_ENV_VARS = frozenset({
-        "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "PATH",
-        "PYTHONPATH", "QT_QPA_PLATFORM_PLUGIN_PATH",
-    })
-
     def __init__(
         self,
         python_executable: str,
         bridge_script_path: Path,
-        # -- New render-platform API --
-        render_platform: RenderPlatform | None = None,
+        render_platform: RenderPlatform,
         screen_config: str = "1024x768x24",
-        # -- Backward-compat (deprecated) --
-        needs_display: bool = False,
-        xvfb_screen_config: str = "1024x768x24",
-        # -- Other params --
         startup_timeout: float = 30.0,
         command_timeout: float = 300.0,
         poll_interval: float = 0.1,
         extra_args: list[str] | None = None,
-        extra_env: dict[str, str] | None = None,
+        extra_env: EnvVars | None = None,
     ):
         self.python_executable = python_executable
         self.bridge_script_path = bridge_script_path
-
-        # Resolve render platform: explicit > backward-compat fallback
-        if render_platform is not None:
-            self.render_platform = render_platform
-            self.screen_config = screen_config
-        elif needs_display:
-            self.render_platform = get_render_platform("auto")
-            self.screen_config = xvfb_screen_config
-        else:
-            self.render_platform = get_render_platform("headless")
-            self.screen_config = xvfb_screen_config
-
+        self.render_platform = render_platform
+        self.screen_config = screen_config
         self.startup_timeout = startup_timeout
         self.command_timeout = command_timeout
         self.poll_interval = poll_interval
@@ -193,24 +172,15 @@ class SubprocessRunner:
     def _build_subprocess_env(self) -> dict[str, str] | None:
         """Build env dict for subprocess, merging platform + extra_env.
 
-        For path-like vars (LD_LIBRARY_PATH, PATH, etc.), prepends the new
-        value to the existing value with ':' separator.
-
         Returns None if no env vars to set (subprocess inherits parent env).
         """
         platform_env = self.render_platform.get_env_vars()
-        combined = {**platform_env, **(self.extra_env or {})}
+        combined = EnvVars.merge(platform_env, self.extra_env) if self.extra_env else platform_env
 
         if not combined:
             return None
 
-        env = os.environ.copy()
-        for key, value in combined.items():
-            if key in self._PREPEND_ENV_VARS and key in env:
-                env[key] = f"{value}:{env[key]}"
-            else:
-                env[key] = value
-        return env
+        return combined.apply_to_env(os.environ.copy())
 
     def _build_launch_command(self) -> list[str]:
         """Build the command to launch the bridge subprocess."""

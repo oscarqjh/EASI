@@ -9,6 +9,78 @@ from unittest.mock import patch
 import pytest
 
 
+class TestEnvVarsDataclass:
+    """Test the EnvVars dataclass."""
+
+    def test_empty_is_falsy(self):
+        from easi.core.render_platform import EnvVars
+
+        assert not EnvVars()
+
+    def test_replace_is_truthy(self):
+        from easi.core.render_platform import EnvVars
+
+        assert EnvVars(replace={"FOO": "bar"})
+
+    def test_prepend_is_truthy(self):
+        from easi.core.render_platform import EnvVars
+
+        assert EnvVars(prepend={"PATH": "/extra"})
+
+    def test_to_flat_dict(self):
+        from easi.core.render_platform import EnvVars
+
+        ev = EnvVars(replace={"A": "1"}, prepend={"B": "2"})
+        assert ev.to_flat_dict() == {"A": "1", "B": "2"}
+
+    def test_apply_to_env_replace(self):
+        from easi.core.render_platform import EnvVars
+
+        ev = EnvVars(replace={"FOO": "new"})
+        result = ev.apply_to_env({"FOO": "old", "BAR": "keep"})
+        assert result["FOO"] == "new"
+        assert result["BAR"] == "keep"
+
+    def test_apply_to_env_prepend_existing(self):
+        from easi.core.render_platform import EnvVars
+
+        ev = EnvVars(prepend={"PATH": "/new"})
+        result = ev.apply_to_env({"PATH": "/old"})
+        assert result["PATH"] == "/new:/old"
+
+    def test_apply_to_env_prepend_missing(self):
+        from easi.core.render_platform import EnvVars
+
+        ev = EnvVars(prepend={"LD_LIBRARY_PATH": "/lib"})
+        result = ev.apply_to_env({})
+        assert result["LD_LIBRARY_PATH"] == "/lib"
+
+    def test_merge_replace_later_wins(self):
+        from easi.core.render_platform import EnvVars
+
+        a = EnvVars(replace={"K": "a"})
+        b = EnvVars(replace={"K": "b"})
+        merged = EnvVars.merge(a, b)
+        assert merged.replace["K"] == "b"
+
+    def test_merge_prepend_concatenates(self):
+        from easi.core.render_platform import EnvVars
+
+        a = EnvVars(prepend={"PATH": "/a"})
+        b = EnvVars(prepend={"PATH": "/b"})
+        merged = EnvVars.merge(a, b)
+        assert merged.prepend["PATH"] == "/b:/a"
+
+    def test_merge_mixed(self):
+        from easi.core.render_platform import EnvVars
+
+        a = EnvVars(replace={"ROOT": "/opt"}, prepend={"PATH": "/a/bin"})
+        b = EnvVars(replace={"HOME": "/home"}, prepend={"PATH": "/b/bin"})
+        merged = EnvVars.merge(a, b)
+        assert merged.replace == {"ROOT": "/opt", "HOME": "/home"}
+        assert merged.prepend["PATH"] == "/b/bin:/a/bin"
+
+
 class TestRenderPlatformRegistry:
     """Test platform discovery and instantiation."""
 
@@ -66,10 +138,12 @@ class TestHeadlessPlatform:
         assert p.wrap_command(cmd, "1024x768x24") == cmd
 
     def test_get_env_vars_empty(self):
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platform import EnvVars, get_render_platform
 
         p = get_render_platform("headless")
-        assert p.get_env_vars() == {}
+        ev = p.get_env_vars()
+        assert isinstance(ev, EnvVars)
+        assert not ev
 
     def test_get_system_deps_empty(self):
         from easi.core.render_platform import get_render_platform
@@ -92,10 +166,12 @@ class TestXvfbPlatform:
         assert wrapped[-2:] == cmd
 
     def test_get_env_vars_empty(self):
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platform import EnvVars, get_render_platform
 
         p = get_render_platform("xvfb")
-        assert p.get_env_vars() == {}
+        ev = p.get_env_vars()
+        assert isinstance(ev, EnvVars)
+        assert not ev
 
     def test_get_system_deps_includes_xvfb(self):
         from easi.core.render_platform import get_render_platform
@@ -115,10 +191,12 @@ class TestNativePlatform:
         assert p.wrap_command(cmd, "1024x768x24") == cmd
 
     def test_get_env_vars_empty(self):
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platform import EnvVars, get_render_platform
 
         p = get_render_platform("native")
-        assert p.get_env_vars() == {}
+        ev = p.get_env_vars()
+        assert isinstance(ev, EnvVars)
+        assert not ev
 
     def test_is_available_true_when_display_set(self):
         from easi.core.render_platform import get_render_platform
@@ -146,11 +224,12 @@ class TestEGLPlatform:
         assert p.wrap_command(cmd, "1024x768x24") == cmd
 
     def test_get_env_vars_sets_pyopengl(self):
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platform import EnvVars, get_render_platform
 
         p = get_render_platform("egl")
-        env = p.get_env_vars()
-        assert env["PYOPENGL_PLATFORM"] == "egl"
+        ev = p.get_env_vars()
+        assert isinstance(ev, EnvVars)
+        assert ev.replace["PYOPENGL_PLATFORM"] == "egl"
 
     def test_get_system_deps_includes_egl(self):
         from easi.core.render_platform import get_render_platform
@@ -219,21 +298,13 @@ class TestBaseEnvManagerRenderPlatform:
         mgr = self._make_stub()
         assert mgr.screen_config == "1024x768x24"
 
-    def test_needs_display_false_for_headless(self):
+    def test_get_env_vars_returns_envvars(self):
+        from easi.core.render_platform import EnvVars
+
         mgr = self._make_stub()
-        assert mgr.needs_display is False
-
-    def test_needs_display_true_when_platform_not_headless(self):
-        mgr = self._make_stub(
-            default_render_platform=property(lambda self: "auto"),
-        )
-        assert mgr.needs_display is True
-
-    def test_xvfb_screen_config_aliases_screen_config(self):
-        mgr = self._make_stub(
-            screen_config=property(lambda self: "1920x1080x24"),
-        )
-        assert mgr.xvfb_screen_config == "1920x1080x24"
+        ev = mgr.get_env_vars()
+        assert isinstance(ev, EnvVars)
+        assert not ev
 
 
 class TestSubprocessRunnerRenderPlatform:
@@ -282,7 +353,7 @@ class TestSubprocessRunnerRenderPlatform:
         assert cmd[0] == "/usr/bin/python3"
 
     def test_platform_env_vars_merged(self):
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platform import EnvVars, get_render_platform
         from easi.simulators.subprocess_runner import SubprocessRunner
 
         p = get_render_platform("egl")
@@ -290,33 +361,23 @@ class TestSubprocessRunnerRenderPlatform:
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/fake/bridge.py"),
             render_platform=p,
-            extra_env={"SIM_ROOT": "/opt/sim"},
+            extra_env=EnvVars(replace={"SIM_ROOT": "/opt/sim"}),
         )
         env = runner._build_subprocess_env()
         assert env["PYOPENGL_PLATFORM"] == "egl"
         assert env["SIM_ROOT"] == "/opt/sim"
 
-    def test_backward_compat_needs_display_still_works(self):
-        """Old callers passing needs_display=True get AutoPlatform."""
+    def test_no_env_vars_returns_none(self):
+        from easi.core.render_platform import get_render_platform
         from easi.simulators.subprocess_runner import SubprocessRunner
 
+        p = get_render_platform("headless")
         runner = SubprocessRunner(
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/fake/bridge.py"),
-            needs_display=True,
-            xvfb_screen_config="1024x768x24",
+            render_platform=p,
         )
-        assert runner.render_platform.name == "auto"
-
-    def test_backward_compat_needs_display_false_gets_headless(self):
-        from easi.simulators.subprocess_runner import SubprocessRunner
-
-        runner = SubprocessRunner(
-            python_executable="/usr/bin/python3",
-            bridge_script_path=Path("/fake/bridge.py"),
-            needs_display=False,
-        )
-        assert runner.render_platform.name == "headless"
+        assert runner._build_subprocess_env() is None
 
 
 class TestSimulatorRenderPlatforms:
@@ -329,8 +390,6 @@ class TestSimulatorRenderPlatforms:
         assert mgr.default_render_platform == "auto"
         assert "xvfb" in mgr.supported_render_platforms
         assert "native" in mgr.supported_render_platforms
-        # backward compat
-        assert mgr.needs_display is True
 
     def test_ai2thor_v5(self):
         from easi.simulators.ai2thor.v5_0_0.env_manager import AI2ThorEnvManagerV500
@@ -358,8 +417,9 @@ class TestSimulatorRenderPlatforms:
         from easi.simulators.coppeliasim.v4_1_0.env_manager import CoppeliaSimEnvManagerV410
 
         mgr = CoppeliaSimEnvManagerV410()
-        env = mgr.get_env_vars(render_platform_name="egl")
-        assert "__EGL_VENDOR_LIBRARY_FILENAMES" not in env
+        ev = mgr.get_env_vars(render_platform_name="egl")
+        all_keys = set(ev.replace) | set(ev.prepend)
+        assert "__EGL_VENDOR_LIBRARY_FILENAMES" not in all_keys
 
     def test_tdw(self):
         from easi.simulators.tdw.v1_11_23.env_manager import TDWEnvManager
@@ -372,7 +432,6 @@ class TestSimulatorRenderPlatforms:
 
         mgr = OmniGibsonEnvManager()
         assert mgr.default_render_platform == "headless"
-        assert mgr.needs_display is False
 
     def test_dummy(self):
         from easi.simulators.dummy.v1.env_manager import DummyEnvManager
@@ -413,15 +472,15 @@ class TestRunnerRenderPlatformWiring:
     """Verify EvaluationRunner resolves and passes render platform."""
 
     def _make_mock_env_mgr(self):
+        from easi.core.render_platform import EnvVars
+
         mgr = MagicMock()
         mgr.env_is_ready.return_value = True
         mgr.get_python_executable.return_value = "/usr/bin/python3"
         mgr.default_render_platform = "auto"
         mgr.supported_render_platforms = ["auto", "xvfb", "native", "egl"]
         mgr.screen_config = "1024x768x24"
-        mgr.needs_display = True
-        mgr.xvfb_screen_config = "1024x768x24"
-        mgr.get_env_vars.return_value = {}
+        mgr.get_env_vars.return_value = EnvVars()
         return mgr
 
     def _make_mock_task(self, render_platform=None):
@@ -535,7 +594,7 @@ class TestRenderPlatformEndToEnd:
     """End-to-end: platform flows through runner to subprocess."""
 
     def test_egl_env_vars_in_subprocess(self):
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platform import EnvVars, get_render_platform
         from easi.simulators.subprocess_runner import SubprocessRunner
 
         platform = get_render_platform("egl")
@@ -543,7 +602,7 @@ class TestRenderPlatformEndToEnd:
             python_executable="/usr/bin/python3",
             bridge_script_path=Path("/fake/bridge.py"),
             render_platform=platform,
-            extra_env={"SIM_ROOT": "/opt/sim"},
+            extra_env=EnvVars(replace={"SIM_ROOT": "/opt/sim"}),
         )
         env = runner._build_subprocess_env()
         assert env["PYOPENGL_PLATFORM"] == "egl"

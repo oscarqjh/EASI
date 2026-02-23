@@ -11,18 +11,22 @@ from pathlib import Path
 class TestEnvManagerGetEnvVars:
     """Tests for the get_env_vars() method."""
 
-    def test_default_returns_empty_dict(self):
-        from easi.simulators.dummy.v1.env_manager import DummyEnvManager
-
-        mgr = DummyEnvManager()
-        assert mgr.get_env_vars() == {}
-
-    def test_returns_dict_type(self):
+    def test_default_returns_empty_envvars(self):
+        from easi.core.render_platform import EnvVars
         from easi.simulators.dummy.v1.env_manager import DummyEnvManager
 
         mgr = DummyEnvManager()
         result = mgr.get_env_vars()
-        assert isinstance(result, dict)
+        assert isinstance(result, EnvVars)
+        assert not result
+
+    def test_returns_envvars_type(self):
+        from easi.core.render_platform import EnvVars
+        from easi.simulators.dummy.v1.env_manager import DummyEnvManager
+
+        mgr = DummyEnvManager()
+        result = mgr.get_env_vars()
+        assert isinstance(result, EnvVars)
 
 
 class TestEnvManagerPostInstall:
@@ -33,7 +37,7 @@ class TestEnvManagerPostInstall:
 
         mgr = DummyEnvManager()
         ctx = mgr._get_template_variables()
-        ctx["env_vars"] = mgr.get_env_vars()
+        ctx["env_vars"] = mgr.get_env_vars().to_flat_dict()
         mgr.post_install(ctx)  # Should not raise
 
     def test_post_install_receives_context_keys(self):

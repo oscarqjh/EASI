@@ -16,11 +16,51 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class EnvVars:
+    """Structured environment variables with replace/prepend semantics.
+
+    ``replace`` vars overwrite any existing value.
+    ``prepend`` vars are prepended with ':' to any existing value (for PATH-like vars).
+    """
+
+    replace: dict[str, str] = field(default_factory=dict)
+    prepend: dict[str, str] = field(default_factory=dict)
+
+    def to_flat_dict(self) -> dict[str, str]:
+        """Combine into single dict (for internal use like post_install)."""
+        return {**self.replace, **self.prepend}
+
+    def apply_to_env(self, base: dict[str, str]) -> dict[str, str]:
+        """Merge into a base env dict (e.g. os.environ.copy())."""
+        env = dict(base)
+        for k, v in self.replace.items():
+            env[k] = v
+        for k, v in self.prepend.items():
+            env[k] = f"{v}:{env[k]}" if k in env else v
+        return env
+
+    def __bool__(self) -> bool:
+        return bool(self.replace) or bool(self.prepend)
+
+    @classmethod
+    def merge(cls, *env_vars: EnvVars) -> EnvVars:
+        """Merge multiple EnvVars. Later values win for replace; prepend values concatenate."""
+        replace: dict[str, str] = {}
+        prepend: dict[str, str] = {}
+        for ev in env_vars:
+            replace.update(ev.replace)
+            for k, v in ev.prepend.items():
+                prepend[k] = f"{v}:{prepend[k]}" if k in prepend else v
+        return cls(replace=replace, prepend=prepend)
 
 
 class RenderPlatform(ABC):
@@ -45,9 +85,9 @@ class RenderPlatform(ABC):
         """
         ...
 
-    def get_env_vars(self) -> dict[str, str]:
+    def get_env_vars(self) -> EnvVars:
         """Extra env vars needed by this platform (merged into subprocess)."""
-        return {}
+        return EnvVars()
 
     def get_system_deps(self) -> list[str]:
         """System dependency names required by this platform."""
@@ -113,12 +153,12 @@ class EGLPlatform(RenderPlatform):
     def wrap_command(self, cmd: list[str], screen_config: str) -> list[str]:
         return cmd
 
-    def get_env_vars(self) -> dict[str, str]:
-        env: dict[str, str] = {"PYOPENGL_PLATFORM": "egl"}
+    def get_env_vars(self) -> EnvVars:
+        replace: dict[str, str] = {"PYOPENGL_PLATFORM": "egl"}
         mesa_vendor = Path("/usr/share/glvnd/egl_vendor.d/50_mesa.json")
         if mesa_vendor.exists():
-            env["__EGL_VENDOR_LIBRARY_FILENAMES"] = str(mesa_vendor)
-        return env
+            replace["__EGL_VENDOR_LIBRARY_FILENAMES"] = str(mesa_vendor)
+        return EnvVars(replace=replace)
 
     def get_system_deps(self) -> list[str]:
         return ["egl"]

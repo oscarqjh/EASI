@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from easi.core.base_env_manager import BaseEnvironmentManager
+from easi.core.render_platform import EnvVars
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -66,14 +67,14 @@ class TDWEnvManager(BaseEnvironmentManager):
                 return False
         return True
 
-    def get_env_vars(self, render_platform_name: str | None = None) -> dict[str, str]:
+    def get_env_vars(self, render_platform_name: str | None = None) -> EnvVars:
         """Return TDW env vars for bridge subprocess."""
         build_dir = self.installation_kwargs.get("build_dir_name", "")
         if not build_dir:
-            return {}
+            return EnvVars()
         t = self._get_template_variables()
         build_path = self._resolve_template("{extras_dir}/" + build_dir, t)
-        return {"TDW_BUILD_PATH": build_path}
+        return EnvVars(replace={"TDW_BUILD_PATH": build_path})
 
     def post_install(self, context: dict) -> None:
         """Download and extract TDW Unity build.

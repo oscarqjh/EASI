@@ -30,6 +30,7 @@ import tempfile
 from pathlib import Path
 
 from easi.core.base_env_manager import BaseEnvironmentManager
+from easi.core.render_platform import EnvVars
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -128,7 +129,7 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
         )
         return str(local_python)
 
-    def get_env_vars(self, render_platform_name: str | None = None) -> dict[str, str]:
+    def get_env_vars(self, render_platform_name: str | None = None) -> EnvVars:
         """Export env vars for headless rendering, EULA, and PYTHONHOME.
 
         PYTHONHOME is set to the conda env directory so the /tmp Python
@@ -137,11 +138,11 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
         conda_python = self._get_conda_python()
         # conda env dir is two levels up from bin/python
         conda_env_dir = str(Path(conda_python).resolve().parent.parent)
-        return {
+        return EnvVars(replace={
             "OMNIGIBSON_HEADLESS": "1",
             "OMNI_KIT_ACCEPT_EULA": "YES",
             "PYTHONHOME": conda_env_dir,
-        }
+        })
 
     def post_install(self, context: dict) -> None:
         """Replicate BEHAVIOR-1K setup.sh install process.

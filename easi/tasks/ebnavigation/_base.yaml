@@ -8,6 +8,7 @@ dataset:
   repo_id: "oscarqjh/EB-Navigation_easi"
   subset: null
 simulator_configs:
+  render_platform: auto
   screen_height: 500
   screen_width: 500
   fov: 100

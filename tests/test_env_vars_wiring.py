@@ -10,6 +10,7 @@ class TestEnvVarsWiring:
     """Verify env vars flow from env_manager to SubprocessRunner."""
 
     def test_runner_passes_env_vars_to_subprocess(self):
+        from easi.core.render_platform import EnvVars
         from easi.evaluation.runner import EvaluationRunner
 
         runner = EvaluationRunner.__new__(EvaluationRunner)
@@ -22,9 +23,7 @@ class TestEnvVarsWiring:
         mock_env_mgr.default_render_platform = "headless"
         mock_env_mgr.supported_render_platforms = ["headless"]
         mock_env_mgr.screen_config = "1024x768x24"
-        mock_env_mgr.needs_display = False
-        mock_env_mgr.xvfb_screen_config = "1024x768x24"
-        mock_env_mgr.get_env_vars.return_value = {"SIM_ROOT": "/opt/sim"}
+        mock_env_mgr.get_env_vars.return_value = EnvVars(replace={"SIM_ROOT": "/opt/sim"})
 
         mock_sim_cls = MagicMock()
         mock_sim = mock_sim_cls.return_value
@@ -39,9 +38,12 @@ class TestEnvVarsWiring:
             runner._create_simulator("fake:v1")
 
             call_kwargs = MockRunner.call_args
-            assert call_kwargs.kwargs.get("extra_env") == {"SIM_ROOT": "/opt/sim"}
+            extra_env = call_kwargs.kwargs.get("extra_env")
+            assert isinstance(extra_env, EnvVars)
+            assert extra_env.replace == {"SIM_ROOT": "/opt/sim"}
 
     def test_runner_passes_none_when_no_env_vars(self):
+        from easi.core.render_platform import EnvVars
         from easi.evaluation.runner import EvaluationRunner
 
         runner = EvaluationRunner.__new__(EvaluationRunner)
@@ -54,9 +56,7 @@ class TestEnvVarsWiring:
         mock_env_mgr.default_render_platform = "headless"
         mock_env_mgr.supported_render_platforms = ["headless"]
         mock_env_mgr.screen_config = "1024x768x24"
-        mock_env_mgr.needs_display = False
-        mock_env_mgr.xvfb_screen_config = "1024x768x24"
-        mock_env_mgr.get_env_vars.return_value = {}
+        mock_env_mgr.get_env_vars.return_value = EnvVars()
 
         mock_sim_cls = MagicMock()
         mock_sim = mock_sim_cls.return_value

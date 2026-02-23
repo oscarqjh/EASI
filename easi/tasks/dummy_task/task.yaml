@@ -10,6 +10,10 @@ dataset:
   source: "local"
   path: null  # null = use built-in dummy episodes
 
+# Simulator config
+simulator_configs:
+  render_platform: headless
+
 # Episode limits
 max_steps: 100
 

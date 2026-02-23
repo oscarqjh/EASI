@@ -14,12 +14,15 @@ from easi.simulators.subprocess_runner import SubprocessRunner
 @pytest.fixture
 def dummy_simulator():
     """Create and start a dummy simulator, cleaning up after the test."""
+    from easi.core.render_platform import get_render_platform
+
     env_manager = DummyEnvManager()
     sim = DummySimulator()
 
     runner = SubprocessRunner(
         python_executable=env_manager.get_python_executable(),
         bridge_script_path=sim._get_bridge_script_path(),
+        render_platform=get_render_platform("headless"),
         startup_timeout=10.0,
         command_timeout=10.0,
     )
@@ -84,17 +87,21 @@ def test_is_running(dummy_simulator):
 
 
 def test_dummy_simulator_with_env_vars_wiring():
-    """Verify DummyEnvManager.get_env_vars() returns {} and doesn't break launch."""
+    """Verify DummyEnvManager.get_env_vars() returns empty EnvVars and doesn't break launch."""
+    from easi.core.render_platform import get_render_platform
+
     env_manager = DummyEnvManager()
-    assert env_manager.get_env_vars() == {}
+    env_vars = env_manager.get_env_vars()
+    assert not env_vars  # empty EnvVars is falsy
 
     sim = DummySimulator()
     runner = SubprocessRunner(
         python_executable=env_manager.get_python_executable(),
         bridge_script_path=sim._get_bridge_script_path(),
+        render_platform=get_render_platform("headless"),
         startup_timeout=10.0,
         command_timeout=10.0,
-        extra_env=env_manager.get_env_vars() or None,
+        extra_env=env_vars if env_vars else None,
     )
     runner.launch()
     try:

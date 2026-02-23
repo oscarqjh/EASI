@@ -49,18 +49,18 @@ class TestOmniGibsonEnvManager:
         mgr = OmniGibsonEnvManager()
         assert mgr.get_env_name() == "easi_omnigibson_v3_7_2"
 
-    def test_needs_display(self):
+    def test_default_render_platform_headless(self):
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
         mgr = OmniGibsonEnvManager()
-        assert mgr.needs_display is False
+        assert mgr.default_render_platform == "headless"
 
     def test_env_vars(self):
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
         mgr = OmniGibsonEnvManager()
-        env_vars = mgr.get_env_vars()
-        assert env_vars["OMNIGIBSON_HEADLESS"] == "1"
-        assert env_vars["OMNI_KIT_ACCEPT_EULA"] == "YES"
-        assert "PYTHONHOME" in env_vars
+        ev = mgr.get_env_vars()
+        assert ev.replace["OMNIGIBSON_HEADLESS"] == "1"
+        assert ev.replace["OMNI_KIT_ACCEPT_EULA"] == "YES"
+        assert "PYTHONHOME" in ev.replace
 
     def test_get_python_executable_is_local(self):
         """Python executable should be a /tmp copy (NFS workaround)."""
@@ -153,7 +153,7 @@ class TestOmniGibsonRegistry:
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("omnigibson:v3_7_2")
         assert mgr.simulator_name == "omnigibson"
-        assert mgr.needs_display is False
+        assert mgr.default_render_platform == "headless"
 
     def test_create_env_manager_has_installation_kwargs(self):
         from easi.simulators.registry import create_env_manager

@@ -9,6 +9,7 @@ dataset:
   zip_files:
     - "simulator_data.zip"
 simulator_configs:
+  render_platform: auto
   screen_size: 512
   port: 1071
   use_cached_assets: false
