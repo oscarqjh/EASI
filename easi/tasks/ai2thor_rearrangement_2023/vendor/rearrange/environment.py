@@ -13,7 +13,7 @@ import ai2thor.server
 import ai2thor.wsgi_server
 import numpy as np
 from packaging import version
-from torch.distributions.utils import lazy_property
+from functools import cached_property as lazy_property
 
 from allenact.utils.system import get_logger
 from allenact_plugins.ithor_plugin.ithor_environment import IThorEnvironment
