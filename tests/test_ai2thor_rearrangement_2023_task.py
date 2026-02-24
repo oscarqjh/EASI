@@ -196,3 +196,64 @@ class TestAggregateResults:
         assert agg["num_steps"] == 4.0  # (3+5)/2
         # success_length should average only non-NaN: 3.0
         assert agg["success_length"] == 3.0
+
+
+class TestPromptBuilder:
+    def _make_builder(self):
+        from easi.tasks.ai2thor_rearrangement_2023.prompts import AI2THORRearrangement2023PromptBuilder
+        builder = AI2THORRearrangement2023PromptBuilder()
+        builder.set_action_space(["done", "move_ahead", "pickup_bowl"])
+        return builder
+
+    def test_set_action_space(self):
+        builder = self._make_builder()
+        assert "done" in builder._action_name_set
+        assert "move_ahead" in builder._action_name_set
+        assert "pickup_bowl" in builder._action_name_set
+
+    def test_parse_valid_response(self):
+        from easi.core.memory import AgentMemory
+        builder = self._make_builder()
+        memory = AgentMemory()
+        response = json.dumps({
+            "observation": "I see a kitchen",
+            "reasoning": "Need to find bowl",
+            "plan": [
+                {"action_name": "move_ahead"},
+                {"action_name": "pickup_bowl"},
+            ]
+        })
+        actions = builder.parse_response(response, memory)
+        assert len(actions) == 2
+        assert actions[0].action_name == "move_ahead"
+        assert actions[1].action_name == "pickup_bowl"
+
+    def test_parse_invalid_response_returns_done(self):
+        from easi.core.memory import AgentMemory
+        builder = self._make_builder()
+        memory = AgentMemory()
+        actions = builder.parse_response("not json", memory)
+        assert len(actions) == 1
+        assert actions[0].action_name == "done"
+
+    def test_parse_unknown_action_stops_plan(self):
+        from easi.core.memory import AgentMemory
+        builder = self._make_builder()
+        memory = AgentMemory()
+        response = json.dumps({
+            "plan": [
+                {"action_name": "move_ahead"},
+                {"action_name": "fly_away"},
+            ]
+        })
+        actions = builder.parse_response(response, memory)
+        assert len(actions) == 1
+        assert actions[0].action_name == "move_ahead"
+
+
+class TestBridgeScript:
+    def test_bridge_path_exists(self):
+        task = _make_task()
+        bridge_path = task.get_bridge_script_path()
+        assert bridge_path.exists()
+        assert bridge_path.name == "bridge.py"
