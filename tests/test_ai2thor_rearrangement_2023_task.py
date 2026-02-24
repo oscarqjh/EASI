@@ -197,6 +197,40 @@ class TestAggregateResults:
         # success_length should average only non-NaN: 3.0
         assert agg["success_length"] == 3.0
 
+    def test_aggregate_skips_non_numeric_values(self):
+        """String fields (episode_id, instruction) injected by the runner must not crash sum()."""
+        task = _make_task()
+
+        records = [
+            EpisodeRecord(
+                episode={"id": "ep1"}, trajectory=[],
+                episode_results={
+                    "success": 1.0, "num_steps": 3.0,
+                    # Runner injects these string fields into episode_results
+                    "episode_id": "FloorPlan21__0",
+                    "instruction": "Move the bowl.",
+                    "elapsed_seconds": 5.2,
+                },
+            ),
+            EpisodeRecord(
+                episode={"id": "ep2"}, trajectory=[],
+                episode_results={
+                    "success": 0.0, "num_steps": 7.0,
+                    "episode_id": "FloorPlan22__0",
+                    "instruction": "Move the cup.",
+                    "elapsed_seconds": 8.1,
+                },
+            ),
+        ]
+        # Should not raise TypeError
+        agg = task.aggregate_results(records)
+        assert agg["success"] == 0.5
+        assert agg["num_steps"] == 5.0
+        assert agg["elapsed_seconds"] == pytest.approx(6.65)
+        # String keys should be NaN (skipped)
+        assert math.isnan(agg["episode_id"])
+        assert math.isnan(agg["instruction"])
+
 
 class TestPromptBuilder:
     def _make_builder(self):

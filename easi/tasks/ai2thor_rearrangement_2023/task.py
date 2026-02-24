@@ -124,8 +124,8 @@ class AI2THORRearrangement2023Task(BaseTask):
             values = []
             for r in records:
                 v = r.episode_results.get(key)
-                if v is not None and not (isinstance(v, float) and math.isnan(v)):
-                    values.append(v)
+                if isinstance(v, (int, float)) and not math.isnan(v):
+                    values.append(float(v))
             if values:
                 agg[key] = sum(values) / len(values)
             else:
