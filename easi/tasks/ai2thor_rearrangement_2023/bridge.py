@@ -2,6 +2,10 @@
 
 Runs inside the easi_ai2thor_v5_0_0 conda env (Python 3.10).
 Wraps RearrangeTHOREnvironment in SNAP mode with 84 discrete actions.
+
+For the 1-phase track, maintains a second "walkthrough" environment
+that stays in the goal state to provide goal images from the agent's
+current viewpoint at each step.
 """
 from __future__ import annotations
 
@@ -46,8 +50,9 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
         self._use_rgb = simulator_kwargs.get("use_rgb", True)
         self._use_depth = simulator_kwargs.get("use_depth", False)
         self._use_gps = simulator_kwargs.get("use_gps", True)
+        self._use_goal_image = simulator_kwargs.get("use_goal_image", True)
 
-        controller_kwargs = {
+        self._controller_kwargs = {
             "width": screen_w,
             "height": screen_h,
             "fieldOfView": fov,
@@ -60,11 +65,28 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
             "fastActionEmit": True,
         }
 
+        # enhanced_physics_determinism=False: the physics_step_kwargs
+        # (actionSimulationSeconds, fixedDeltaTime) from older AI2-THOR are
+        # not uniformly accepted by v5 actions (e.g. Crouch takes no args,
+        # RotateRight rejects actionSimulationSeconds). Disable to avoid
+        # ValueError on unsupported kwargs.
         env = RearrangeTHOREnvironment(
             mode=RearrangeMode.SNAP,
-            controller_kwargs=controller_kwargs,
+            controller_kwargs=dict(self._controller_kwargs),
             force_cache_reset=True,
+            enhanced_physics_determinism=False,
         )
+
+        # Create walkthrough env for goal images (1-phase track)
+        if self._use_goal_image:
+            self._walkthrough_env = RearrangeTHOREnvironment(
+                mode=RearrangeMode.SNAP,
+                controller_kwargs=dict(self._controller_kwargs),
+                force_cache_reset=True,
+                enhanced_physics_determinism=False,
+            )
+        else:
+            self._walkthrough_env = None
 
         # Action tracking for PuSR/PuLen metrics
         self._actions_taken = []
@@ -105,6 +127,12 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
         env.reset(task_spec=task_spec, force_axis_aligned_start=True)
         env.shuffle()
 
+        # Setup walkthrough env (stays in goal state — no shuffle)
+        if self._walkthrough_env is not None:
+            self._walkthrough_env.reset(
+                task_spec=task_spec, force_axis_aligned_start=True
+            )
+
         # Clear action tracking
         self._actions_taken = []
         self._actions_taken_success = []
@@ -112,6 +140,15 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
         # No-op to get initial observation
         env.controller.step("Pass")
         return env.last_event.frame.copy()
+
+    def reset(self, reset_config):
+        """Override to add initial goal image to the reset response."""
+        response = super().reset(reset_config)
+        if self._walkthrough_env is not None:
+            goal_rgb = self._get_goal_frame(self.env)
+            goal_path = self._save_goal_image(goal_rgb)
+            response.setdefault("info", {})["goal_rgb_path"] = goal_path
+        return response
 
     def _on_step(self, env, action_text):
         action_name = action_text.strip().lower()
@@ -149,6 +186,12 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
         info = self._build_info(env, action_name, action_success)
         feedback = "success" if action_success else "action failed"
         info["feedback"] = feedback
+
+        # Capture goal image (walkthrough env teleported to current agent position)
+        if self._walkthrough_env is not None:
+            goal_rgb = self._get_goal_frame(env)
+            goal_path = self._save_goal_image(goal_rgb)
+            info["goal_rgb_path"] = goal_path
 
         return rgb, 0.0, False, info
 
@@ -228,6 +271,33 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
     def _get_rgb(self, env) -> np.ndarray:
         """Extract RGB frame from environment."""
         return env.last_event.frame.copy()
+
+    def _get_goal_frame(self, env) -> np.ndarray:
+        """Teleport walkthrough env agent to current position and capture goal frame.
+
+        This implements the 1-phase track observation: the agent sees what the
+        scene SHOULD look like from its current viewpoint.
+        """
+        loc = env.get_agent_location()
+        self._walkthrough_env.controller.step(
+            "TeleportFull",
+            x=loc["x"], y=loc["y"], z=loc["z"],
+            rotation={"x": 0, "y": loc["rotation"], "z": 0},
+            horizon=loc["horizon"],
+            standing=loc.get("standing", True),
+            forceAction=True,
+        )
+        return self._walkthrough_env.last_event.frame.copy()
+
+    def _save_goal_image(self, image_array: np.ndarray) -> str:
+        """Save goal frame as PNG, return path string."""
+        from PIL import Image
+
+        save_dir = Path(self.episode_output_dir) if self.episode_output_dir else self.workspace
+        save_dir.mkdir(parents=True, exist_ok=True)
+        goal_path = save_dir / ("step_%04d_goal.png" % self.step_count)
+        Image.fromarray(image_array).save(str(goal_path))
+        return str(goal_path)
 
     def _build_info(self, env, action_name: str, action_success: bool) -> dict:
         """Build info dict with sensor data and action feedback."""
@@ -311,6 +381,13 @@ class AI2THORRearrangement2023Bridge(BaseBridge):
             k: v for k, v in info.items()
             if isinstance(v, (int, float, str, bool))
         }
+
+    def close(self):
+        """Shut down both envs."""
+        if self._walkthrough_env is not None:
+            self._walkthrough_env.stop()
+            self._walkthrough_env = None
+        super().close()
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ simulator_configs:
   use_rgb: true
   use_depth: false
   use_gps: true
+  use_goal_image: true
 agent:
   prompt_builder: "easi.tasks.ai2thor_rearrangement_2023.prompts.AI2THORRearrangement2023PromptBuilder"
   prompt_builder_kwargs:

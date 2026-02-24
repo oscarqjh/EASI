@@ -861,11 +861,10 @@ class RearrangeTHOREnvironment:
             if len(possible_receptacles) == 0 or (
                 not self.controller.last_event.metadata["lastActionSuccess"]
             ):
+                # DropHeldObjectAhead was removed in AI2-THOR v5; use DropHandObject
                 self.controller.step(
-                    "DropHeldObjectAhead",
+                    "DropHandObject",
                     forceAction=True,
-                    autoSimulation=False,
-                    **{**self.physics_step_kwargs, "actionSimulationSeconds": 1.5},
                 )
 
             return False

@@ -211,6 +211,92 @@ class TestPromptBuilder:
         assert "move_ahead" in builder._action_name_set
         assert "pickup_bowl" in builder._action_name_set
 
+    def test_lazy_init_action_space(self):
+        """build_messages should lazy-init action space from memory.action_space."""
+        from easi.core.memory import AgentMemory
+        from easi.tasks.ai2thor_rearrangement_2023.prompts import AI2THORRearrangement2023PromptBuilder
+
+        builder = AI2THORRearrangement2023PromptBuilder()
+        # Action space NOT set via set_action_space — should be empty
+        assert builder._action_list_str == ""
+
+        memory = AgentMemory(action_space=["done", "move_ahead", "pickup_bowl"])
+        memory.current_observation = Observation(rgb_path="/tmp/fake.png")
+        memory.task_description = "Rearrange objects."
+
+        messages = builder.build_messages(memory)
+        # After build_messages, action list should be populated from memory
+        assert "done" in builder._action_list_str
+        assert "move_ahead" in builder._action_list_str
+        # System message should contain action list
+        system_content = messages[0]["content"]
+        assert "move_ahead" in system_content
+
+    def test_gps_from_observation_metadata(self):
+        """GPS data should come from step.observation.metadata (not step.info)."""
+        from easi.core.memory import AgentMemory
+        from easi.tasks.ai2thor_rearrangement_2023.prompts import AI2THORRearrangement2023PromptBuilder
+
+        builder = AI2THORRearrangement2023PromptBuilder()
+        builder.set_action_space(["done", "move_ahead"])
+
+        memory = AgentMemory(action_space=["done", "move_ahead"])
+        # Record a step with GPS in observation metadata
+        obs_with_gps = Observation(
+            rgb_path="/tmp/fake.png",
+            metadata={
+                "agent_x": 1.5, "agent_y": 0.87, "agent_z": -2.0,
+                "agent_rotation": 90.0, "agent_horizon": 0.0,
+                "held_object": "Bowl",
+            },
+        )
+        from easi.core.episode import Action
+        memory.record_step(obs_with_gps, Action(action_name="move_ahead"), llm_response="test")
+        memory.record_feedback("success")
+
+        memory.current_observation = Observation(rgb_path="/tmp/fake2.png")
+        memory.task_description = "Rearrange objects."
+
+        messages = builder.build_messages(memory)
+        # The current turn message should include GPS and held object
+        last_user = messages[-1]
+        text_parts = [p["text"] for p in last_user["content"] if p.get("type") == "text"]
+        text = " ".join(text_parts)
+        assert "1.50" in text  # agent_x
+        assert "Holding: Bowl" in text
+
+    def test_goal_image_in_content(self):
+        """When goal_rgb_path is in metadata, build_messages should include it."""
+        from easi.core.memory import AgentMemory
+        from easi.tasks.ai2thor_rearrangement_2023.prompts import AI2THORRearrangement2023PromptBuilder
+        import tempfile, os
+        from PIL import Image
+        import numpy as np
+
+        builder = AI2THORRearrangement2023PromptBuilder()
+        builder.set_action_space(["done", "move_ahead"])
+
+        # Create real temp images so _encode_image_base64 works
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img = Image.fromarray(np.zeros((4, 4, 3), dtype=np.uint8))
+            obs_path = os.path.join(tmpdir, "obs.png")
+            goal_path = os.path.join(tmpdir, "goal.png")
+            img.save(obs_path)
+            img.save(goal_path)
+
+            memory = AgentMemory(action_space=["done", "move_ahead"])
+            memory.current_observation = Observation(
+                rgb_path=obs_path,
+                metadata={"goal_rgb_path": goal_path},
+            )
+            memory.task_description = "Rearrange objects."
+
+            messages = builder.build_messages(memory)
+            last_user = messages[-1]
+            # Should have 2 images (current + goal) + 1 text
+            image_parts = [p for p in last_user["content"] if p.get("type") == "image_url"]
+            assert len(image_parts) == 2
+
     def test_parse_valid_response(self):
         from easi.core.memory import AgentMemory
         builder = self._make_builder()

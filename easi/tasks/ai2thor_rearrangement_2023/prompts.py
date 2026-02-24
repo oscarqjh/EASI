@@ -2,6 +2,9 @@
 
 Constructs multi-modal prompts with observation images, GPS data,
 action history, and structured JSON output schema.
+
+For the 1-phase track, each step includes both the current (shuffled)
+observation and a goal (walkthrough) image from the same viewpoint.
 """
 from __future__ import annotations
 
@@ -21,6 +24,13 @@ You are an embodied AI agent performing an object rearrangement task in a 3D ind
 ## Goal
 {instruction}
 
+## Observations
+You receive two images at each step:
+1. **Current scene** — what the environment looks like RIGHT NOW (shuffled state)
+2. **Goal scene** — what the environment SHOULD look like from the same viewpoint (target state)
+
+Compare these two images to identify which objects are misplaced and where they should go.
+
 ## Available Actions
 {action_list}
 
@@ -32,10 +42,10 @@ You are an embodied AI agent performing an object rearrangement task in a 3D ind
 - **Done**: Signal that all objects are in their correct positions
 
 ## Strategy
-1. Look around to survey the scene and identify misplaced objects
+1. Compare the current and goal images to identify misplaced objects
 2. Navigate to a misplaced object
 3. Pick it up with the matching pickup_<type> action
-4. Navigate toward where it belongs (near its goal position)
+4. Navigate toward where it belongs (compare with goal image)
 5. Use drop_held_object_with_snap — it snaps the object to its goal if you're close
 6. Repeat for remaining misplaced objects
 7. Say "done" when finished
@@ -51,7 +61,7 @@ OUTPUT_SCHEMA = """\
 Respond in this exact JSON format:
 ```json
 {{
-  "observation": "describe what you see",
+  "observation": "describe what you see in current vs goal images",
   "reasoning": "what to do next and why",
   "plan": [
     {{"action_name": "<name>"}},
@@ -84,6 +94,10 @@ class AI2THORRearrangement2023PromptBuilder:
         self._action_list_str = ", ".join(parts)
 
     def build_messages(self, memory: AgentMemory) -> list[dict]:
+        # Lazy-init action space from memory (set by agent constructor)
+        if not self._action_list_str and memory.action_space:
+            self.set_action_space(memory.action_space)
+
         instruction = memory.task_description or "Rearrange objects to match the goal."
 
         system_text = SYSTEM_PROMPT.format(
@@ -113,6 +127,9 @@ class AI2THORRearrangement2023PromptBuilder:
 
     def _make_history_content(self, step) -> list[dict]:
         content = []
+        metadata = step.observation.metadata if step.observation else {}
+
+        # Current observation image
         if step.observation and step.observation.rgb_path:
             img_url = _encode_image_base64(step.observation.rgb_path)
             if img_url:
@@ -121,12 +138,22 @@ class AI2THORRearrangement2023PromptBuilder:
                     "image_url": {"url": img_url},
                 })
 
-        text = "Observation."
+        # Goal image (walkthrough state from same viewpoint)
+        goal_path = metadata.get("goal_rgb_path")
+        if goal_path:
+            img_url = _encode_image_base64(goal_path)
+            if img_url:
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": img_url},
+                })
+
+        text = "Observation (image 1: current, image 2: goal)."
         if self.use_feedback and step.feedback:
             text += f"\nFeedback: {step.feedback}"
 
-        # GPS overlay from step info
-        gps_text = self._format_gps(step.info)
+        # GPS overlay from observation metadata
+        gps_text = self._format_gps(metadata)
         if gps_text:
             text += f"\n{gps_text}"
 
@@ -135,7 +162,12 @@ class AI2THORRearrangement2023PromptBuilder:
 
     def _make_current_content(self, memory: AgentMemory) -> list[dict]:
         content = []
+        metadata = (
+            memory.current_observation.metadata
+            if memory.current_observation else {}
+        )
 
+        # Current observation image
         if memory.current_observation and memory.current_observation.rgb_path:
             img_url = _encode_image_base64(memory.current_observation.rgb_path)
             if img_url:
@@ -144,39 +176,54 @@ class AI2THORRearrangement2023PromptBuilder:
                     "image_url": {"url": img_url},
                 })
 
+        # Goal image (walkthrough state from same viewpoint)
+        goal_path = metadata.get("goal_rgb_path")
+        if goal_path:
+            img_url = _encode_image_base64(goal_path)
+            if img_url:
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": img_url},
+                })
+
+        has_goal = bool(goal_path)
+        img_label = " (image 1: current, image 2: goal)" if has_goal else ""
+
         if memory.is_first_turn:
-            text = "First observation. Begin the rearrangement task."
+            text = f"First observation{img_label}. Begin the rearrangement task."
         else:
-            text = "Current observation."
+            text = f"Current observation{img_label}."
             if self.use_feedback and memory.steps:
                 last = memory.steps[-1]
                 if last.feedback:
                     text += f"\nFeedback: {last.feedback}"
 
-        # GPS from last step info
+        # GPS and held-object from last step's observation metadata
         if memory.steps:
-            gps_text = self._format_gps(memory.steps[-1].info)
+            last_metadata = memory.steps[-1].observation.metadata if memory.steps[-1].observation else {}
+            gps_text = self._format_gps(last_metadata)
             if gps_text:
                 text += f"\n{gps_text}"
-            held = (memory.steps[-1].info or {}).get("held_object", "none")
+            held = last_metadata.get("held_object", "none")
             text += f"\nHolding: {held}"
 
         text += f"\n\n{OUTPUT_SCHEMA}"
         content.append({"type": "text", "text": text})
         return content
 
-    def _format_gps(self, info: dict | None) -> str:
-        if not info:
+    def _format_gps(self, metadata: dict | None) -> str:
+        if not metadata:
             return ""
         parts = []
-        if "agent_x" in info:
-            parts.append(
-                f"Position: ({info['agent_x']:.2f}, {info['agent_y']:.2f}, {info['agent_z']:.2f})"
-            )
-        if "agent_rotation" in info:
-            parts.append(f"Rotation: {info['agent_rotation']:.0f}")
-        if "agent_horizon" in info:
-            parts.append(f"Horizon: {info['agent_horizon']:.0f}")
+        if "agent_x" in metadata:
+            x = float(metadata["agent_x"])
+            y = float(metadata["agent_y"])
+            z = float(metadata["agent_z"])
+            parts.append(f"Position: ({x:.2f}, {y:.2f}, {z:.2f})")
+        if "agent_rotation" in metadata:
+            parts.append(f"Rotation: {float(metadata['agent_rotation']):.0f}")
+        if "agent_horizon" in metadata:
+            parts.append(f"Horizon: {float(metadata['agent_horizon']):.0f}")
         return "GPS: " + ", ".join(parts) if parts else ""
 
     def parse_response(
