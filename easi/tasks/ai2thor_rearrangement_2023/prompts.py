@@ -27,7 +27,7 @@ You are an embodied AI agent performing an object rearrangement task in a 3D ind
 ## Goal
 {instruction}
 
-**Important:** You are evaluated on the final state of ALL objects in the scene, not just the ones listed above. If you accidentally bump into or displace objects that were already in their correct positions, it counts against you. Navigate carefully.
+**Important:** You are evaluated on the final state of ALL objects in the scene. If you accidentally bump into or displace objects that are already in their correct positions, it counts against you. Navigate carefully.
 
 ## Observations
 At each step you receive the following sensor inputs:
