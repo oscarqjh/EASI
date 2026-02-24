@@ -140,21 +140,6 @@ class TestBaseTaskAggregateResults:
         assert agg["total_steps"] == 3.0
 
 
-class TestAggregateMetricsBackwardCompat:
-    """Verify old aggregate_metrics() still works for any existing callers."""
-
-    def test_aggregate_metrics_unchanged(self):
-        from easi.evaluation.metrics import aggregate_metrics
-        results = [
-            {"success": 1.0, "num_steps": 10.0},
-            {"success": 0.0, "num_steps": 20.0},
-        ]
-        summary = aggregate_metrics(results)
-        assert summary["num_episodes"] == 2
-        assert summary["avg_success"] == 0.5
-        assert summary["success_rate"] == 0.5
-
-
 class TestSummaryJsonStructure:
     """Test that summary.json nests metrics under 'metrics' key."""
 

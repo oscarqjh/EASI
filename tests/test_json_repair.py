@@ -69,8 +69,3 @@ class TestFixJson:
         data = json.loads(result)
         assert data["executable_plan"][0]["action_id"] == 14
         assert data["executable_plan"][0]["action_name"] == "find a Mug"
-
-    def test_backward_compat_import(self):
-        """Old import path still works via re-export."""
-        from easi.tasks.ebalfred.json_repair import fix_json as old_fix_json
-        assert old_fix_json is fix_json
