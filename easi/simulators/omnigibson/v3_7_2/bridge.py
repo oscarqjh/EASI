@@ -4,11 +4,15 @@ This script runs inside the easi_omnigibson_v3_7_2 conda env (Python 3.10).
 It communicates with the parent process via filesystem IPC.
 
 Provides an OmniGibsonBridge that handles:
-- Minimal OmniGibson environment creation (Scene + DummyTask, no dataset)
+- Minimal OmniGibson environment creation (Scene + DummyTask, no dataset required)
 - Action execution and observation capture
 - Main IPC loop (reset/step/close)
 
-Headless mode is enabled via OMNIGIBSON_HEADLESS=1 env var (set by env_manager).
+Rendering mode is controlled via OMNIGIBSON_HEADLESS env var, set by the active
+render platform class (OmniGibsonNativePlatform or OmniGibsonAutoPlatform).
+
+Note: Isaac Sim takes 60-120 seconds to start on first launch. Use --timeout 300
+or more when running easi sim test for OmniGibson.
 
 Usage:
     python bridge.py --workspace /tmp/easi_xxx [--simulator-kwargs '{}']
@@ -36,6 +40,10 @@ class OmniGibsonBridge(BaseBridge):
     def _create_env(self, reset_config, simulator_kwargs):
         """Create minimal OmniGibson env (no dataset needed).
 
+        The default smoke-test config uses an empty scene (no robots) so that
+        the omnigibson-robot-assets dataset is not required. Pass a full
+        og_config in simulator_kwargs to use robots in production.
+
         Args:
             reset_config: Episode reset configuration.
             simulator_kwargs: From task YAML's simulator_configs.
@@ -49,12 +57,6 @@ class OmniGibsonBridge(BaseBridge):
 
         cfg = {
             "scene": {"type": "Scene"},
-            "robots": [{
-                "type": "R1",
-                "obs_modalities": ["rgb"],
-                "action_type": "continuous",
-                "action_normalize": True,
-            }],
             "task": {"type": "DummyTask"},
         }
         # Allow full config override from simulator_kwargs
@@ -72,13 +74,17 @@ class OmniGibsonBridge(BaseBridge):
     def _on_step(self, env, action_text):
         """Execute zero action (for smoke test) or parse action_text.
 
-        For smoke testing, sends a zero action vector. Task-specific
-        subclasses should override for meaningful action parsing.
+        For smoke testing, sends a zero action vector. If the environment
+        has no robots (default smoke test), passes an empty action.
+        Task-specific subclasses should override for meaningful action parsing.
         """
         import torch as th
 
-        action_dim = env.action_space.shape[0]
-        action = th.zeros(action_dim)
+        if env.robots:
+            action_dim = env.action_space.shape[0]
+            action = th.zeros(action_dim)
+        else:
+            action = th.zeros(0)
         obs, reward, terminated, truncated, info = env.step(action)
         return obs, float(reward), terminated or truncated, info
 

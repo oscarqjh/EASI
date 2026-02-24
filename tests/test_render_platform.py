@@ -438,7 +438,7 @@ class TestSimulatorRenderPlatforms:
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
 
         mgr = OmniGibsonEnvManager()
-        assert mgr.default_render_platform == "headless"
+        assert mgr.default_render_platform == "native"
 
     def test_dummy(self):
         from easi.simulators.dummy.v1.env_manager import DummyEnvManager

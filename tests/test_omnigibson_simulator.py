@@ -34,6 +34,15 @@ class TestOmniGibsonManifest:
         assert "BEHAVIOR-1K" in kwargs["behavior_1k_repo"]
         assert kwargs["behavior_1k_tag"] == "v3.7.2"
 
+    def test_manifest_render_platforms(self):
+        with open("easi/simulators/omnigibson/manifest.yaml") as f:
+            data = yaml.safe_load(f)
+        rp = data["versions"]["v3_7_2"].get("render_platforms", {})
+        assert "native" in rp, "missing 'native' render platform"
+        assert "auto" in rp, "missing 'auto' render platform"
+        assert "render_platforms.OmniGibsonNativePlatform" in rp["native"]
+        assert "render_platforms.OmniGibsonAutoPlatform" in rp["auto"]
+
 
 class TestOmniGibsonEnvManager:
     """Test OmniGibsonEnvManager class."""
@@ -49,23 +58,27 @@ class TestOmniGibsonEnvManager:
         mgr = OmniGibsonEnvManager()
         assert mgr.get_env_name() == "easi_omnigibson_v3_7_2"
 
-    def test_default_render_platform_headless(self):
+    def test_default_render_platform_native(self):
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
         mgr = OmniGibsonEnvManager()
-        assert mgr.default_render_platform == "headless"
+        assert mgr.default_render_platform == "native"
 
     def test_env_vars(self):
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
         mgr = OmniGibsonEnvManager()
         ev = mgr.get_env_vars()
-        assert ev.replace["OMNIGIBSON_HEADLESS"] == "1"
+        assert "OMNIGIBSON_HEADLESS" not in ev.replace
         assert ev.replace["OMNI_KIT_ACCEPT_EULA"] == "YES"
         assert "PYTHONHOME" in ev.replace
 
-    def test_get_python_executable_is_local(self):
+    def test_get_python_executable_is_local(self, monkeypatch):
         """Python executable should be a /tmp copy (NFS workaround)."""
+        import sys
         from easi.simulators.omnigibson.v3_7_2.env_manager import OmniGibsonEnvManager
         mgr = OmniGibsonEnvManager()
+        # Mock _get_conda_python to return a real existing binary so the copy
+        # can succeed without the conda env being installed.
+        monkeypatch.setattr(mgr, "_get_conda_python", lambda: sys.executable)
         python_path = mgr.get_python_executable()
         assert python_path.startswith("/tmp/easi_python_")
         assert Path(python_path).exists()
@@ -153,7 +166,7 @@ class TestOmniGibsonRegistry:
         from easi.simulators.registry import create_env_manager
         mgr = create_env_manager("omnigibson:v3_7_2")
         assert mgr.simulator_name == "omnigibson"
-        assert mgr.default_render_platform == "headless"
+        assert mgr.default_render_platform == "native"
 
     def test_create_env_manager_has_installation_kwargs(self):
         from easi.simulators.registry import create_env_manager

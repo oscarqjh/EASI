@@ -12,8 +12,8 @@ Replicates the BEHAVIOR-1K setup.sh install process:
 7. Fix websockets conflict in Isaac Sim extscache (post_install)
 8. Fix cffi compatibility (post_install)
 
-Headless mode: OMNIGIBSON_HEADLESS=1 uses Isaac Sim's native headless rendering
-(no Xvfb needed).
+Rendering mode is controlled via OMNIGIBSON_HEADLESS, set by the active render
+platform class (OmniGibsonNativePlatform or OmniGibsonAutoPlatform). No Xvfb needed.
 
 NFS workaround: On NFS/FUSE filesystems, /proc/self/exe can resolve to
 "python3.10 (deleted)" which crashes Isaac Sim's Carbonite library. The
@@ -79,6 +79,14 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
     def version(self) -> str:
         return "v3_7_2"
 
+    @property
+    def default_render_platform(self) -> str:
+        return "native"
+
+    @property
+    def supported_render_platforms(self) -> list[str]:
+        return ["native", "auto"]
+
     def get_conda_env_yaml_path(self) -> Path:
         return Path(__file__).parent / "conda_env.yaml"
 
@@ -115,6 +123,12 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
         # Resolve symlinks to get the real binary
         real_binary = str(Path(conda_python).resolve())
 
+        # Guard: if the conda env doesn't exist yet (e.g. during env_is_ready()
+        # before installation), return the raw path so the caller can detect
+        # non-existence via Path(path).exists() rather than crashing on copy.
+        if not Path(real_binary).exists():
+            return conda_python
+
         tmp_dir = tempfile.mkdtemp(prefix="easi_python_")
         local_python = Path(tmp_dir) / "python3"
         shutil.copy2(real_binary, str(local_python))
@@ -130,7 +144,10 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
         return str(local_python)
 
     def get_env_vars(self, render_platform_name: str | None = None) -> EnvVars:
-        """Export env vars for headless rendering, EULA, and PYTHONHOME.
+        """Export env vars for EULA acceptance and PYTHONHOME.
+
+        OMNIGIBSON_HEADLESS is set by the render platform (OmniGibsonNativePlatform
+        or OmniGibsonAutoPlatform), not here.
 
         PYTHONHOME is set to the conda env directory so the /tmp Python
         copy can find the conda env's stdlib and site-packages.
@@ -139,7 +156,6 @@ class OmniGibsonEnvManager(BaseEnvironmentManager):
         # conda env dir is two levels up from bin/python
         conda_env_dir = str(Path(conda_python).resolve().parent.parent)
         return EnvVars(replace={
-            "OMNIGIBSON_HEADLESS": "1",
             "OMNI_KIT_ACCEPT_EULA": "YES",
             "PYTHONHOME": conda_env_dir,
         })
