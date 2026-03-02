@@ -34,6 +34,8 @@ class SimulatorEntry:
     python_version: str
     installation_kwargs: dict = field(default_factory=dict)
     render_platforms: dict[str, str] = field(default_factory=dict)  # platform_name -> FQN class
+    runtime: str = "conda"  # "conda" or "docker"
+    data_dir: str = ""  # default data directory (from manifest top-level)
 
 
 # Module-level registry populated on first access
@@ -65,6 +67,8 @@ def _discover_simulators() -> dict[str, SimulatorEntry]:
                 python_version=ver_info.get("python_version", "3.10"),
                 installation_kwargs=ver_info.get("installation_kwargs", {}),
                 render_platforms=ver_info.get("render_platforms", {}),
+                runtime=ver_info.get("runtime", "conda"),
+                data_dir=manifest.get("data_dir", ""),
             )
 
             # Register with explicit key: "ai2thor:v2_1_0"
