@@ -157,15 +157,47 @@ class LHPRVLNBridge(BaseBridge):
 
         clean_info = self._extract_info(info or {})
         clean_info["step"] = str(self.step_count)
+
+        # Build metadata with image paths + environmental feedback for prompt builder
+        metadata = {
+            "step": str(self.step_count),
+            "left_rgb_path": paths["left"],
+            "front_rgb_path": paths["front"],
+            "right_rgb_path": paths["right"],
+        }
+
+        # Expose environmental feedback in metadata so the prompt builder can use it
+        sim = self._scene_sim
+        if sim is not None:
+            sim_info = sim.info or {}
+            metadata["subtask_stage"] = str(float(sim.stage))
+            metadata["subtask_total"] = str(float(sim.target_num))
+            metadata["current_geo_distance"] = str(float(sim_info.get("geo_dis", -1)))
+            metadata["current_target"] = str(sim_info.get("target", ""))
+            # Agent position/rotation
+            pos = sim_info.get("agent_position")
+            if pos is not None:
+                metadata["agent_position"] = json.dumps([float(x) for x in pos])
+            rot = sim_info.get("agent_rotation")
+            if rot is not None:
+                metadata["agent_rotation"] = json.dumps([float(rot.w), float(rot.x), float(rot.y), float(rot.z)])
+            # Target coordinate
+            coord = sim_info.get("target_coord")
+            if coord is not None:
+                metadata["target_coordinate"] = json.dumps([float(x) for x in coord])
+
+        # Build agent_pose from sim info
+        agent_pose = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        if sim is not None:
+            sim_info = sim.info or {}
+            pos = sim_info.get("agent_position")
+            if pos is not None:
+                agent_pose = [float(pos[0]), float(pos[1]), float(pos[2]), 0.0, 0.0, 0.0]
+
         return make_observation_response(
             rgb_path=paths["front"],
-            agent_pose=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            metadata={
-                "step": str(self.step_count),
-                "left_rgb_path": paths["left"],
-                "front_rgb_path": paths["front"],
-                "right_rgb_path": paths["right"],
-            },
+            agent_pose=agent_pose,
+            metadata=metadata,
             reward=reward,
             done=done,
             info=clean_info,

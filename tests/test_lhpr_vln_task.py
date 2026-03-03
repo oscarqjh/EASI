@@ -168,51 +168,198 @@ class TestLHPRVLNTask:
 
 
 class TestPromptBuilder:
-    def test_build_messages_has_system_and_user(self):
-        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
-        builder = LHPRVLNPromptBuilder()
+    @pytest.fixture
+    def mock_encode(self):
+        """Mock image encoding to avoid file I/O."""
+        import easi.tasks.lhpr_vln.prompts as prompts_mod
+        original = prompts_mod._encode_image_base64
+        prompts_mod._encode_image_base64 = lambda x: "data:image/png;base64,AAAA"
+        yield
+        prompts_mod._encode_image_base64 = original
+
+    def _make_memory(self, action_history=None):
         memory = MagicMock()
         memory.task_description = "Find the chair then the table."
         memory.action_space = ["move_forward", "turn_left", "turn_right", "stop"]
+        memory.is_first_turn = (action_history is None or len(action_history) == 0)
         memory.current_observation = Observation(
             rgb_path="/tmp/test_front.png",
             metadata={
-                "subtask_stage": "0", "subtask_total": "2", "current_geo_distance": "5.3",
+                "subtask_stage": "0", "subtask_total": "2",
+                "current_geo_distance": "5.3",
+                "current_target": "chair",
                 "left_rgb_path": "/tmp/test_left.png",
                 "front_rgb_path": "/tmp/test_front.png",
                 "right_rgb_path": "/tmp/test_right.png",
+                "agent_position": "[1.5, 0.0, -3.2]",
+                "target_coordinate": "[4.1, 0.0, -1.8]",
             },
         )
-        memory.action_history = [("move_forward", "Subtask 1/2: navigate to chair")]
-        # Mock the image encoding to avoid file I/O
-        import easi.tasks.lhpr_vln.prompts as prompts_mod
-        original_encode = prompts_mod._encode_image_base64
-        prompts_mod._encode_image_base64 = lambda x: "data:image/png;base64,AAAA"
-        try:
-            messages = builder.build_messages(memory)
-            assert len(messages) == 2
-            assert messages[0]["role"] == "system"
-            assert messages[1]["role"] == "user"
-            # Should have 3 image blocks (left, front, right) + text labels
-            user_content = messages[1]["content"]
-            image_blocks = [b for b in user_content if b.get("type") == "image_url"]
-            assert len(image_blocks) == 3
-        finally:
-            prompts_mod._encode_image_base64 = original_encode
+        memory.action_history = action_history or []
+        memory.steps = []
+        return memory
 
-    def test_parse_response_json(self):
+    def test_build_messages_single_user_message(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder()
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        assert len(messages) == 1
+        assert messages[0]["role"] == "user"
+        # Should have 3 image blocks + 3 text labels + 1 prompt text
+        user_content = messages[0]["content"]
+        image_blocks = [b for b in user_content if b.get("type") == "image_url"]
+        assert len(image_blocks) == 3
+
+    def test_prompt_contains_env_feedback(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder()
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        text_blocks = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
+        prompt_text = "\n".join(text_blocks)
+        assert "Current subtask: 1/2" in prompt_text
+        assert "target object: chair" in prompt_text
+        assert "Geodesic distance" in prompt_text
+        assert "5.30m" in prompt_text
+
+    def test_agent_position_toggle(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        # Off by default
+        builder = LHPRVLNPromptBuilder(use_agent_position=False)
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "Agent position" not in text
+        # On
+        builder = LHPRVLNPromptBuilder(use_agent_position=True)
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "Agent position" in text
+        assert "1.50" in text
+
+    def test_target_coordinate_toggle(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        # Off by default
+        builder = LHPRVLNPromptBuilder(use_target_coordinate=False)
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "Target coordinate" not in text
+        # On
+        builder = LHPRVLNPromptBuilder(use_target_coordinate=True)
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "Target coordinate" in text
+        assert "4.10" in text
+
+    def test_geo_distance_toggle(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder(use_geo_distance=False)
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "Geodesic distance" not in text
+
+    def test_subtask_progress_toggle(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder(use_subtask_progress=False)
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "Current subtask" not in text
+
+    def test_action_history_with_feedback(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder()
+        memory = self._make_memory(
+            action_history=[("move_forward", "Subtask 1/2: navigate to chair. Distance: 5.3m")]
+        )
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "action history" in text
+        assert "env feedback:" in text
+        assert "move_forward" in text
+
+    def test_action_history_without_feedback(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder(use_feedback=False)
+        memory = self._make_memory(
+            action_history=[("move_forward", "Subtask 1/2: navigate to chair")]
+        )
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "action history" in text
+        assert "env feedback:" not in text
+
+    def test_parse_response_executable_plan(self):
         from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
         builder = LHPRVLNPromptBuilder()
         memory = MagicMock()
         memory.action_space = ["move_forward", "turn_left", "turn_right", "stop"]
-        actions = builder.parse_response('{"action": "turn_left"}', memory)
+        response = json.dumps({
+            "visual_state_description": "I see a hallway",
+            "reasoning_and_reflection": "Need to move forward",
+            "language_plan": "Step 1: move forward",
+            "executable_plan": [
+                {"action_id": 0, "action_name": "move_forward"},
+                {"action_id": 1, "action_name": "turn_left"},
+            ],
+        })
+        actions = builder.parse_response(response, memory)
+        assert len(actions) == 2
+        assert actions[0].action_name == "move_forward"
+        assert actions[1].action_name == "turn_left"
+
+    def test_parse_response_action_id_lookup(self):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder()
+        memory = MagicMock()
+        memory.action_space = ["move_forward", "turn_left", "turn_right", "stop"]
+        builder.set_action_space(memory.action_space)
+        # action_id 3 = "stop"
+        response = json.dumps({
+            "visual_state_description": "Close to target",
+            "reasoning_and_reflection": "Within range",
+            "language_plan": "Step 1: stop",
+            "executable_plan": [{"action_id": 3, "action_name": "stop"}],
+        })
+        actions = builder.parse_response(response, memory)
         assert len(actions) == 1
-        assert actions[0].action_name == "turn_left"
+        assert actions[0].action_name == "stop"
 
-    def test_parse_response_fallback(self):
+    def test_parse_response_invalid_json(self):
         from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
         builder = LHPRVLNPromptBuilder()
         memory = MagicMock()
         memory.action_space = ["move_forward", "turn_left", "turn_right", "stop"]
-        actions = builder.parse_response("I should stop here.", memory)
-        assert actions[0].action_name == "stop"
+        actions = builder.parse_response("not valid json at all", memory)
+        assert actions == []
+
+    def test_get_response_format_returns_schema(self):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder()
+        memory = MagicMock()
+        schema = builder.get_response_format(memory)
+        assert schema["type"] == "json_schema"
+        props = schema["json_schema"]["schema"]["properties"]
+        assert "visual_state_description" in props
+        assert "reasoning_and_reflection" in props
+        assert "language_plan" in props
+        assert "executable_plan" in props
+
+    def test_first_turn_vs_subsequent_action_count(self, mock_encode):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder()
+        # First turn: "1-3 actions"
+        memory = self._make_memory()
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "1-3 actions" in text
+        # Subsequent turn: "3-5 actions"
+        memory = self._make_memory(
+            action_history=[("move_forward", "ok")]
+        )
+        messages = builder.build_messages(memory)
+        text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
+        assert "3-5 actions" in text
