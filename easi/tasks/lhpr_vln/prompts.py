@@ -34,9 +34,9 @@ LHPRVLN_SYSTEM_PROMPT = '''## You are a robot navigating in a 3D indoor environm
 
 2. Navigate using Move forward and Turn left/right as your main strategy, since any point can be reached through a combination of those. When planning movement, reason based on the target object location and obstacles around you.
 
-3. Multi-Subtask Navigation: This task has multiple sequential targets. After reaching one target, use "stop" to advance to the next subtask. Focus on the current target only.
+3. Multi-Subtask Navigation: This task requires you to navigate to multiple target objects in sequence. The "stop" action does NOT end the episode — it marks the CURRENT subtask as complete and advances you to the NEXT target. You must use "stop" once for each target. The episode only ends after you have used "stop" for every target.
 
-4. Use Stop Carefully: Only use "stop" when you are confident you are within 1 meter of the current target object. Do not stop too early.
+4. Use Stop Carefully: Only use "stop" when you are confident you are within 1 meter of the current target object. Using "stop" too far from the target will mark that subtask as failed, but the episode will still continue to the next target. Do not use "stop" too early — try to get as close as possible first.
 
 5. Efficient Exploration: If the target is not visible, explore by turning to survey the environment. Use the three camera views to gather spatial information before deciding which direction to move.
 
