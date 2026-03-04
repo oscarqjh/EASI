@@ -64,6 +64,9 @@ class EvaluationRunner:
         resume_dir: Path | str | None = None,
         refresh_data: bool = False,
         render_platform: str | None = None,
+        vllm_instances: int | None = None,
+        vllm_gpus: list[int] | None = None,
+        sim_gpus: list[int] | None = None,
     ):
         # Auto-capture all init args for config.json (before any mutation)
         frame = inspect.currentframe()
@@ -87,6 +90,9 @@ class EvaluationRunner:
         self.resume_dir = Path(resume_dir) if resume_dir else None
         self.refresh_data = refresh_data
         self.render_platform_name = render_platform
+        self.vllm_instances = vllm_instances
+        self.vllm_gpus = vllm_gpus
+        self.sim_gpus = sim_gpus
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         if self.model:
             safe_model = self.model.replace("/", "_")

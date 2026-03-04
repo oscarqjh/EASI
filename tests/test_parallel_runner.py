@@ -127,6 +127,32 @@ class TestParallelRunnerWithDummy:
             assert (ed / "result.json").exists()
 
 
+class TestRunnerGPUArgs:
+    """Test GPU-related args on EvaluationRunner."""
+
+    def test_runner_accepts_gpu_args(self):
+        """EvaluationRunner should accept vllm_instances, vllm_gpus, sim_gpus."""
+        from easi.evaluation.runner import EvaluationRunner
+        runner = EvaluationRunner(
+            task_name="dummy_task",
+            agent_type="dummy",
+            vllm_instances=2,
+            vllm_gpus=[0, 1],
+            sim_gpus=[2, 3],
+        )
+        assert runner.vllm_instances == 2
+        assert runner.vllm_gpus == [0, 1]
+        assert runner.sim_gpus == [2, 3]
+
+    def test_runner_gpu_args_default_none(self):
+        """GPU args should default to None."""
+        from easi.evaluation.runner import EvaluationRunner
+        runner = EvaluationRunner(task_name="dummy_task", agent_type="dummy")
+        assert runner.vllm_instances is None
+        assert runner.vllm_gpus is None
+        assert runner.sim_gpus is None
+
+
 class TestCLIParallelArg:
     """Test --num-parallel CLI argument parsing."""
 
