@@ -121,3 +121,78 @@ class TestCudaVisibleDevices:
         sm = ServerManager("vllm", "test-model")
         _cmd, env = sm._build_command()
         assert "CUDA_VISIBLE_DEVICES" not in env
+
+
+class TestMultiServerManager:
+    def test_multi_server_manager_starts_n_instances(self):
+        """MultiServerManager should start N ServerManager instances with correct GPU assignment."""
+        from unittest.mock import patch, MagicMock
+        from easi.llm.server_manager import MultiServerManager
+
+        with patch("easi.llm.server_manager.ServerManager") as MockSM:
+            mock_instance = MagicMock()
+            mock_instance.start.return_value = "http://localhost:8000/v1"
+            MockSM.return_value = mock_instance
+
+            mgr = MultiServerManager(
+                model="test-model",
+                num_instances=2,
+                gpu_ids=[0, 1],
+                base_port=8000,
+            )
+            urls = mgr.start()
+
+            assert len(urls) == 2
+            assert MockSM.call_count == 2
+
+            # Check GPU assignment: instance 0 → GPU 0, instance 1 → GPU 1
+            calls = MockSM.call_args_list
+            assert calls[0].kwargs["cuda_visible_devices"] == "0"
+            assert calls[0].kwargs["port"] == 8000
+            assert calls[1].kwargs["cuda_visible_devices"] == "1"
+            assert calls[1].kwargs["port"] == 8001
+
+    def test_multi_server_manager_tp2_gpu_assignment(self):
+        """With TP=2, each instance should get 2 GPUs."""
+        from unittest.mock import patch, MagicMock
+        from easi.llm.server_manager import MultiServerManager
+
+        with patch("easi.llm.server_manager.ServerManager") as MockSM:
+            mock_instance = MagicMock()
+            mock_instance.start.return_value = "http://localhost:8000/v1"
+            MockSM.return_value = mock_instance
+
+            mgr = MultiServerManager(
+                model="test-model",
+                num_instances=2,
+                gpu_ids=[0, 1, 2, 3],
+                base_port=8000,
+            )
+            urls = mgr.start()
+
+            calls = MockSM.call_args_list
+            assert calls[0].kwargs["cuda_visible_devices"] == "0,1"
+            assert calls[1].kwargs["cuda_visible_devices"] == "2,3"
+
+    def test_multi_server_manager_stop_all(self):
+        """stop() should stop all managed instances."""
+        from unittest.mock import patch, MagicMock
+        from easi.llm.server_manager import MultiServerManager
+
+        with patch("easi.llm.server_manager.ServerManager") as MockSM:
+            mock_instance = MagicMock()
+            mock_instance.start.return_value = "http://localhost:8000/v1"
+            MockSM.return_value = mock_instance
+
+            mgr = MultiServerManager(model="m", num_instances=2, gpu_ids=[0, 1])
+            mgr.start()
+            mgr.stop()
+
+            assert mock_instance.stop.call_count == 2
+
+    def test_multi_server_manager_validates_gpu_count(self):
+        """Should raise if GPUs don't divide evenly across instances."""
+        from easi.llm.server_manager import MultiServerManager
+
+        with pytest.raises(ValueError, match="divide.*evenly"):
+            MultiServerManager(model="m", num_instances=3, gpu_ids=[0, 1])

@@ -206,3 +206,58 @@ class ServerManager:
 
     def __exit__(self, *exc) -> None:
         self.stop()
+
+
+class MultiServerManager:
+    """Manages multiple vLLM server instances across GPUs."""
+
+    def __init__(
+        self,
+        model: str,
+        num_instances: int,
+        gpu_ids: list[int],
+        base_port: int = 8000,
+        server_kwargs: dict | None = None,
+        startup_timeout: float = 300.0,
+        log_dir: Path | str | None = None,
+    ):
+        if len(gpu_ids) % num_instances != 0:
+            raise ValueError(
+                f"Cannot divide {len(gpu_ids)} GPUs evenly across "
+                f"{num_instances} instances"
+            )
+        self.model = model
+        self.num_instances = num_instances
+        self.gpu_ids = gpu_ids
+        self.base_port = base_port
+        self.server_kwargs = server_kwargs or {}
+        self.startup_timeout = startup_timeout
+        self.log_dir = Path(log_dir) if log_dir else None
+        self._managers: list[ServerManager] = []
+
+    def start(self) -> list[str]:
+        """Start all instances, return list of base_urls."""
+        gpus_per = len(self.gpu_ids) // self.num_instances
+        urls = []
+        for i in range(self.num_instances):
+            instance_gpus = self.gpu_ids[i * gpus_per : (i + 1) * gpus_per]
+            port = self.base_port + i
+            mgr = ServerManager(
+                backend="vllm",
+                model=self.model,
+                port=port,
+                server_kwargs=self.server_kwargs,
+                startup_timeout=self.startup_timeout,
+                log_dir=self.log_dir,
+                cuda_visible_devices=",".join(str(g) for g in instance_gpus),
+            )
+            url = mgr.start()
+            urls.append(url)
+            self._managers.append(mgr)
+        return urls
+
+    def stop(self):
+        """Stop all managed instances."""
+        for mgr in self._managers:
+            mgr.stop()
+        self._managers.clear()
