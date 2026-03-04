@@ -23,7 +23,7 @@ class TestBuildCommand:
     def test_vllm_basic(self):
         from easi.llm.server_manager import ServerManager
         sm = ServerManager("vllm", "Qwen/Qwen2.5-VL-72B", port=9090)
-        cmd = sm._build_command()
+        cmd, env = sm._build_command()
         assert "-m" in cmd
         assert "vllm.entrypoints.openai.api_server" in cmd
         assert "--model" in cmd
@@ -36,7 +36,7 @@ class TestBuildCommand:
         sm = ServerManager("vllm", "test-model", port=8080,
                            server_kwargs={"tensor_parallel_size": 4,
                                           "gpu_memory_utilization": 0.9})
-        cmd = sm._build_command()
+        cmd, env = sm._build_command()
         assert "--tensor-parallel-size" in cmd
         assert "4" in cmd
         assert "--gpu-memory-utilization" in cmd
@@ -86,3 +86,17 @@ class TestIsRunning:
         from easi.llm.server_manager import ServerManager
         sm = ServerManager("vllm", "test")
         assert sm.is_running() is False
+
+
+class TestCudaVisibleDevices:
+    def test_server_manager_sets_cuda_visible_devices(self):
+        from easi.llm.server_manager import ServerManager
+        sm = ServerManager("vllm", "test-model", cuda_visible_devices="0,1")
+        _cmd, env = sm._build_command()
+        assert env["CUDA_VISIBLE_DEVICES"] == "0,1"
+
+    def test_server_manager_no_cuda_by_default(self):
+        from easi.llm.server_manager import ServerManager
+        sm = ServerManager("vllm", "test-model")
+        _cmd, env = sm._build_command()
+        assert "CUDA_VISIBLE_DEVICES" not in env

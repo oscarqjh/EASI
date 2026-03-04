@@ -4,6 +4,7 @@ Starts the server as a subprocess, waits for health check, and stops on exit.
 """
 from __future__ import annotations
 
+import os
 import socket
 import subprocess
 import sys
@@ -32,12 +33,14 @@ class ServerManager:
         server_kwargs: dict | None = None,
         startup_timeout: float = _DEFAULT_STARTUP_TIMEOUT,
         log_dir: Path | None = None,  # Deprecated: server output now goes to logger
+        cuda_visible_devices: str | None = None,
     ):
         self.backend = backend
         self.model = model
         self.port = port
         self.server_kwargs = server_kwargs or {}
         self.startup_timeout = startup_timeout
+        self.cuda_visible_devices = cuda_visible_devices
         self._process: subprocess.Popen | None = None
         self._log_thread: threading.Thread | None = None
 
@@ -45,13 +48,17 @@ class ServerManager:
         """Start the server, wait for health, return base_url."""
         self._check_port()
 
-        cmd = self._build_command()
+        cmd, extra_env = self._build_command()
         logger.info("Starting %s server: %s", self.backend, " ".join(cmd))
+
+        spawn_env = os.environ.copy()
+        spawn_env.update(extra_env)
 
         self._process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env=spawn_env,
         )
         self._log_thread = threading.Thread(
             target=self._stream_output,
@@ -101,8 +108,13 @@ class ServerManager:
         finally:
             sock.close()
 
-    def _build_command(self) -> list[str]:
-        """Build the server launch command."""
+    def _build_command(self) -> tuple[list[str], dict]:
+        """Build the server launch command and environment overrides.
+
+        Returns:
+            Tuple of (command list, env dict). The env dict contains
+            ``CUDA_VISIBLE_DEVICES`` when *cuda_visible_devices* is set.
+        """
         if self.backend == "vllm":
             cmd = [
                 sys.executable, "-m", "vllm.entrypoints.openai.api_server",
@@ -117,9 +129,14 @@ class ServerManager:
                     # Skip False booleans (don't add the flag)
                 else:
                     cmd.extend([flag, str(value)])
-            return cmd
         else:
             raise ValueError(f"Unsupported server backend: {self.backend}")
+
+        env: dict[str, str] = {}
+        if self.cuda_visible_devices is not None:
+            env["CUDA_VISIBLE_DEVICES"] = self.cuda_visible_devices
+
+        return cmd, env
 
     @staticmethod
     def _stream_output(proc: subprocess.Popen) -> None:
