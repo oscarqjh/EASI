@@ -30,6 +30,7 @@ agent:
   prompt_builder: "easi.tasks.ai2thor_rearrangement_2023.prompts.AI2THORRearrangement2023PromptBuilder"
   prompt_builder_kwargs:
     use_feedback: true
+    action_history_len: 20
     chat_history: true
     message_window_len: 10
     # Sensor toggles (must match simulator_configs)

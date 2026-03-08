@@ -1,7 +1,8 @@
 """ManipulaTHOR prompt builder for EASI LLM agents.
 
+Follows the EASI Standard Prompt Format Reference (docs/easi-prompt-format-reference.md).
 Presents RGB image + GPS state sensors + action history.
-Outputs JSON with executable plan of named action IDs.
+Outputs JSON with executable plan of named actions.
 """
 from __future__ import annotations
 
@@ -16,58 +17,95 @@ from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# ── System prompt template ──────────────────────────────────────────────────
+# ── Action descriptions for the system prompt ──
+ACTION_DESCRIPTIONS = {
+    "MoveArmHeightP": "Move arm up by 0.05m",
+    "MoveArmHeightM": "Move arm down by 0.05m",
+    "MoveArmXP": "Move arm right by 0.05m",
+    "MoveArmXM": "Move arm left by 0.05m",
+    "MoveArmYP": "Move arm up by 0.05m (Y axis)",
+    "MoveArmYM": "Move arm down by 0.05m (Y axis)",
+    "MoveArmZP": "Move arm forward by 0.05m",
+    "MoveArmZM": "Move arm backward by 0.05m",
+    "MoveAheadContinuous": "Move agent forward by 0.2m",
+    "RotateRightContinuous": "Rotate agent right by 45 degrees",
+    "RotateLeftContinuous": "Rotate agent left by 45 degrees",
+    "PickUpMidLevel": "Pick up the target object (arm must be close)",
+    "DoneMidLevel": "Signal task completion (object must be at goal)",
+}
 
-SYSTEM_PROMPT = """You are a robotic arm agent in a kitchen environment. Your task is to pick up a target object and move it to a goal location.
 
-## Environment
-- You control a robotic arm mounted on a mobile base in a kitchen (AI2-THOR simulator).
-- You observe: an RGB image from the agent's camera{sensor_note}.
-- Each arm movement moves 0.05m. Navigation moves 0.2m forward or rotates 45°.
-- Maximum {max_steps} steps per episode.
+def _build_action_list() -> str:
+    """Build formatted action list for system prompt."""
+    lines = []
+    for name in ACTION_SPACE:
+        desc = ACTION_DESCRIPTIONS.get(name, "")
+        lines.append(f"- {name}: {desc}")
+    return "\n".join(lines)
 
-## Available Actions (choose by ID 0-{max_id}):
+
+SYSTEM_PROMPT = """\
+## Role and Environment
+You are a robotic arm agent in a kitchen environment (AI2-THOR simulator). \
+Your task is to pick up a target object and move it to a goal location. You \
+control a robotic arm mounted on a mobile base. Each arm movement moves \
+0.05m. Navigation moves 0.2m forward or rotates 45 degrees. Maximum \
+{{max_steps}} steps per episode.
+
+## Observation Description
+- **Object Position & Rotation**: Object 6D state (x,y,z position and \
+rx,ry,rz rotation) relative to the agent.
+- **Object-to-Goal Distance**: Absolute x,y,z distance from the object to \
+the goal in agent frame.
+- **Arm-to-Object Distance**: Absolute x,y,z distance from the arm tip to \
+the object in agent frame.
+- **Object Held**: Whether you are currently holding the object ("Yes"/"No").
+
+## Available Actions
 {action_list}
-{gps_description}
-## Strategy for Using GPS Sensors
-The GPS sensors give you precise spatial information in YOUR reference frame (agent-relative coordinates).
 
+## Strategy
 **Phase 1 — Approach the object:**
-- Check "Arm-to-Object Distance": this tells you how far your arm tip is from the target object on each axis.
-- Positive X means the object is to your right; positive Z means it is ahead of you.
-- Use MoveArmXP/XM, MoveArmYP/YM, MoveArmZP/ZM to reduce arm-to-object distance on each axis.
-- Use MoveAheadContinuous / RotateLeft / RotateRight if the object is far (>0.5m) — navigation is faster than arm movement.
+- Check Arm-to-Object Distance to see how far your arm tip is from the target.
+- Positive X = object is to your right; positive Z = object is ahead.
+- Use arm movements (MoveArmXP/XM, MoveArmYP/YM, MoveArmZP/ZM) to reduce \
+distance on each axis.
+- Use navigation (MoveAheadContinuous/RotateLeft/RotateRight) if the object \
+is far (>0.5m).
 
 **Phase 2 — Pick up the object:**
-- When arm-to-object distance is small on all axes (<0.1m), use PickUpMidLevel (action 11).
-- After pickup, check "Object Held" — it should read "Yes".
+- When arm-to-object distance is small on all axes (<0.1m), use PickUpMidLevel.
+- After pickup, check Object Held — it should read "Yes".
 
 **Phase 3 — Navigate to the goal:**
-- Check "Object-to-Goal Distance": this tells you how far the object is from the goal.
-- Navigate (MoveAhead, Rotate) to reduce the distance. The object moves with you when held.
-- Use arm movements for fine positioning when close to the goal.
+- Check Object-to-Goal Distance. Navigate to reduce it. The object moves \
+with you when held.
+- Use arm movements for fine positioning when close.
 
 **Phase 4 — Place and finish:**
-- When Object-to-Goal Distance is small on all axes (<0.1m), use DoneMidLevel (action 12).
+- When Object-to-Goal Distance is small on all axes (<0.1m), use DoneMidLevel.
 
-{examples}"""
+## Guidelines
+1. Always output at least one action in executable_plan.
+2. Only use actions from the Available Actions list.
+3. If previous actions failed, reason about why and try a different approach.
+4. Do not repeatedly execute the same action sequence.
+5. Keep your plan efficient and concise.
+6. Output 1-5 actions per step.
 
-OUTPUT_TEMPLATE = """
+## Response Format
+Output a JSON object with exactly these 4 fields:
+{{{{
+    "visual_state_description": "Describe what you see in the image and \
+the GPS state",
+    "reasoning_and_reflection": "Your reasoning about the current state \
+and what to do next",
+    "language_plan": "Your plan in natural language",
+    "executable_plan": [{{{{"action": "<action_name>"}}}}]
+}}}}
 
-## Output Format
-Respond in JSON with this exact structure:
-```json
-{{
-  "visual_state_description": "Describe what you see in the image and the GPS state",
-  "reasoning_and_reflection": "Your reasoning about the current state and what to do next",
-  "language_plan": "Your plan in natural language",
-  "executable_plan": [
-    {{"action_id": <int>, "action_name": "<string>"}},
-    ...
-  ]
-}}
-```
-Output 1-5 actions in the executable_plan. Choose action IDs from the available actions list."""
+You may include multiple actions in executable_plan. Actions execute \
+sequentially."""
 
 
 # ── Prompt builder ──────────────────────────────────────────────────────────
@@ -81,19 +119,23 @@ class ManipulaTHORPromptBuilder:
         split: str = "test_seen",
         use_feedback: bool = True,
         chat_history: bool = False,
+        message_window_len: int = 5,
         max_steps: int = 200,
         use_rgb: bool = True,
         use_gps: bool = True,
         use_depth: bool = False,
+        action_history_len: int = 20,
     ):
         self.n_shot = n_shot
         self.split = split
         self.use_feedback = use_feedback
         self.chat_history = chat_history
+        self.message_window_len = message_window_len
         self.max_steps = max_steps
         self.use_rgb = use_rgb
         self.use_gps = use_gps
         self.use_depth = use_depth
+        self.action_history_len = action_history_len
 
         # Load few-shot examples
         examples_file = Path(__file__).parent / "config" / "manipulathor_examples.json"
@@ -103,10 +145,6 @@ class ManipulaTHORPromptBuilder:
         else:
             self._examples = []
 
-        # Build action list string
-        self._action_list = "\n".join(
-            f"  {i}: {name}" for i, name in enumerate(ACTION_SPACE)
-        )
         self._action_id_map = {name: i for i, name in enumerate(ACTION_SPACE)}
         self._id_action_map = {i: name for i, name in enumerate(ACTION_SPACE)}
 
@@ -115,61 +153,51 @@ class ManipulaTHORPromptBuilder:
         pass  # ManipulaTHOR has a fixed action space
 
     def build_messages(self, memory: AgentMemory) -> list:
-        """Build OpenAI message format from agent memory."""
-        prompt = self._build_prompt_text(memory)
-        return self._wrap_as_user_message(prompt, memory.current_observation)
+        """Build 2-message format: system + user."""
+        import base64
 
-    def _build_prompt_text(self, memory: AgentMemory) -> str:
-        """Build the full prompt text."""
-        max_id = len(ACTION_SPACE) - 1
-
-        # Build examples section
-        examples_str = ""
-        if self.n_shot >= 1 and self._examples:
-            examples_str = "\n\n## Examples\n" + "\n\n".join(
-                f"### Example {i+1}:\n{ex}"
-                for i, ex in enumerate(self._examples[:self.n_shot])
-            )
-
-        # Build sensor note for system prompt
-        sensor_parts = []
-        if self.use_gps:
-            sensor_parts.append("GPS-like state sensors showing spatial relationships")
-        if self.use_depth:
-            sensor_parts.append("a depth image (colormap)")
-        sensor_note = (", and " + ", ".join(sensor_parts)) if sensor_parts else ""
-
-        # GPS description section (only if GPS enabled)
-        gps_description = ""
-        if self.use_gps:
-            gps_description = """
-## GPS State Sensors
-At each step you receive:
-- **Object State** (6D): object position (x,y,z) and rotation (rx,ry,rz) relative to agent
-- **Object-to-Goal Distance** (3D): absolute x,y,z distance from object to goal in agent frame
-- **Arm-to-Object Distance** (3D): absolute x,y,z distance from arm tip to object in agent frame
-- **Object Held**: whether you are currently holding the object
-
-"""
-
-        # System prompt
-        prompt = SYSTEM_PROMPT.format(
+        # Build system prompt
+        system_text = SYSTEM_PROMPT.format(
             max_steps=self.max_steps,
-            max_id=max_id,
-            action_list=self._action_list,
-            examples=examples_str,
-            sensor_note=sensor_note,
-            gps_description=gps_description,
+            action_list=_build_action_list(),
         )
+        messages = [{"role": "system", "content": system_text}]
 
-        # Task instruction
-        task_desc = memory.task_description
-        prompt += f"\n\n## Current Task: {task_desc}"
-
-        # GPS state from current observation metadata (only if GPS enabled)
+        # Build user message
+        content = []
         obs = memory.current_observation
+
+        # Images first
+        if self.use_rgb and obs and obs.rgb_path:
+            try:
+                with open(obs.rgb_path, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{b64}"},
+                })
+            except FileNotFoundError:
+                logger.warning("RGB image not found: %s", obs.rgb_path)
+
+        if self.use_depth and obs and obs.depth_path:
+            try:
+                with open(obs.depth_path, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{b64}"},
+                })
+            except FileNotFoundError:
+                logger.warning("Depth image not found: %s", obs.depth_path)
+
+        text_parts = []
+
+        # Task
+        text_parts.append(f"## Task\n{memory.task_description}")
+
+        # Environment Feedback (GPS state)
         if self.use_gps and obs and obs.metadata:
-            prompt += "\n\n## Current GPS State:"
+            feedback_lines = []
             gps_fields = [
                 ("relative_current_obj_state", "Object Position & Rotation (agent-relative)"),
                 ("relative_obj_to_goal", "Object-to-Goal Distance"),
@@ -181,61 +209,56 @@ At each step you receive:
                 if val is not None:
                     if key == "pickedup_object":
                         held = float(val) > 0.5
-                        prompt += f"\n- {label}: {'Yes' if held else 'No'}"
+                        feedback_lines.append(f"{label}: {'Yes' if held else 'No'}")
                     else:
                         try:
                             arr = json.loads(val) if isinstance(val, str) else val
                             formatted = [f"{v:.3f}" for v in arr]
-                            prompt += f"\n- {label}: [{', '.join(formatted)}]"
+                            feedback_lines.append(f"{label}: [{', '.join(formatted)}]")
                         except (json.JSONDecodeError, TypeError):
-                            prompt += f"\n- {label}: {val}"
+                            feedback_lines.append(f"{label}: {val}")
+            if feedback_lines:
+                text_parts.append("## Environment Feedback\n" + "\n".join(feedback_lines))
 
-        # Action history + feedback
-        action_history = getattr(memory, 'action_history', [])
-        if action_history:
-            prompt += "\n\n## Action History:"
-            for i, (action_name, feedback) in enumerate(action_history):
-                action_id = self._action_id_map.get(action_name, -1)
-                if self.use_feedback:
-                    prompt += f"\nStep {i+1}: action {action_id} ({action_name}) — {feedback}"
+        # Action History
+        action_history = memory.action_history
+        if action_history and self.action_history_len > 0:
+            history = action_history[-self.action_history_len:]
+            history_lines = []
+            for i, (action_name, feedback) in enumerate(history):
+                if self.use_feedback and feedback:
+                    history_lines.append(f"Step {i}: {action_name} -> {feedback}")
                 else:
-                    prompt += f"\nStep {i+1}: action {action_id} ({action_name})"
+                    history_lines.append(f"Step {i}: {action_name}")
+            if history_lines:
+                text_parts.append(
+                    f"## Action History (last {len(history_lines)} steps)\n"
+                    + "\n".join(history_lines)
+                )
 
-            prompt += "\n\nBased on the action history and current state, plan your next actions."
+        # Chat History
+        if self.chat_history and memory.steps:
+            responses = [
+                s.llm_response for s in memory.steps
+                if s.llm_response is not None
+            ][-self.message_window_len:]
+            if responses:
+                chat_lines = []
+                offset = len(memory.steps) - len(responses)
+                for j, resp in enumerate(responses):
+                    chat_lines.append(f"[Step {offset + j} Response]\n{resp}")
+                text_parts.append(
+                    f"## Chat History (last {len(responses)} responses)\n"
+                    + "\n\n".join(chat_lines)
+                )
 
-        prompt += OUTPUT_TEMPLATE
-        return prompt
+        # Response format reminder
+        text_parts.append("Respond with the JSON format specified above.")
 
-    def _wrap_as_user_message(self, prompt: str, observation) -> list:
-        """Wrap prompt + images as OpenAI user message.
+        content.append({"type": "text", "text": "\n\n".join(text_parts)})
+        messages.append({"role": "user", "content": content})
 
-        Includes RGB and/or depth images based on use_rgb and use_depth toggles.
-        """
-        import base64
-
-        content = []
-
-        def _add_image(path, label):
-            try:
-                with open(path, "rb") as f:
-                    b64 = base64.b64encode(f.read()).decode("utf-8")
-                content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{b64}"},
-                })
-            except FileNotFoundError:
-                logger.warning("%s image not found: %s", label, path)
-
-        # Add RGB image (before text, matching EASI convention)
-        if self.use_rgb and observation and observation.rgb_path:
-            _add_image(observation.rgb_path, "RGB")
-
-        # Add depth colormap image if enabled
-        if self.use_depth and observation and observation.depth_path:
-            _add_image(observation.depth_path, "Depth")
-
-        content.append({"type": "text", "text": prompt})
-        return [{"role": "user", "content": content}]
+        return messages
 
     def parse_response(self, llm_response: str, memory: AgentMemory) -> list:
         """Parse LLM JSON response into Action objects."""
@@ -259,8 +282,9 @@ At each step you receive:
             if not isinstance(entry, dict):
                 continue
 
-            action_name = None
-            if "action_id" in entry:
+            # Prefer "action" key (EASI standard), fall back to action_id/action_name
+            action_name = entry.get("action", None)
+            if action_name is None and "action_id" in entry:
                 aid = entry["action_id"]
                 if isinstance(aid, int) and 0 <= aid < len(ACTION_SPACE):
                     action_name = self._id_action_map[aid]

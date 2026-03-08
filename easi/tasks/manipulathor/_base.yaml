@@ -23,7 +23,9 @@ agent:
   prompt_builder_kwargs:
     n_shot: 0
     use_feedback: true
+    action_history_len: 20
     chat_history: false
+    message_window_len: 5
     max_steps: 200
     use_rgb: true
     use_gps: true

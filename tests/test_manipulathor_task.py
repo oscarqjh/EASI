@@ -243,18 +243,21 @@ class TestPromptBuilder:
         )
 
         messages = builder.build_messages(memory)
-        assert len(messages) == 1
-        assert messages[0]["role"] == "user"
-        content = messages[0]["content"]
+        assert len(messages) == 2
+        assert messages[0]["role"] == "system"
+        assert messages[1]["role"] == "user"
+        content = messages[1]["content"]
         # Should have image + text
         assert any(c["type"] == "image_url" for c in content)
         assert any(c["type"] == "text" for c in content)
 
         text = next(c["text"] for c in content if c["type"] == "text")
         assert "Pick up the Apple" in text
-        assert "GPS State" in text
+        assert "Environment Feedback" in text
         assert "Object Held: No" in text
-        assert "Strategy for Using GPS Sensors" in text
+        # Strategy is now in system prompt
+        system_text = messages[0]["content"]
+        assert "Phase 1" in system_text
 
     def test_build_messages_gps_disabled(self, tmp_path):
         """When use_gps=False, no GPS section in prompt."""
@@ -273,9 +276,11 @@ class TestPromptBuilder:
             rgb_path=str(img_path),
             metadata={"pickedup_object": "0.0"},
         )
+        memory.steps = []
         messages = builder.build_messages(memory)
-        text = next(c["text"] for c in messages[0]["content"] if c["type"] == "text")
-        assert "GPS State" not in text
+        text = next(c["text"] for c in messages[1]["content"] if c["type"] == "text")
+        assert "Object Position" not in text
+        assert "Arm-to-Object" not in text
 
     def test_build_messages_with_history(self, builder, tmp_path):
         """Subsequent turn: includes action history."""
@@ -301,7 +306,7 @@ class TestPromptBuilder:
         )
 
         messages = builder.build_messages(memory)
-        text = next(c["text"] for c in messages[0]["content"] if c["type"] == "text")
+        text = next(c["text"] for c in messages[1]["content"] if c["type"] == "text")
         assert "Action History" in text
         assert "MoveArmZP" in text
         assert "succeeded" in text

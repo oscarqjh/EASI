@@ -1,5 +1,7 @@
 """Prompt builder for AI2-THOR Rearrangement task.
 
+Follows the EASI Standard Prompt Format Reference (docs/easi-prompt-format-reference.md).
+
 Constructs multi-modal prompts with observation images, GPS data,
 action history, and structured JSON output schema.
 
@@ -19,55 +21,6 @@ from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# --- System prompt template (observations section is injected dynamically) ---
-
-SYSTEM_PROMPT = """\
-You are an embodied AI agent performing an object rearrangement task in a 3D indoor environment (AI2-THOR).
-
-## Goal
-{instruction}
-
-**Important:** You are evaluated on the final state of ALL objects in the scene. If you accidentally bump into or displace objects that are already in their correct positions, it counts against you. Navigate carefully.
-
-## Observations
-At each step you receive the following sensor inputs:
-{observation_description}
-
-## Available Actions
-{action_list}
-
-## Action Types
-- **Navigation**: move_ahead (0.25m step), move_left/right/back, rotate_left/right (90°), look_up/look_down (30°), stand/crouch
-- **Pickup**: pickup_<object_type> — picks up the nearest visible object of that type (must have empty hands)
-- **Drop**: drop_held_object_with_snap — drops held object, snapping to goal position if close enough
-- **Open/Close**: open_by_type_<type> — toggles openness of nearest visible cabinet/drawer/fridge/etc.
-- **Done**: Signal that all objects are in their correct positions
-
-## Strategy
-{strategy}
-
-## Rules
-- You can hold only ONE object at a time
-- drop_held_object_with_snap works best when the goal location is visible
-- If pickup fails, try moving closer or adjusting your view angle
-- Grid movement: 0.25m steps, 90° rotations
-- **Do NOT disturb objects already in their correct positions** — avoid bumping into furniture or pushing items while navigating. Take careful, minimal paths.
-"""
-
-OUTPUT_SCHEMA = """\
-Respond in this exact JSON format:
-```json
-{{
-  "observation": "describe what you see in the observation images",
-  "reasoning": "what to do next and why",
-  "plan": [
-    {{"action_name": "<name>"}},
-    ...
-  ]
-}}
-```
-Plan 1-5 actions. Use exact action names from the list above."""
-
 
 class AI2THORRearrangement2023PromptBuilder:
     """Prompt builder for the rearrangement task.
@@ -80,6 +33,7 @@ class AI2THORRearrangement2023PromptBuilder:
     def __init__(
         self,
         use_feedback: bool = True,
+        action_history_len: int = 20,
         chat_history: bool = True,
         message_window_len: int = 10,
         use_rgb: bool = True,
@@ -89,6 +43,7 @@ class AI2THORRearrangement2023PromptBuilder:
         **kwargs,
     ):
         self.use_feedback = use_feedback
+        self.action_history_len = action_history_len
         self.chat_history = chat_history
         self.message_window_len = message_window_len
         self.use_rgb = use_rgb
@@ -100,13 +55,78 @@ class AI2THORRearrangement2023PromptBuilder:
 
     def set_action_space(self, actions: list[str]):
         self._action_name_set = set(actions)
-        parts = [f"{i}: {a}" for i, a in enumerate(actions)]
-        self._action_list_str = ", ".join(parts)
+        parts = [f"- {a}" for a in actions]
+        self._action_list_str = "\n".join(parts)
 
-    # --- System prompt helpers ---
+    # --- System prompt ---
+
+    def _build_system_prompt(self) -> str:
+        """Build the full system prompt following EASI standard sections."""
+        sections = []
+
+        # Role and Environment
+        sections.append(
+            "## Role and Environment\n"
+            "You are an embodied AI agent performing an object rearrangement "
+            "task in a 3D indoor environment (AI2-THOR). You must rearrange "
+            "objects to match a goal state. You are evaluated on ALL objects "
+            "in the scene — avoid accidentally displacing objects already in "
+            "their correct positions."
+        )
+
+        # Observation Description
+        obs_desc = self._build_observation_description()
+        if obs_desc:
+            sections.append(f"## Observation Description\n{obs_desc}")
+
+        # Available Actions
+        sections.append(
+            f"## Available Actions\n{self._action_list_str}\n\n"
+            "**Action Types:**\n"
+            "- **Navigation**: move_ahead (0.25m step), move_left/right/back, "
+            "rotate_left/right (90 deg), look_up/look_down (30 deg), stand/crouch\n"
+            "- **Pickup**: pickup_<object_type> — picks up the nearest visible "
+            "object of that type (must have empty hands)\n"
+            "- **Drop**: drop_held_object_with_snap — drops held object, "
+            "snapping to goal position if close enough\n"
+            "- **Open/Close**: open_by_type_<type> — toggles openness of "
+            "nearest visible cabinet/drawer/fridge/etc.\n"
+            "- **Done**: Signal that all objects are in their correct positions"
+        )
+
+        # Strategy
+        sections.append(f"## Strategy\n{self._build_strategy()}")
+
+        # Guidelines
+        sections.append(
+            "## Guidelines\n"
+            "1. Always output at least one action in executable_plan.\n"
+            "2. Only use actions from the Available Actions list.\n"
+            "3. If previous actions failed, reason about why and try a different approach.\n"
+            "4. Do not repeatedly execute the same action sequence.\n"
+            "5. Keep your plan efficient and concise.\n"
+            "6. You can hold only ONE object at a time.\n"
+            "7. Do NOT disturb objects already in their correct positions."
+        )
+
+        # Response Format
+        sections.append(
+            "## Response Format\n"
+            "Output a JSON object with exactly these 4 fields:\n"
+            "{\n"
+            '    "visual_state_description": "Describe what you see in the observation images",\n'
+            '    "reasoning_and_reflection": "What to do next and why",\n'
+            '    "language_plan": "Your plan in natural language",\n'
+            '    "executable_plan": [{"action": "<action_name>"}]\n'
+            "}\n\n"
+            "You may include 1-5 actions in executable_plan. Actions execute "
+            "sequentially."
+        )
+
+        return "\n\n".join(sections)
 
     def _build_observation_description(self) -> str:
-        """Build the observation section of the system prompt based on active sensors."""
+        """Build the observation description based on active sensors."""
         sections = []
         idx = 1
 
@@ -122,8 +142,7 @@ class AI2THORRearrangement2023PromptBuilder:
             sections.append(
                 f"- **Depth Image** (Image {idx}): A grayscale depth map from "
                 f"the agent's viewpoint. Brighter pixels are closer, darker "
-                f"pixels are farther away. Use this to judge distances to "
-                f"objects and obstacles."
+                f"pixels are farther away."
             )
             idx += 1
 
@@ -140,7 +159,7 @@ class AI2THORRearrangement2023PromptBuilder:
             sections.append(
                 "- **GPS Data** (text): The agent's 3D position (x, y, z) in "
                 "meters where y is the vertical axis (height). Yaw rotation in "
-                "degrees (0°–360°). Horizon angle: 0° = looking straight "
+                "degrees (0-360). Horizon angle: 0 = looking straight "
                 "ahead, positive = looking down, negative = looking up. Also "
                 "reports which object the agent is currently holding, if any."
             )
@@ -155,7 +174,7 @@ class AI2THORRearrangement2023PromptBuilder:
                 "2. Navigate to a misplaced object\n"
                 "3. Pick it up with the matching pickup_<type> action\n"
                 "4. Navigate toward where it belongs (compare with goal image)\n"
-                "5. Use drop_held_object_with_snap — it snaps the object to its goal if you're close\n"
+                "5. Use drop_held_object_with_snap — it snaps the object to its goal if you are close\n"
                 "6. Repeat for remaining misplaced objects\n"
                 '7. Say "done" when finished'
             )
@@ -164,7 +183,7 @@ class AI2THORRearrangement2023PromptBuilder:
             "2. Navigate to a misplaced object\n"
             "3. Pick it up with the matching pickup_<type> action\n"
             "4. Navigate to where it should go based on context\n"
-            "5. Use drop_held_object_with_snap — it snaps the object to its goal if you're close\n"
+            "5. Use drop_held_object_with_snap — it snaps the object to its goal if you are close\n"
             "6. Repeat for remaining misplaced objects\n"
             '7. Say "done" when finished'
         )
@@ -172,35 +191,15 @@ class AI2THORRearrangement2023PromptBuilder:
     # --- Message building ---
 
     def build_messages(self, memory: AgentMemory) -> list[dict]:
-        # Lazy-init action space from memory (set by agent constructor)
+        # Lazy-init action space from memory
         if not self._action_list_str and memory.action_space:
             self.set_action_space(memory.action_space)
 
-        instruction = memory.task_description or "Rearrange objects to match the goal."
-
-        system_text = SYSTEM_PROMPT.format(
-            instruction=instruction,
-            observation_description=self._build_observation_description(),
-            action_list=self._action_list_str,
-            strategy=self._build_strategy(),
-        )
-
+        system_text = self._build_system_prompt()
         messages = [{"role": "system", "content": system_text}]
 
-        # Chat history (if enabled)
-        if self.chat_history and memory.steps:
-            window = memory.steps[-self.message_window_len:]
-            for step in window:
-                user_content = self._make_history_content(step)
-                messages.append({"role": "user", "content": user_content})
-                if step.llm_response:
-                    messages.append({
-                        "role": "assistant",
-                        "content": step.llm_response,
-                    })
-
-        # Current turn
-        user_content = self._make_current_content(memory)
+        # Build user message
+        user_content = self._make_user_content(memory)
         messages.append({"role": "user", "content": user_content})
 
         return messages
@@ -256,63 +255,88 @@ class AI2THORRearrangement2023PromptBuilder:
 
         return f" ({', '.join(labels)})" if labels else ""
 
-    def _make_history_content(self, step) -> list[dict]:
+    def _make_user_content(self, memory: AgentMemory) -> list[dict]:
+        """Build user message content: images + text sections."""
         content: list[dict] = []
-        metadata = step.observation.metadata if step.observation else {}
-        rgb_path = step.observation.rgb_path if step.observation else None
+        obs = memory.current_observation
+        metadata = obs.metadata if obs else {}
+        rgb_path = obs.rgb_path if obs else None
 
+        # Images first
         img_label = self._add_images(content, rgb_path, metadata)
 
-        text = f"Observation{img_label}."
-        if self.use_feedback and step.feedback:
-            text += f"\nFeedback: {step.feedback}"
+        text_parts = []
 
-        # GPS overlay from observation metadata
-        if self.use_gps:
-            gps_text = self._format_gps(metadata)
-            if gps_text:
-                text += f"\n{gps_text}"
+        # Task
+        instruction = memory.task_description or "Rearrange objects to match the goal."
+        text_parts.append(f"## Task\n{instruction}")
 
-        content.append({"type": "text", "text": text})
-        return content
-
-    def _make_current_content(self, memory: AgentMemory) -> list[dict]:
-        content: list[dict] = []
-        metadata = (
-            memory.current_observation.metadata
-            if memory.current_observation else {}
-        )
-        rgb_path = (
-            memory.current_observation.rgb_path
-            if memory.current_observation else None
-        )
-
-        img_label = self._add_images(content, rgb_path, metadata)
-
-        if memory.is_first_turn:
-            text = f"First observation{img_label}. Begin the rearrangement task."
-        else:
-            text = f"Current observation{img_label}."
-            if self.use_feedback and memory.steps:
-                last = memory.steps[-1]
-                if last.feedback:
-                    text += f"\nFeedback: {last.feedback}"
-
-        # GPS and held-object from last step's observation metadata
-        if memory.steps:
+        # Environment Feedback (GPS + held object)
+        feedback_lines = []
+        if self.use_gps and memory.steps:
             last_metadata = (
                 memory.steps[-1].observation.metadata
                 if memory.steps[-1].observation else {}
             )
-            if self.use_gps:
-                gps_text = self._format_gps(last_metadata)
-                if gps_text:
-                    text += f"\n{gps_text}"
+            gps_text = self._format_gps(last_metadata)
+            if gps_text:
+                feedback_lines.append(gps_text)
             held = last_metadata.get("held_object", "none")
-            text += f"\nHolding: {held}"
+            feedback_lines.append(f"Holding: {held}")
+        elif self.use_gps and obs and metadata:
+            gps_text = self._format_gps(metadata)
+            if gps_text:
+                feedback_lines.append(gps_text)
 
-        text += f"\n\n{OUTPUT_SCHEMA}"
-        content.append({"type": "text", "text": text})
+        if self.use_feedback and memory.steps:
+            last = memory.steps[-1]
+            if last.feedback:
+                feedback_lines.append(f"Last action result: {last.feedback}")
+
+        if feedback_lines:
+            text_parts.append("## Environment Feedback\n" + "\n".join(feedback_lines))
+
+        # Action History
+        if memory.action_history and self.action_history_len > 0:
+            history = memory.action_history[-self.action_history_len:]
+            history_lines = []
+            for i, (action_name, feedback) in enumerate(history):
+                if self.use_feedback and feedback:
+                    history_lines.append(f"Step {i}: {action_name} -> {feedback}")
+                else:
+                    history_lines.append(f"Step {i}: {action_name}")
+            if history_lines:
+                text_parts.append(
+                    f"## Action History (last {len(history_lines)} steps)\n"
+                    + "\n".join(history_lines)
+                )
+
+        # Chat History (text section, not multi-turn)
+        if self.chat_history and memory.steps:
+            responses = [
+                s.llm_response for s in memory.steps
+                if s.llm_response is not None
+            ][-self.message_window_len:]
+            if responses:
+                chat_lines = []
+                offset = len(memory.steps) - len(responses)
+                for j, resp in enumerate(responses):
+                    chat_lines.append(f"[Step {offset + j} Response]\n{resp}")
+                text_parts.append(
+                    f"## Chat History (last {len(responses)} responses)\n"
+                    + "\n\n".join(chat_lines)
+                )
+
+        # Response format reminder
+        if memory.is_first_turn:
+            text_parts.append(
+                f"First observation{img_label}. Begin the rearrangement task.\n\n"
+                "Respond with the JSON format specified above."
+            )
+        else:
+            text_parts.append("Respond with the JSON format specified above.")
+
+        content.append({"type": "text", "text": "\n\n".join(text_parts)})
         return content
 
     def _format_gps(self, metadata: dict | None) -> str:
@@ -340,13 +364,15 @@ class AI2THORRearrangement2023PromptBuilder:
             logger.warning("Failed to parse LLM response as JSON")
             return [Action(action_name="done")]
 
-        plan = data.get("plan", [])
+        # Accept both "executable_plan" (standard) and "plan" (legacy)
+        plan = data.get("executable_plan", data.get("plan", []))
         if not plan:
             return [Action(action_name="done")]
 
         actions = []
         for entry in plan:
-            name = entry.get("action_name", "")
+            # Accept "action" (standard), "action_name" (legacy)
+            name = entry.get("action", entry.get("action_name", ""))
             if name in self._action_name_set:
                 actions.append(Action(action_name=name))
             else:
