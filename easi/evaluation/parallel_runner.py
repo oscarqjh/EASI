@@ -124,7 +124,7 @@ class ParallelRunner(EvaluationRunner):
         server_mgr = None
 
         try:
-            if backend == "vllm" and base_url is None:
+            if backend in ("vllm", "custom") and base_url is None:
                 # Auto-manage vLLM instances
                 from easi.llm.server_manager import MultiServerManager
                 from easi.llm.utils import parse_llm_kwargs, split_kwargs as _split

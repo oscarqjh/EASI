@@ -163,7 +163,7 @@ class EvaluationRunner:
         server = None
 
         try:
-            if backend == "vllm" and base_url is None:
+            if backend in ("vllm", "custom") and base_url is None:
                 from easi.llm.server_manager import ServerManager
                 from easi.llm.utils import parse_llm_kwargs, split_kwargs
 
