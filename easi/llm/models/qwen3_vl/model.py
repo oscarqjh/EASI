@@ -76,8 +76,8 @@ class Qwen3VLModel(BaseModelServer):
         import torch
         from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-        # Resolve torch dtype
-        dtype_str = kwargs.pop("torch_dtype", "auto")
+        # Resolve torch dtype — newer transformers uses "dtype" instead of "torch_dtype"
+        dtype_str = kwargs.pop("torch_dtype", kwargs.pop("dtype", "auto"))
         if dtype_str in _DTYPE_MAP:
             torch_dtype = getattr(torch, dtype_str, "auto") if dtype_str != "auto" else "auto"
         else:
@@ -85,16 +85,42 @@ class Qwen3VLModel(BaseModelServer):
 
         attn_impl = kwargs.pop("attn_implementation", None)
 
-        load_kwargs = {"torch_dtype": torch_dtype, "device_map": "auto"}
+        # Use device_map="auto" only if accelerate is available; otherwise
+        # fall back to loading on the specified device directly.
+        try:
+            import accelerate  # noqa: F401
+            load_kwargs = {"dtype": torch_dtype, "device_map": "auto"}
+        except ImportError:
+            logger.info("accelerate not installed, loading model on %s without device_map", device)
+            load_kwargs = {"dtype": torch_dtype}
+
         if attn_impl:
-            load_kwargs["attn_implementation"] = attn_impl
+            # Validate flash_attention_2 availability before requesting it
+            if attn_impl == "flash_attention_2":
+                try:
+                    import flash_attn  # noqa: F401
+                    load_kwargs["attn_implementation"] = attn_impl
+                except ImportError:
+                    logger.warning(
+                        "flash_attn not installed, falling back to sdpa attention. "
+                        "Install with: pip install flash-attn --no-build-isolation"
+                    )
+                    load_kwargs["attn_implementation"] = "sdpa"
+            else:
+                load_kwargs["attn_implementation"] = attn_impl
 
         logger.info("Loading Qwen3-VL from %s (dtype=%s, attn=%s)", model_path, dtype_str, attn_impl)
         self.model = Qwen3VLForConditionalGeneration.from_pretrained(
             model_path, **load_kwargs
         )
+        # Move to device if device_map was not used
+        if "device_map" not in load_kwargs:
+            self.model = self.model.to(device)
+
         self.processor = AutoProcessor.from_pretrained(model_path)
-        self.device = self.model.device
+        # device_map="auto" shards across GPUs; .device would raise RuntimeError.
+        # Use the device of the first parameter instead.
+        self.device = next(self.model.parameters()).device
         logger.info("Qwen3-VL loaded on %s", self.device)
 
     def generate(self, messages: list[dict], **kwargs) -> str:
@@ -119,7 +145,7 @@ class Qwen3VLModel(BaseModelServer):
             return_dict=True,
             return_tensors="pt",
         )
-        inputs = inputs.to(self.device)
+        inputs = {k: v.to(self.device) if hasattr(v, "to") else v for k, v in inputs.items()}
 
         # Generation kwargs
         max_new_tokens = kwargs.get("max_tokens", 4096)
@@ -140,7 +166,7 @@ class Qwen3VLModel(BaseModelServer):
         # Trim input tokens from output
         generated_ids_trimmed = [
             out_ids[len(in_ids):]
-            for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+            for in_ids, out_ids in zip(inputs["input_ids"], generated_ids)
         ]
         output_text = self.processor.batch_decode(
             generated_ids_trimmed,

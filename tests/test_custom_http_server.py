@@ -207,8 +207,13 @@ class TestHTTPServerMain:
         mock_cls.return_value = mock_instance
         mock_create_app.return_value = MagicMock()
 
+        mock_entry = MagicMock()
+        mock_entry.default_kwargs = {"default_key": "default_val"}
+
         with patch(
             "easi.llm.models.registry.load_model_class", return_value=mock_cls
+        ), patch(
+            "easi.llm.models.registry.get_model_entry", return_value=mock_entry
         ), patch(
             "sys.argv",
             [
@@ -228,8 +233,9 @@ class TestHTTPServerMain:
             main()
 
         mock_cls.assert_called_once()
+        # CLI kwargs override manifest defaults
         mock_instance.load.assert_called_once_with(
-            "/tmp/weights", "cpu", key="val"
+            "/tmp/weights", "cpu", default_key="default_val", key="val"
         )
         mock_create_app.assert_called_once_with(mock_instance)
         mock_uvicorn_run.assert_called_once()
@@ -246,8 +252,13 @@ class TestHTTPServerMain:
         mock_cls.return_value = mock_instance
         mock_create_app.return_value = MagicMock()
 
+        mock_entry = MagicMock()
+        mock_entry.default_kwargs = {}
+
         with patch(
             "easi.llm.models.registry.load_model_class", return_value=mock_cls
+        ), patch(
+            "easi.llm.models.registry.get_model_entry", return_value=mock_entry
         ), patch(
             "sys.argv",
             [

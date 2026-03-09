@@ -28,7 +28,7 @@ class TestQwen3VLDiscovery:
         entry = get_model_entry("qwen3_vl")
         assert entry.display_name == "Qwen3-VL"
         assert entry.model_class == "easi.llm.models.qwen3_vl.model.Qwen3VLModel"
-        assert entry.default_kwargs.get("torch_dtype") == "bfloat16"
+        assert entry.default_kwargs.get("dtype") == "bfloat16"
 
     def test_class_importable(self):
         cls = load_model_class("qwen3_vl")

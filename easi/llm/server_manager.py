@@ -220,8 +220,8 @@ class ServerManager:
                     logger.trace("[%s] Health check passed (status=%d)", self.label, resp.status_code)
                     return
                 logger.trace("[%s] Health check returned status %d, retrying...", self.label, resp.status_code)
-            except requests.ConnectionError:
-                logger.trace("[%s] Health check connection refused, retrying...", self.label)
+            except (requests.ConnectionError, requests.Timeout):
+                logger.trace("[%s] Health check connection refused/timed out, retrying...", self.label)
 
             time.sleep(_HEALTH_POLL_INTERVAL)
 

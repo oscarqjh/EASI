@@ -85,6 +85,9 @@ class LLMClient:
         }
         if self.base_url:
             call_kwargs["api_base"] = self.base_url
+            # Local servers (vLLM, custom) don't need a real API key,
+            # but LiteLLM requires one for the openai/ prefix.
+            call_kwargs.setdefault("api_key", "dummy")
         if response_format is not None:
             call_kwargs["response_format"] = response_format
 

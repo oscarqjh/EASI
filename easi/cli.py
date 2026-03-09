@@ -566,6 +566,14 @@ def cmd_model(args) -> None:
 # --- Main ---
 
 def main() -> None:
+    try:
+        _main()
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user.")
+        sys.exit(130)
+
+
+def _main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 

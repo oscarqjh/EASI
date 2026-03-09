@@ -42,13 +42,17 @@ def extract_images(messages: list[dict[str, Any]]) -> list[Any]:
                 continue
             image_url = part.get("image_url", {})
             url = image_url.get("url", "")
-            if url.startswith("data:"):
+            if url.startswith("data:") and ";base64," in url:
                 # Format: data:<media_type>;base64,<data>
                 _, encoded = url.split(",", 1)
+                raw = base64.b64decode(encoded)
+                images.append(Image.open(io.BytesIO(raw)))
+            elif url.startswith("data:"):
+                # Non-base64 data URI (e.g. data:text/plain,...) — skip
+                logger.debug("Skipping non-base64 data URI")
             else:
-                encoded = url
-            raw = base64.b64decode(encoded)
-            images.append(Image.open(io.BytesIO(raw)))
+                # HTTP/HTTPS URLs — not yet supported for extraction
+                logger.debug("Skipping non-data image URL: %s", url[:80])
     return images
 
 

@@ -66,7 +66,7 @@ def create_app(model: Any) -> Any:
         try:
             content = model.generate(messages, **gen_kwargs)
         except Exception as e:
-            logger.error("Generation failed: %s", e)
+            logger.error("Generation failed: %s", e, exc_info=True)
             return JSONResponse(
                 status_code=500,
                 content={"error": {"message": str(e), "type": "server_error"}},
@@ -111,7 +111,7 @@ def main() -> None:
 
     import uvicorn
 
-    from easi.llm.models.registry import load_model_class
+    from easi.llm.models.registry import get_model_entry, load_model_class
 
     parser = argparse.ArgumentParser(description="EASI custom model HTTP server")
     parser.add_argument("--model-name", required=True, help="Registered model name")
@@ -127,16 +127,21 @@ def main() -> None:
 
     extra_kwargs: dict[str, Any] = json.loads(args.kwargs)
 
+    # Merge manifest default_kwargs with CLI overrides (CLI wins)
+    entry = get_model_entry(args.model_name)
+    merged_kwargs = {**entry.default_kwargs, **extra_kwargs}
+
     logger.info(
-        "Loading model '%s' from %s on %s",
+        "Loading model '%s' from %s on %s (kwargs=%s)",
         args.model_name,
         args.model_path,
         args.device,
+        merged_kwargs,
     )
 
     cls = load_model_class(args.model_name)
     model_instance = cls()
-    model_instance.load(args.model_path, args.device, **extra_kwargs)
+    model_instance.load(args.model_path, args.device, **merged_kwargs)
 
     app = create_app(model_instance)
 
