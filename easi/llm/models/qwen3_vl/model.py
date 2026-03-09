@@ -18,13 +18,8 @@ from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Dtype string → torch dtype mapping
-_DTYPE_MAP = {
-    "bfloat16": "bfloat16",
-    "float16": "float16",
-    "float32": "float32",
-    "auto": "auto",
-}
+# Recognised dtype strings for from_pretrained
+_ALLOWED_DTYPES = {"bfloat16", "float16", "float32", "auto"}
 
 
 def _openai_to_qwen_messages(messages: list[dict], images: list) -> list[dict]:
@@ -77,11 +72,11 @@ class Qwen3VLModel(BaseModelServer):
         from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
         # Resolve torch dtype — newer transformers uses "dtype" instead of "torch_dtype"
-        dtype_str = kwargs.pop("torch_dtype", kwargs.pop("dtype", "auto"))
-        if dtype_str in _DTYPE_MAP:
-            torch_dtype = getattr(torch, dtype_str, "auto") if dtype_str != "auto" else "auto"
-        else:
-            torch_dtype = "auto"
+        dtype_str = kwargs.pop("torch_dtype", None) or kwargs.pop("dtype", "auto")
+        if dtype_str not in _ALLOWED_DTYPES:
+            logger.warning("Unrecognised dtype '%s', falling back to 'auto'", dtype_str)
+            dtype_str = "auto"
+        torch_dtype = getattr(torch, dtype_str, "auto") if dtype_str != "auto" else "auto"
 
         attn_impl = kwargs.pop("attn_implementation", None)
 

@@ -6,9 +6,11 @@ subprocess launch via ``python -m easi.llm.models.http_server``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import uuid
+from functools import partial
 from typing import Any
 
 from easi.utils.logging import get_logger
@@ -64,7 +66,10 @@ def create_app(model: Any) -> Any:
                 gen_kwargs[key] = request[key]
 
         try:
-            content = model.generate(messages, **gen_kwargs)
+            loop = asyncio.get_event_loop()
+            content = await loop.run_in_executor(
+                None, partial(model.generate, messages, **gen_kwargs)
+            )
         except Exception as e:
             logger.error("Generation failed: %s", e, exc_info=True)
             return JSONResponse(

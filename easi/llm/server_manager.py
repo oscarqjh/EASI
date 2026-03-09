@@ -4,6 +4,7 @@ Starts the server as a subprocess, waits for health check, and stops on exit.
 """
 from __future__ import annotations
 
+import json
 import os
 import socket
 import subprocess
@@ -176,8 +177,7 @@ class ServerManager:
                 "--port", str(self.port),
             ]
             if extra_kwargs:
-                import json as _json
-                cmd.extend(["--kwargs", _json.dumps(extra_kwargs)])
+                cmd.extend(["--kwargs", json.dumps(extra_kwargs)])
         else:
             raise ValueError(f"Unsupported server backend: {self.backend}")
 

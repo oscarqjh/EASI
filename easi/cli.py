@@ -559,7 +559,6 @@ def cmd_model(args) -> None:
         logger.info("  Default kwargs: %s", entry.default_kwargs)
 
     else:
-        from easi.cli import build_parser
         build_parser().parse_args(["model", "--help"])
 
 

@@ -140,6 +140,7 @@ class ProgressBar:
         active_workers:
             Number of currently active worker threads.
         """
+        do_log = False
         with self._lock:
             if completed is not None:
                 self._completed = completed
@@ -148,12 +149,15 @@ class ProgressBar:
             if active_workers is not None:
                 self._active_workers = active_workers
 
-        # Non-TTY: emit periodic log lines
-        if not self._is_tty:
-            now = time.monotonic()
-            if now - self._last_non_tty_log >= _NON_TTY_LOG_INTERVAL:
-                self._last_non_tty_log = now
-                self._log_progress()
+            # Non-TTY: emit periodic log lines
+            if not self._is_tty:
+                now = time.monotonic()
+                if now - self._last_non_tty_log >= _NON_TTY_LOG_INTERVAL:
+                    self._last_non_tty_log = now
+                    do_log = True
+
+        if do_log:
+            self._log_progress()
 
     def _refresh_loop(self) -> None:
         """Background thread: periodically redraw the bar."""

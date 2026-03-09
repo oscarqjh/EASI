@@ -240,8 +240,6 @@ class ParallelRunner(EvaluationRunner):
                     num_workers=num_workers,
                     start_index=start_index,
                 )
-                progress_bar.start()
-
                 def _worker(worker_id: int) -> None:
                     """Worker thread: owns a simulator + agent, pulls episodes from queue."""
                     logger.trace("[Worker %d] Starting up", worker_id)
@@ -387,7 +385,7 @@ class ParallelRunner(EvaluationRunner):
                 logger.trace("Launching %d worker threads", num_workers)
                 wall_start = time.monotonic()
 
-                with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                with progress_bar, ThreadPoolExecutor(max_workers=num_workers) as executor:
                     futures = []
                     for wid in range(num_workers):
                         futures.append(executor.submit(_worker, wid))
@@ -398,7 +396,6 @@ class ParallelRunner(EvaluationRunner):
                         future.result()
 
                 wall_seconds = round(time.monotonic() - wall_start, 2)
-                progress_bar.stop()
 
                 # Merge completed results from resume with new results
                 new_results.sort(key=lambda x: x[0])
