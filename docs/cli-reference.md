@@ -41,21 +41,22 @@ easi start [TASK ...] [options]
 
 | Option | Description |
 |---|---|
-| `--backend {vllm,openai,anthropic,gemini,dummy}` | LLM backend (required for `react` agent) |
-| `--model MODEL` | Model identifier |
+| `--backend {vllm,custom,openai,anthropic,gemini,dummy}` | LLM backend (required for `react` agent) |
+| `--model MODEL` | Model identifier (HuggingFace ID for `vllm`, registry name for `custom`) |
 | `--llm-url URL` | LLM server base URL (for external servers) |
-| `--port PORT` | Port for local vLLM server (default: 8080) |
+| `--port PORT` | Port for local LLM server (default: 8080) |
 | `--llm-kwargs JSON` | Extra LLM/server kwargs as JSON string |
 | `--max-retries N` | Max retry attempts on transient LLM errors (default: 3) |
 
 **Model identifiers by backend:**
 
-| Backend | Example `--model` values |
-|---|---|
-| `vllm` | `meta-llama/Llama-2-7b-hf`, `Qwen/Qwen2.5-VL-72B-Instruct` |
-| `openai` | `gpt-4o`, `gpt-5.2-2025-12-11` |
-| `anthropic` | `claude-sonnet-4-20250514` |
-| `gemini` | `gemini-2.0-flash` |
+| Backend | Example `--model` values | Description |
+|---|---|---|
+| `vllm` | `Qwen/Qwen2.5-VL-72B-Instruct` | vLLM-supported HuggingFace models |
+| `custom` | `qwen3_vl`, `echo` | Custom model registry name (see `easi model list`) |
+| `openai` | `gpt-4o`, `gpt-5.2-2025-12-11` | OpenAI API models |
+| `anthropic` | `claude-sonnet-4-20250514` | Anthropic API models |
+| `gemini` | `gemini-2.0-flash` | Google Gemini API models |
 
 ### Execution Control
 
@@ -66,21 +67,24 @@ easi start [TASK ...] [options]
 | `--seed SEED` | Random seed for agent reproducibility |
 | `--render-platform PLATFORM` | Rendering platform override (default: simulator's preference). See [Render Platforms](#render-platforms). |
 
-### GPU Allocation (vLLM backend)
+### GPU Allocation (Local Backends)
+
+These options apply to local LLM backends (`vllm` and `custom`).
 
 | Option | Description |
 |---|---|
-| `--vllm-instances N` | Number of vLLM server instances to start (default: 1). Each runs on a subset of `--vllm-gpus`. |
-| `--vllm-gpus IDS` | Comma-separated GPU IDs for vLLM inference (e.g., `0,1,2,3`). GPUs are split evenly across instances. |
+| `--llm-instances N` | Number of LLM server instances to start (default: 1). Each runs on a subset of `--llm-gpus`. |
+| `--llm-gpus IDS` | Comma-separated GPU IDs for LLM inference (e.g., `0,1,2,3`). GPUs are split evenly across instances. |
 | `--sim-gpus IDS` | Comma-separated GPU IDs for simulator rendering (e.g., `4,5`). Sets `CUDA_VISIBLE_DEVICES` for simulator subprocesses. |
 
 **Notes:**
-- `--vllm-gpus` is required when `--vllm-instances > 1`.
-- `--vllm-gpus` and `--sim-gpus` must not overlap.
+- `--llm-gpus` is required when `--llm-instances > 1`.
+- `--llm-gpus` and `--sim-gpus` must not overlap.
 - GPU IDs are validated against hardware at startup (via `nvidia-smi`).
-- All vLLM instances start in parallel (processes spawned first, then health-checked concurrently).
-- Workers are assigned to vLLM instances via round-robin (e.g., 8 workers across 2 instances → 4 workers per instance).
-- These options are ignored with a warning if `--backend` is not `vllm`.
+- All LLM instances start in parallel (processes spawned first, then health-checked concurrently).
+- Workers are assigned to LLM instances via round-robin (e.g., 8 workers across 2 instances → 4 workers per instance).
+- These options are ignored with a warning if `--backend` is not `vllm` or `custom`.
+- Local backends use a 600s default timeout (vs 120s for API backends) to handle request queueing when workers outnumber server instances.
 
 ### Data & Output
 
@@ -136,14 +140,30 @@ easi start ebalfred_base --agent react --backend vllm \
 # Parallel vLLM with 2 instances (TP=2 each) + separate sim GPUs
 easi start ebalfred_base --agent react --backend vllm \
     --model Qwen/Qwen2.5-VL-72B-Instruct \
-    --num-parallel 8 --vllm-instances 2 \
-    --vllm-gpus 0,1,2,3 --sim-gpus 4,5 \
+    --num-parallel 8 --llm-instances 2 \
+    --llm-gpus 0,1,2,3 --sim-gpus 4,5 \
     --llm-kwargs '{"tensor_parallel_size": 2}'
 
 # External multi-URL vLLM (pre-started servers, no auto-management)
 easi start ebalfred_base --agent react --backend vllm \
     --model Qwen/Qwen2.5-VL-72B-Instruct --num-parallel 8 \
     --llm-url http://localhost:8000/v1,http://localhost:8001/v1
+
+# Custom model server (auto-starts, single instance)
+easi start ebalfred_base --agent react --backend custom \
+    --model qwen3_vl \
+    --llm-kwargs '{"model_path": "Qwen/Qwen3-VL-8B-Instruct"}'
+
+# Custom model with parallel workers and 2 server instances
+easi start ebalfred_base --agent react --backend custom \
+    --model qwen3_vl --num-parallel 8 \
+    --llm-instances 2 --llm-gpus 0,1,2,3 --sim-gpus 4,5 \
+    --llm-kwargs '{"model_path": "Qwen/Qwen3-VL-8B-Instruct"}'
+
+# Custom model with generation kwargs
+easi start ebalfred_base --agent react --backend custom \
+    --model qwen3_vl \
+    --llm-kwargs '{"model_path": "Qwen/Qwen3-VL-8B-Instruct", "temperature": 0.7, "max_tokens": 2048}'
 
 # Multiple tasks
 easi start ebalfred_base ebnavigation_base --agent react \
@@ -170,7 +190,7 @@ easi start ebalfred_base --agent dummy --verbosity TRACE
 ### Output Structure
 
 ```
-<output-dir>/<task_name>/<timestamp>_<model>/
+<output-dir>/<task_name>/<timestamp>_<model>[_<model_path>]/
 ├── config.json              # CLI options + resolved configuration
 ├── summary.json             # Aggregated metrics
 └── episodes/
@@ -198,10 +218,11 @@ easi start ebalfred_base --agent dummy --verbosity TRACE
 
 ### Notes
 
-- `--num-parallel > 1` requires an API backend (`openai`, `anthropic`, `gemini`). It uses a thread pool with one simulator per thread.
-- When using `--backend vllm` without `--llm-url`, a local vLLM server is auto-started and stopped after evaluation.
+- `--num-parallel > 1` works with any backend. It uses a thread pool with one simulator per thread.
+- When using `--backend vllm` or `--backend custom` without `--llm-url`, local server(s) are auto-started and stopped after evaluation.
 - `--resume` cannot be combined with multiple tasks.
-- `--llm-kwargs` is split into server kwargs (e.g., `tensor_parallel_size`, `dtype`) and generation kwargs (e.g., `temperature`, `max_tokens`).
+- `--llm-kwargs` is split into server kwargs (e.g., `tensor_parallel_size`, `dtype`, `model_path`) and generation kwargs (e.g., `temperature`, `max_tokens`). Server kwargs are passed to the server process; generation kwargs are sent per-request.
+- For `--backend custom`, `model_path` in `--llm-kwargs` specifies the HuggingFace model ID or local path to weights. The `--model` flag selects which custom model class to use from the registry.
 
 ---
 
@@ -368,6 +389,114 @@ Executes `MoveAhead` for each step and reports observations and rewards.
 
 ---
 
+## `easi model` — Manage Custom Models
+
+### `easi model list`
+
+List all custom models discovered in the registry.
+
+```bash
+easi model list
+```
+
+Output shows each model name and its display name.
+
+---
+
+### `easi model info <model>`
+
+Display detailed information about a custom model.
+
+```bash
+easi model info qwen3_vl
+```
+
+Shows model name, display name, description, model class, and default kwargs.
+
+---
+
+### Custom Model Overview
+
+Custom models allow running model architectures not supported by vLLM. Each model is defined by:
+
+1. **A Python class** extending `BaseModelServer` with `load()`, `generate()`, and `unload()` methods
+2. **A `manifest.yaml`** file for auto-discovery by the registry
+
+Models live in `easi/llm/models/<name>/` and are auto-discovered at startup.
+
+**Built-in custom models:**
+
+| Name | Description |
+|---|---|
+| `echo` | Echoes input back (testing) |
+| `qwen3_vl` | Qwen3-VL vision-language model (8B, 72B, etc.) |
+
+**Installation:**
+
+Custom models require additional dependencies not included in the base install:
+
+```bash
+pip install -e ".[custom-models]"
+```
+
+This installs `torch`, `transformers`, `accelerate`, `fastapi`, `uvicorn`, and `Pillow`.
+
+**How it works:**
+
+When you run `--backend custom --model <name>`:
+1. The registry looks up the model class from `easi/llm/models/<name>/manifest.yaml`
+2. A FastAPI HTTP server is started as a subprocess, loading the model
+3. The server exposes an OpenAI-compatible `/v1/chat/completions` endpoint
+4. LiteLLM connects to it transparently via the `openai/` prefix
+5. Manifest `default_kwargs` (e.g., `dtype`, `attn_implementation`) are merged with CLI `--llm-kwargs`
+
+**Adding a new custom model:**
+
+Create a directory under `easi/llm/models/` with:
+
+```
+easi/llm/models/my_model/
+├── __init__.py
+├── manifest.yaml
+└── model.py
+```
+
+`manifest.yaml`:
+```yaml
+name: my_model
+display_name: "My Custom Model"
+description: "Description of the model"
+model_class: "easi.llm.models.my_model.model.MyModel"
+default_kwargs:
+  dtype: "bfloat16"
+```
+
+`model.py`:
+```python
+from easi.llm.models.base_model_server import BaseModelServer
+
+class MyModel(BaseModelServer):
+    def load(self, model_path: str, device: str, **kwargs) -> None:
+        # Load model weights
+        ...
+
+    def generate(self, messages: list[dict], **kwargs) -> str:
+        # messages are in OpenAI format (with image_url for vision)
+        # Return generated text
+        ...
+
+    def unload(self) -> None:
+        # Release GPU memory
+        ...
+```
+
+Helper utilities are available in `easi.llm.models.helpers`:
+- `extract_images(messages)` — Extract PIL Images from base64 image_url entries
+- `extract_text_only(messages)` — Concatenate all text content
+- `extract_by_role(messages)` — Group text by role
+
+---
+
 ## `easi llm-server` — Dummy LLM Server
 
 Start a minimal OpenAI-compatible dummy LLM server for testing.
@@ -455,7 +584,7 @@ The CLI itself does not use environment variables, but the LLM backends require 
 | `ANTHROPIC_API_KEY` | `anthropic` |
 | `GOOGLE_API_KEY` | `gemini` |
 
-These are handled by the underlying LiteLLM client.
+These are handled by the underlying LiteLLM client. The `vllm` and `custom` backends do not require API keys (a dummy key is used automatically for the local OpenAI-compatible server).
 
 ---
 
