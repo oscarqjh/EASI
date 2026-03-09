@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 
 _HEALTH_POLL_INTERVAL = 5.0
 _DEFAULT_STARTUP_TIMEOUT = 600.0
-_DEFAULT_VLLM_FLAGS = {
+_DEFAULT_VLLM_SERVER_FLAGS = {
     "enable_prefix_caching": True,
     "disable_log_requests": True,
 }
@@ -147,10 +147,10 @@ class ServerManager:
                 "--port", str(self.port),
             ]
             # Merge defaults with user overrides (user wins)
-            merged_kwargs = {**_DEFAULT_VLLM_FLAGS, **self.server_kwargs}
+            merged_kwargs = {**_DEFAULT_VLLM_SERVER_FLAGS, **self.server_kwargs}
             overridden = {
                 k: v for k, v in self.server_kwargs.items()
-                if k in _DEFAULT_VLLM_FLAGS and v != _DEFAULT_VLLM_FLAGS[k]
+                if k in _DEFAULT_VLLM_SERVER_FLAGS and v != _DEFAULT_VLLM_SERVER_FLAGS[k]
             }
             if overridden:
                 logger.trace("[%s] User overrides for default vLLM flags: %s", self.label, overridden)
@@ -225,7 +225,7 @@ class ServerManager:
 
 
 class MultiServerManager:
-    """Manages multiple vLLM server instances across GPUs."""
+    """Manages multiple local LLM server instances across GPUs."""
 
     def __init__(
         self,
@@ -235,6 +235,7 @@ class MultiServerManager:
         base_port: int = 8000,
         server_kwargs: dict | None = None,
         startup_timeout: float = 300.0,
+        backend: str = "vllm",
     ):
         if gpu_ids is not None and len(gpu_ids) % num_instances != 0:
             raise ValueError(
@@ -247,6 +248,7 @@ class MultiServerManager:
         self.base_port = base_port
         self.server_kwargs = server_kwargs or {}
         self.startup_timeout = startup_timeout
+        self.backend = backend
         self._managers: list[ServerManager] = []
 
     def start(self) -> list[str]:
@@ -273,21 +275,21 @@ class MultiServerManager:
                 port = self._find_available_port(next_port)
                 next_port = port + 1
                 mgr = ServerManager(
-                    backend="vllm",
+                    backend=self.backend,
                     model=self.model,
                     port=port,
                     server_kwargs=self.server_kwargs,
                     startup_timeout=self.startup_timeout,
                     cuda_visible_devices=cuda_devices,
-                    label=f"vllm-{i}",
+                    label=f"{self.backend}-{i}",
                 )
                 mgr.launch()
                 self._managers.append(mgr)
 
             # Phase 2: Wait for all health checks concurrently
             logger.info(
-                "All %d vLLM processes spawned, waiting for health checks...",
-                self.num_instances,
+                "All %d %s processes spawned, waiting for health checks...",
+                self.num_instances, self.backend,
             )
             urls = [None] * len(self._managers)
             with ThreadPoolExecutor(max_workers=len(self._managers)) as pool:
@@ -301,8 +303,8 @@ class MultiServerManager:
 
         except Exception:
             logger.warning(
-                "vLLM startup failed, stopping %d spawned instances",
-                len(self._managers),
+                "%s startup failed, stopping %d spawned instances",
+                self.backend, len(self._managers),
             )
             self.stop()
             raise

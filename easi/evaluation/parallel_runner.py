@@ -65,34 +65,34 @@ class ParallelRunner(EvaluationRunner):
 
     def _validate_gpu_args(self):
         """Validate GPU allocation arguments."""
-        if self.vllm_instances and self.vllm_instances > 1 and not self.vllm_gpus:
+        if self.llm_instances and self.llm_instances > 1 and not self.llm_gpus:
             raise ValueError(
-                "--vllm-gpus is required when --vllm-instances > 1. "
-                "Specify which GPUs to use for vLLM inference."
+                "--llm-gpus is required when --llm-instances > 1. "
+                "Specify which GPUs to use for LLM inference."
             )
-        if self.vllm_gpus and self.sim_gpus:
-            overlap = set(self.vllm_gpus) & set(self.sim_gpus)
+        if self.llm_gpus and self.sim_gpus:
+            overlap = set(self.llm_gpus) & set(self.sim_gpus)
             if overlap:
                 raise ValueError(
-                    f"--vllm-gpus and --sim-gpus must not overlap. "
+                    f"--llm-gpus and --sim-gpus must not overlap. "
                     f"Overlapping GPU IDs: {overlap}"
                 )
-        # Warn if vLLM-specific args are set but backend is not vllm
-        if self.backend and self.backend != "vllm":
+        # Warn if local-server args are set but backend is not a local backend
+        if self.backend and self.backend not in ("vllm", "custom"):
             ignored = []
-            if self.vllm_instances:
-                ignored.append("--vllm-instances")
-            if self.vllm_gpus:
-                ignored.append("--vllm-gpus")
+            if self.llm_instances:
+                ignored.append("--llm-instances")
+            if self.llm_gpus:
+                ignored.append("--llm-gpus")
             if ignored:
                 logger.warning(
-                    "%s will be ignored because --backend is '%s' (not 'vllm').",
+                    "%s will be ignored because --backend is '%s' (not a local LLM backend).",
                     ", ".join(ignored), self.backend,
                 )
         # Validate GPU IDs against hardware
         all_gpu_ids = set()
-        if self.vllm_gpus:
-            all_gpu_ids.update(self.vllm_gpus)
+        if self.llm_gpus:
+            all_gpu_ids.update(self.llm_gpus)
         if self.sim_gpus:
             all_gpu_ids.update(self.sim_gpus)
         if all_gpu_ids:
@@ -132,8 +132,8 @@ class ParallelRunner(EvaluationRunner):
                 all_kw = parse_llm_kwargs(self.llm_kwargs_raw)
                 srv_kw, _ = _split(all_kw)
 
-                num_instances = self.vllm_instances or 1
-                gpu_ids = self.vllm_gpus
+                num_instances = self.llm_instances or 1
+                gpu_ids = self.llm_gpus
 
                 server_mgr = MultiServerManager(
                     model=self.model,

@@ -159,45 +159,45 @@ class TestRunnerGPUArgs:
     """Test GPU-related args on EvaluationRunner."""
 
     def test_runner_accepts_gpu_args(self):
-        """EvaluationRunner should accept vllm_instances, vllm_gpus, sim_gpus."""
+        """EvaluationRunner should accept llm_instances, llm_gpus, sim_gpus."""
         from easi.evaluation.runner import EvaluationRunner
         runner = EvaluationRunner(
             task_name="dummy_task",
             agent_type="dummy",
-            vllm_instances=2,
-            vllm_gpus=[0, 1],
+            llm_instances=2,
+            llm_gpus=[0, 1],
             sim_gpus=[2, 3],
         )
-        assert runner.vllm_instances == 2
-        assert runner.vllm_gpus == [0, 1]
+        assert runner.llm_instances == 2
+        assert runner.llm_gpus == [0, 1]
         assert runner.sim_gpus == [2, 3]
 
     def test_runner_gpu_args_default_none(self):
         """GPU args should default to None."""
         from easi.evaluation.runner import EvaluationRunner
         runner = EvaluationRunner(task_name="dummy_task", agent_type="dummy")
-        assert runner.vllm_instances is None
-        assert runner.vllm_gpus is None
+        assert runner.llm_instances is None
+        assert runner.llm_gpus is None
         assert runner.sim_gpus is None
 
 
 class TestGPUValidation:
     """Test GPU allocation validation."""
 
-    def test_vllm_gpus_required_when_instances_specified(self):
-        """Should raise if --vllm-instances set but --vllm-gpus not provided."""
+    def test_llm_gpus_required_when_instances_specified(self):
+        """Should raise if --llm-instances set but --llm-gpus not provided."""
         from easi.evaluation.parallel_runner import ParallelRunner
         import pytest
 
-        with pytest.raises(ValueError, match="--vllm-gpus"):
+        with pytest.raises(ValueError, match="--llm-gpus"):
             ParallelRunner(
                 task_name="dummy_task", agent_type="dummy",
                 num_parallel=4, backend="vllm", model="test",
-                vllm_instances=2, vllm_gpus=None,
+                llm_instances=2, llm_gpus=None,
             )
 
-    def test_vllm_gpus_sim_gpus_no_overlap(self):
-        """Should raise if vllm_gpus and sim_gpus overlap."""
+    def test_llm_gpus_sim_gpus_no_overlap(self):
+        """Should raise if llm_gpus and sim_gpus overlap."""
         from easi.evaluation.parallel_runner import ParallelRunner
         import pytest
 
@@ -205,7 +205,7 @@ class TestGPUValidation:
             ParallelRunner(
                 task_name="dummy_task", agent_type="dummy",
                 num_parallel=4, backend="vllm", model="test",
-                vllm_instances=2, vllm_gpus=[0, 1], sim_gpus=[1, 2],
+                llm_instances=2, llm_gpus=[0, 1], sim_gpus=[1, 2],
             )
 
     def test_valid_gpu_config_passes(self):
@@ -215,9 +215,9 @@ class TestGPUValidation:
         runner = ParallelRunner(
             task_name="dummy_task", agent_type="dummy",
             num_parallel=4, backend="vllm", model="test",
-            vllm_instances=2, vllm_gpus=[0, 1], sim_gpus=[2, 3],
+            llm_instances=2, llm_gpus=[0, 1], sim_gpus=[2, 3],
         )
-        assert runner.vllm_instances == 2
+        assert runner.llm_instances == 2
 
     def test_invalid_gpu_ids_raises(self):
         """Should raise if GPU IDs exceed hardware count."""
@@ -229,7 +229,7 @@ class TestGPUValidation:
                 ParallelRunner(
                     task_name="dummy_task", agent_type="dummy",
                     num_parallel=4, backend="vllm", model="test",
-                    vllm_instances=2, vllm_gpus=[0, 1, 2, 3],
+                    llm_instances=2, llm_gpus=[0, 1, 2, 3],
                 )
 
     def test_invalid_sim_gpu_ids_raises(self):
@@ -253,7 +253,7 @@ class TestGPUValidation:
             with pytest.raises(ValueError, match="do not exist"):
                 ParallelRunner(
                     task_name="dummy_task", agent_type="dummy",
-                    num_parallel=4, vllm_gpus=[-1, 0],
+                    num_parallel=4, llm_gpus=[-1, 0],
                 )
 
     def test_gpu_validation_skipped_when_detection_fails(self):
@@ -265,9 +265,9 @@ class TestGPUValidation:
             # Should not raise even with absurd GPU IDs
             runner = ParallelRunner(
                 task_name="dummy_task", agent_type="dummy",
-                num_parallel=4, vllm_gpus=[99, 100],
+                num_parallel=4, llm_gpus=[99, 100],
             )
-            assert runner.vllm_gpus == [99, 100]
+            assert runner.llm_gpus == [99, 100]
 
 
 class TestCLIParallelArg:

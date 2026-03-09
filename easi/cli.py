@@ -102,7 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
                               help="LLM server URL")
     start_parser.add_argument("--seed", type=int, default=None, dest="agent_seed")
     start_parser.add_argument("--backend", type=str, default=None,
-                              help="LLM backend: vllm, openai, anthropic, gemini, dummy")
+                              help="LLM backend: vllm, custom, openai, anthropic, gemini, dummy")
     start_parser.add_argument("--model", type=str, default=None,
                               help="Model name (HF path for vLLM, API name for proprietary)")
     start_parser.add_argument("--port", type=int, default=None,
@@ -114,14 +114,14 @@ def build_parser() -> argparse.ArgumentParser:
     start_parser.add_argument("--num-parallel", type=int, default=None, dest="num_parallel",
                               help="Number of parallel simulator instances (default: 1, sequential).")
     start_parser.add_argument(
-        "--vllm-instances", type=int, default=None, dest="vllm_instances",
-        help="Number of vLLM server instances to start (default: 1). "
-             "Each instance runs on a subset of --vllm-gpus.",
+        "--llm-instances", type=int, default=None, dest="llm_instances",
+        help="Number of local LLM server instances to start (default: 1). "
+             "Each instance runs on a subset of --llm-gpus.",
     )
     start_parser.add_argument(
-        "--vllm-gpus", type=str, default=None, dest="vllm_gpus",
-        help="Comma-separated GPU IDs for vLLM inference (e.g., '0,1'). "
-             "GPUs are split evenly across --vllm-instances.",
+        "--llm-gpus", type=str, default=None, dest="llm_gpus",
+        help="Comma-separated GPU IDs for LLM inference (e.g., '0,1'). "
+             "GPUs are split evenly across --llm-instances.",
     )
     start_parser.add_argument(
         "--sim-gpus", type=str, default=None, dest="sim_gpus",
@@ -467,13 +467,13 @@ def cmd_start(args):
 
     # Parse comma-separated GPU strings into lists of ints
     # When resuming, values from config.json may already be list[int]
-    vllm_gpus_val = run_kwargs.pop("vllm_gpus", None)
+    llm_gpus_val = run_kwargs.pop("llm_gpus", None)
     sim_gpus_val = run_kwargs.pop("sim_gpus", None)
-    if vllm_gpus_val:
-        if isinstance(vllm_gpus_val, list):
-            run_kwargs["vllm_gpus"] = [int(g) for g in vllm_gpus_val]
+    if llm_gpus_val:
+        if isinstance(llm_gpus_val, list):
+            run_kwargs["llm_gpus"] = [int(g) for g in llm_gpus_val]
         else:
-            run_kwargs["vllm_gpus"] = [int(g) for g in vllm_gpus_val.split(",")]
+            run_kwargs["llm_gpus"] = [int(g) for g in llm_gpus_val.split(",")]
     if sim_gpus_val:
         if isinstance(sim_gpus_val, list):
             run_kwargs["sim_gpus"] = [int(g) for g in sim_gpus_val]

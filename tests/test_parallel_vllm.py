@@ -10,14 +10,14 @@ def test_parallel_vllm_end_to_end():
         num_parallel=4,
         backend="vllm",
         model="test-model",
-        vllm_instances=2,
-        vllm_gpus=[0, 1],
+        llm_instances=2,
+        llm_gpus=[0, 1],
         sim_gpus=[2, 3],
     )
 
     # Verify config stored correctly
-    assert runner.vllm_instances == 2
-    assert runner.vllm_gpus == [0, 1]
+    assert runner.llm_instances == 2
+    assert runner.llm_gpus == [0, 1]
     assert runner.sim_gpus == [2, 3]
     assert runner.num_parallel == 4
 
