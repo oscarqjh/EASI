@@ -116,3 +116,21 @@ class TestDiscovery:
         )
         cls = load_model_class("test_model")
         assert cls is FakeModel
+
+
+# ---------------------------------------------------------------------------
+# TestBuiltInEchoModel
+# ---------------------------------------------------------------------------
+
+class TestBuiltInEchoModel:
+    def test_echo_model_discovered(self):
+        refresh()
+        assert "echo" in list_models()
+
+    def test_echo_model_loadable(self):
+        refresh()
+        cls = load_model_class("echo")
+        instance = cls()
+        instance.load("dummy", "cpu")
+        result = instance.generate([{"role": "user", "content": "hello"}])
+        assert "hello" in result.lower()
