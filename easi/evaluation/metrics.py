@@ -26,9 +26,11 @@ def default_aggregate(records: list[EpisodeRecord]) -> dict:
             if isinstance(value, (int, float)):
                 numeric_keys.setdefault(key, []).append(float(value))
 
-    # Average each numeric metric
+    # Average each numeric metric over ALL episodes (not just those that emitted the key).
+    # Failed episodes may not emit task-specific keys — they should contribute 0, not be excluded.
+    total = len(records)
     for key, values in numeric_keys.items():
-        summary[f"avg_{key}"] = round(sum(values) / len(values), 4)
+        summary[f"avg_{key}"] = round(sum(values) / total, 4)
 
     # Convenience aliases
     if "avg_success" in summary:

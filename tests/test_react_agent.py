@@ -2,6 +2,7 @@
 import json
 
 import pytest
+from litellm.exceptions import BadRequestError
 
 from easi.agents.prompt_builder import DefaultPromptBuilder, PromptBuilderProtocol
 from easi.agents.react_agent import ReActAgent
@@ -318,7 +319,10 @@ class TestResponseFormatFallback:
                 self.call_count += 1
                 call_log.append(response_format)
                 if response_format is not None:
-                    raise Exception("response_format not supported")
+                    raise BadRequestError(
+                        "response_format not supported",
+                        model="test", llm_provider="openai",
+                    )
                 return json.dumps({
                     "executable_plan": [{"action": "MoveAhead"}],
                 })
@@ -348,7 +352,10 @@ class TestResponseFormatFallback:
                 self.call_count += 1
                 call_log.append(response_format)
                 if response_format is not None:
-                    raise Exception("not supported")
+                    raise BadRequestError(
+                        "not supported",
+                        model="test", llm_provider="openai",
+                    )
                 return json.dumps({
                     "executable_plan": [{"action": "MoveAhead"}],
                 })

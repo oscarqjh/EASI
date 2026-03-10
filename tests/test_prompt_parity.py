@@ -193,7 +193,7 @@ class TestStatelessAgent:
                 self.call_count = 0
                 self.last_messages = None
 
-            def generate(self, messages):
+            def generate(self, messages, **kwargs):
                 self.call_count += 1
                 self.last_messages = messages
                 return json.dumps({
@@ -262,7 +262,7 @@ class TestStatelessAgent:
         from easi.agents.react_agent import ReActAgent
 
         # LLM returns multi-action plan
-        mock_llm.generate = lambda msgs: json.dumps({
+        mock_llm.generate = lambda msgs, **kwargs: json.dumps({
             "executable_plan": [
                 {"action_id": 14, "action_name": "find a Mug"},
                 {"action_id": 0, "action_name": "find a Cart"},
@@ -289,7 +289,7 @@ class TestStatelessAgent:
         from easi.agents.react_agent import ReActAgent
 
         class MockLLMWithBadJson:
-            def generate(self, messages):
+            def generate(self, messages, **kwargs):
                 return "{'visual_state_description': 'room', 'reasoning_and_reflection': 'think', 'language_plan': 'plan', 'executable_plan': [{'action_id': 14, 'action_name': 'find a Mug'}]}"
 
         actions = get_global_action_space()

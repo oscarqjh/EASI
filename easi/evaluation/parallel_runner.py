@@ -426,7 +426,12 @@ class ParallelRunner(EvaluationRunner):
 
             # Aggregate and save summary
             metric_results = task.aggregate_results(records)
-            summary = {"num_episodes": len(all_results), "metrics": metric_results}
+            effective = sum(1 for r in all_results if "error" not in r)
+            summary = {
+                "num_episodes": len(all_results),
+                "effective_episodes": effective,
+                "metrics": metric_results,
+            }
             summary["num_parallel"] = self.num_parallel
             summary["wall_clock_seconds"] = wall_seconds
             if backend and backend != "legacy":

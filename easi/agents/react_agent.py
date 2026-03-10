@@ -14,6 +14,22 @@ from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Exception types that indicate response_format is unsupported by the backend.
+# Lazy-resolved on first use to avoid importing litellm at module level.
+_FORMAT_UNSUPPORTED_ERRORS: tuple[type[Exception], ...] | None = None
+
+
+def _get_format_unsupported_errors() -> tuple[type[Exception], ...]:
+    """Return exception types for unsupported response_format."""
+    global _FORMAT_UNSUPPORTED_ERRORS
+    if _FORMAT_UNSUPPORTED_ERRORS is None:
+        try:
+            from litellm.exceptions import BadRequestError
+            _FORMAT_UNSUPPORTED_ERRORS = (BadRequestError,)
+        except ImportError:
+            _FORMAT_UNSUPPORTED_ERRORS = ()
+    return _FORMAT_UNSUPPORTED_ERRORS
+
 
 def _format_messages_for_log(messages: list[dict]) -> str:
     """Extract readable text from OpenAI-format messages for logging."""
@@ -152,7 +168,7 @@ class ReActAgent(BaseAgent):
 
         try:
             return self.llm_client.generate(messages, response_format=response_format)
-        except Exception as e:
+        except _get_format_unsupported_errors() as e:
             logger.warning(
                 "response_format not supported by backend, "
                 "falling back to prompt-only: %s", e,

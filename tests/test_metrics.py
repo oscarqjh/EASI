@@ -61,6 +61,21 @@ class TestDefaultAggregate:
         assert "avg_task_success" in agg
         assert "avg_note" not in agg
 
+    def test_missing_keys_count_as_zero(self):
+        """Failed episodes missing task-specific keys should not inflate averages."""
+        from easi.evaluation.metrics import default_aggregate
+        records = [
+            EpisodeRecord({}, [], {"task_success": 1.0, "spl": 0.8, "num_steps": 10.0}),
+            EpisodeRecord({}, [], {"task_success": 1.0, "spl": 0.6, "num_steps": 5.0}),
+            # Failed episode: only has success and num_steps, no spl
+            EpisodeRecord({}, [], {"task_success": 0.0, "num_steps": 0.0}),
+        ]
+        agg = default_aggregate(records)
+        # spl should be averaged over 3 episodes (0.8 + 0.6 + 0) / 3 = 0.4667
+        assert agg["avg_spl"] == round((0.8 + 0.6) / 3, 4)
+        # task_success averaged over 3: (1 + 1 + 0) / 3 = 0.6667
+        assert agg["avg_task_success"] == round(2.0 / 3, 4)
+
     def test_convenience_aliases(self):
         from easi.evaluation.metrics import default_aggregate
         records = [
@@ -166,6 +181,8 @@ class TestSummaryJsonStructure:
 
         # Metadata should be at top level
         assert summary["num_episodes"] == 2
+        assert "effective_episodes" in summary
+        assert summary["effective_episodes"] <= summary["num_episodes"]
 
         # Metric keys should NOT be at the top level
         assert "avg_success" not in summary

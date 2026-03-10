@@ -312,7 +312,12 @@ class EvaluationRunner:
 
         # 6. Aggregate and save summary
         metric_results = task.aggregate_results(records)
-        summary = {"num_episodes": len(all_results), "metrics": metric_results}
+        effective = sum(1 for r in all_results if "error" not in r)
+        summary = {
+            "num_episodes": len(all_results),
+            "effective_episodes": effective,
+            "metrics": metric_results,
+        }
         if backend and backend != "legacy":
             summary["llm_usage"] = self._aggregate_llm_usage(all_results)
             summary["model"] = self.model

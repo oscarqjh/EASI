@@ -143,6 +143,10 @@ def build_parser() -> argparse.ArgumentParser:
     model_info_parser = model_sub.add_parser("info", help="Show model details", parents=[common])
     model_info_parser.add_argument("model_name", help="Model name")
 
+    # --- ps command ---
+    ps_parser = subparsers.add_parser("ps", help="Show EASI-related processes (bridges, LLM servers)", parents=[common])
+    ps_parser.add_argument("--kill", action="store_true", help="Kill all found EASI processes")
+
     # --- llm-server command ---
     llm_parser = subparsers.add_parser("llm-server", help="Start dummy LLM server", parents=[common])
     llm_parser.add_argument("--port", type=int, default=8000)
@@ -538,6 +542,133 @@ def cmd_llm_server(host: str, port: int, mode: str, action_space: list[str]) -> 
     run_server(host=host, port=port, mode=mode, action_space=action_space)
 
 
+def cmd_ps(kill: bool = False) -> None:
+    """Show (and optionally kill) EASI-related processes."""
+    import os
+    import signal
+    import subprocess
+
+    # Patterns that identify EASI-spawned processes
+    patterns = [
+        "easi.llm.models.http_server",       # custom model server
+        "vllm.entrypoints.openai.api_server", # vLLM server
+        "easi.llm.dummy_server",              # dummy LLM server
+    ]
+    # Also match bridge scripts by looking for bridge.py in easi paths
+    bridge_pattern = "easi/simulators/.*/bridge.py|easi/tasks/.*/bridge.py"
+
+    my_pid = os.getpid()
+
+    # Use ps to find matching processes
+    try:
+        result = subprocess.run(
+            ["ps", "aux"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        logger.error("Failed to run 'ps aux'")
+        return
+
+    found: list[dict] = []
+    for line in result.stdout.strip().splitlines()[1:]:  # skip header
+        parts = line.split(None, 10)
+        if len(parts) < 11:
+            continue
+        pid = int(parts[1])
+        if pid == my_pid:
+            continue
+        cmd_str = parts[10]
+        stat = parts[7]
+
+        matched_pattern = None
+        for pattern in patterns:
+            if pattern in cmd_str:
+                matched_pattern = pattern
+                break
+        if matched_pattern is None:
+            import re
+            if re.search(bridge_pattern, cmd_str):
+                matched_pattern = "bridge"
+
+        if matched_pattern is None:
+            continue
+
+        is_zombie = "Z" in stat
+        found.append({
+            "pid": pid,
+            "user": parts[0],
+            "stat": stat,
+            "cpu": parts[2],
+            "mem": parts[3],
+            "start": parts[8],
+            "command": cmd_str[:120],
+            "pattern": matched_pattern,
+            "zombie": is_zombie,
+        })
+
+    if not found:
+        logger.info("No EASI-related processes found.")
+        return
+
+    # Display
+    logger.info("Found %d EASI-related process(es):\n", len(found))
+    logger.info("  %-7s %-6s %-5s %-5s %-8s %s", "PID", "STAT", "CPU%", "MEM%", "TYPE", "COMMAND")
+    logger.info("  %s", "-" * 80)
+    for p in found:
+        zombie_tag = " [ZOMBIE]" if p["zombie"] else ""
+        ptype = p["pattern"].split(".")[-1] if "." in p["pattern"] else p["pattern"]
+        logger.info(
+            "  %-7d %-6s %-5s %-5s %-8s %s%s",
+            p["pid"], p["stat"], p["cpu"], p["mem"], ptype, p["command"][:60], zombie_tag,
+        )
+
+    # GPU usage summary
+    try:
+        gpu_result = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid,used_memory",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=10,
+        )
+        if gpu_result.returncode == 0 and gpu_result.stdout.strip():
+            easi_pids = {p["pid"] for p in found}
+            gpu_lines = []
+            for line in gpu_result.stdout.strip().splitlines():
+                parts = [x.strip() for x in line.split(",")]
+                if len(parts) >= 3:
+                    gpu_pid = int(parts[0])
+                    if gpu_pid in easi_pids:
+                        gpu_lines.append((gpu_pid, parts[1][:12], parts[2]))
+            if gpu_lines:
+                logger.info("\n  GPU memory held by EASI processes:")
+                for gpu_pid, gpu_id, mem_mb in gpu_lines:
+                    logger.info("    PID %-7d  GPU %s  %s MiB", gpu_pid, gpu_id, mem_mb)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass  # no nvidia-smi
+
+    # Kill if requested
+    if kill:
+        logger.info("")
+        for p in found:
+            try:
+                os.kill(p["pid"], signal.SIGTERM)
+                logger.info("  Sent SIGTERM to PID %d (%s)", p["pid"], p["pattern"])
+            except ProcessLookupError:
+                logger.info("  PID %d already exited", p["pid"])
+            except PermissionError:
+                logger.warning("  Cannot kill PID %d (permission denied)", p["pid"])
+        # Wait briefly then SIGKILL any survivors
+        import time
+        time.sleep(2)
+        for p in found:
+            try:
+                os.kill(p["pid"], 0)  # check if still alive
+                os.kill(p["pid"], signal.SIGKILL)
+                logger.info("  Sent SIGKILL to PID %d", p["pid"])
+            except (ProcessLookupError, PermissionError):
+                pass
+        logger.info("  Done.")
+
+
 def cmd_model(args) -> None:
     from easi.llm.models.registry import get_model_entry, list_models
 
@@ -613,6 +744,9 @@ def _main() -> None:
 
     elif args.command == "start":
         cmd_start(args)
+
+    elif args.command == "ps":
+        cmd_ps(kill=args.kill)
 
     elif args.command == "model":
         cmd_model(args)

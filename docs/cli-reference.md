@@ -497,6 +497,44 @@ Helper utilities are available in `easi.llm.models.helpers`:
 
 ---
 
+## `easi ps` — Show EASI Processes
+
+List all running EASI-related processes (LLM servers, simulator bridges) and optionally kill them.
+
+```
+easi ps [--kill]
+```
+
+| Option | Description |
+|---|---|
+| `--kill` | Send SIGTERM (then SIGKILL) to all found EASI processes |
+
+**Detected process types:**
+
+| Type | Description |
+|---|---|
+| `http_server` | Custom model server (`easi.llm.models.http_server`) |
+| `api_server` | vLLM server (`vllm.entrypoints.openai.api_server`) |
+| `dummy_server` | Dummy LLM server (`easi.llm.dummy_server`) |
+| `bridge` | Simulator bridge subprocess |
+
+**Output includes:**
+- PID, status, CPU%, MEM%, process type, and command
+- `[ZOMBIE]` tag for zombie processes
+- GPU memory held by EASI processes (via `nvidia-smi`)
+
+**Examples:**
+
+```bash
+# List all EASI processes
+easi ps
+
+# Kill all orphaned EASI processes (e.g., after Ctrl+C)
+easi ps --kill
+```
+
+---
+
 ## `easi llm-server` — Dummy LLM Server
 
 Start a minimal OpenAI-compatible dummy LLM server for testing.

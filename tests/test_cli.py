@@ -35,6 +35,17 @@ def test_cli_parses_comma_separated_llm_url():
     assert args.llm_base_url == "http://localhost:8000/v1,http://localhost:8001/v1"
 
 
+def test_cli_ps_subcommand():
+    from easi.cli import build_parser
+    parser = build_parser()
+    args = parser.parse_args(["ps"])
+    assert args.command == "ps"
+    assert args.kill is False
+
+    args_kill = parser.parse_args(["ps", "--kill"])
+    assert args_kill.kill is True
+
+
 def test_cli_model_list_subcommand():
     from easi.cli import build_parser
     parser = build_parser()
