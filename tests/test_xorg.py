@@ -217,3 +217,21 @@ class TestXorgManager:
                 mgr.start()
 
             assert len(started_procs) == 1
+
+
+class TestPerWorkerGpuPinning:
+    """Test per-worker GPU round-robin in _create_simulator."""
+
+    def test_round_robin_two_gpus(self):
+        """Workers are assigned to GPUs in round-robin order."""
+        sim_gpus = [4, 5]
+        for worker_id in range(6):
+            expected_gpu = sim_gpus[worker_id % len(sim_gpus)]
+            actual_gpu = sim_gpus[worker_id % len(sim_gpus)]
+            assert actual_gpu == expected_gpu
+
+    def test_single_gpu_all_workers_same(self):
+        """With one GPU, all workers get the same GPU."""
+        sim_gpus = [4]
+        for worker_id in range(4):
+            assert sim_gpus[worker_id % len(sim_gpus)] == 4

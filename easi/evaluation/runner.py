@@ -322,18 +322,19 @@ class EvaluationRunner:
                 server.stop()
 
         # 5. Build EpisodeRecords for aggregate_results
+        effective = sum(1 for r in all_results if "error" not in r)
         records = []
         for r in all_results:
             trajectory = r.pop("_trajectory", [])
             episode = r.pop("_episode", {})
+            episode_results = {k: v for k, v in r.items() if not k.startswith("_")}
             records.append(EpisodeRecord(
                 episode=episode,
                 trajectory=trajectory,
-                episode_results=r,
+                episode_results=episode_results,
             ))
 
         # 6. Aggregate and save summary
-        effective = sum(1 for r in all_results if "error" not in r)
         try:
             metric_results = task.aggregate_results(records)
         except Exception as exc:
@@ -650,7 +651,7 @@ class EvaluationRunner:
         else:
             raise ValueError(f"Unknown agent type: {self.agent_type}")
 
-    def _create_simulator(self, simulator_key: str, task=None, label: str = "bridge"):
+    def _create_simulator(self, simulator_key: str, task=None, label: str = "bridge", worker_id: int = 0):
         import json as _json
 
         from easi.simulators.registry import (
@@ -752,8 +753,8 @@ class EvaluationRunner:
 
         # Apply simulator GPU isolation
         if self.sim_gpus is not None:
-            gpu_str = ",".join(str(g) for g in self.sim_gpus)
-            env_vars = EnvVars.merge(env_vars, EnvVars(replace={"CUDA_VISIBLE_DEVICES": gpu_str}))
+            gpu_id = self.sim_gpus[worker_id % len(self.sim_gpus)]
+            env_vars = EnvVars.merge(env_vars, EnvVars(replace={"CUDA_VISIBLE_DEVICES": str(gpu_id)}))
 
         runner = SubprocessRunner(
             python_executable=env_manager.get_python_executable(),

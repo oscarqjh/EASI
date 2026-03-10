@@ -255,6 +255,7 @@ class ParallelRunner(EvaluationRunner):
                         )
                         sim, sim_runner = self._create_simulator(
                             task.simulator_key, task=task, label=f"bridge-{worker_id}",
+                            worker_id=worker_id,
                         )
                         logger.trace(
                             "[Worker %d] Simulator ready (PID=%s)",
@@ -328,6 +329,7 @@ class ParallelRunner(EvaluationRunner):
                                             sim, sim_runner = self._create_simulator(
                                                 task.simulator_key, task=task,
                                                 label=f"bridge-{worker_id}",
+                                                worker_id=worker_id,
                                             )
                                         except Exception as restart_exc:
                                             logger.error(
@@ -439,18 +441,19 @@ class ParallelRunner(EvaluationRunner):
             )
 
             # Build EpisodeRecords for aggregate_results
+            effective = sum(1 for r in all_results if "error" not in r)
             records = []
             for r in all_results:
                 trajectory = r.pop("_trajectory", [])
                 episode = r.pop("_episode", {})
+                episode_results = {k: v for k, v in r.items() if not k.startswith("_")}
                 records.append(EpisodeRecord(
                     episode=episode,
                     trajectory=trajectory,
-                    episode_results=r,
+                    episode_results=episode_results,
                 ))
 
             # Aggregate and save summary
-            effective = sum(1 for r in all_results if "error" not in r)
             try:
                 metric_results = task.aggregate_results(records)
             except Exception as exc:
