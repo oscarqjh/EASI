@@ -9,36 +9,59 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-class TestXorgPlatform:
-    """Test XorgPlatform env vars and command wrapping."""
+class TestXorgWorkerPlatform:
+    """Test _XorgWorkerPlatform env vars and command wrapping."""
 
     def test_name(self):
-        from easi.core.xorg_platform import XorgPlatform
+        from easi.core.xorg_platform import _XorgWorkerPlatform
 
-        p = XorgPlatform(display_num=10, gpu_id=4)
+        p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         assert p.name == "xorg"
 
     def test_env_vars(self):
-        from easi.core.xorg_platform import XorgPlatform
+        from easi.core.xorg_platform import _XorgWorkerPlatform
 
-        p = XorgPlatform(display_num=10, gpu_id=4)
+        p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         ev = p.get_env_vars()
         assert ev.replace["DISPLAY"] == ":10"
         assert ev.replace["CUDA_VISIBLE_DEVICES"] == "4"
         assert ev.replace["EASI_GPU_DISPLAY"] == "1"
 
     def test_wrap_command_passthrough(self):
-        from easi.core.xorg_platform import XorgPlatform
+        from easi.core.xorg_platform import _XorgWorkerPlatform
 
-        p = XorgPlatform(display_num=10, gpu_id=4)
+        p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         cmd = ["python", "bridge.py", "--workspace", "/tmp"]
         assert p.wrap_command(cmd, "1024x768x24") == cmd
 
     def test_is_available(self):
+        from easi.core.xorg_platform import _XorgWorkerPlatform
+
+        p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
+        assert p.is_available() is True
+
+
+class TestXorgPlatformLifecycle:
+    """Test XorgPlatform setup/teardown/for_worker lifecycle."""
+
+    def test_name(self):
         from easi.core.xorg_platform import XorgPlatform
 
-        p = XorgPlatform(display_num=10, gpu_id=4)
-        assert p.is_available() is True
+        p = XorgPlatform()
+        assert p.name == "xorg"
+
+    def test_for_worker_without_setup_raises(self):
+        from easi.core.xorg_platform import XorgPlatform
+
+        p = XorgPlatform()
+        with pytest.raises(RuntimeError, match="setup.*must be called"):
+            p.for_worker(0)
+
+    def test_teardown_without_setup_is_safe(self):
+        from easi.core.xorg_platform import XorgPlatform
+
+        p = XorgPlatform()
+        p.teardown()  # should not raise
 
 
 class TestXorgManager:

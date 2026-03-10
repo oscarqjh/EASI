@@ -66,7 +66,13 @@ class EnvVars:
 
 
 class RenderPlatform(ABC):
-    """Strategy interface for display/rendering backends."""
+    """Strategy interface for display/rendering backends.
+
+    Lifecycle hooks (``setup`` / ``teardown``) allow platforms that manage
+    external services (e.g. Xorg) to start and stop them without
+    if/else logic in the callers.  ``for_worker`` returns a per-worker
+    platform instance (default: ``self``).
+    """
 
     def __init__(self, env_manager=None):
         self._env_manager = env_manager
@@ -101,6 +107,18 @@ class RenderPlatform(ABC):
     def is_available(self) -> bool:
         """Whether this platform can run in the current environment."""
         return True
+
+    # -- Lifecycle hooks (override in platforms that manage services) ----------
+
+    def setup(self, gpu_ids: list[int] | None = None) -> None:
+        """Called once before any simulator is created. Start external services."""
+
+    def teardown(self) -> None:
+        """Called once after all simulators are done. Stop external services."""
+
+    def for_worker(self, worker_id: int) -> RenderPlatform:
+        """Return a per-worker platform instance. Default: return self."""
+        return self
 
 
 # -- Built-in implementations ------------------------------------------------
@@ -184,6 +202,11 @@ class AutoPlatform(RenderPlatform):
 
 # -- Registry -----------------------------------------------------------------
 
+def _xorg_platform_cls() -> type[RenderPlatform]:
+    from easi.core.xorg_platform import XorgPlatform
+    return XorgPlatform
+
+
 _BUILTIN: dict[str, type[RenderPlatform]] = {
     "auto": AutoPlatform,
     "native": NativePlatform,
@@ -201,9 +224,11 @@ def get_render_platform(name: str) -> RenderPlatform:
     """
     cls = _BUILTIN.get(name)
     if cls is None:
+        if name == "xorg":
+            return _xorg_platform_cls()()
         raise ValueError(
             f"Unknown render platform '{name}'. "
-            f"Available: {', '.join(sorted(_BUILTIN))}"
+            f"Available: {', '.join(sorted(_BUILTIN | {'xorg': None}))}"
         )
     return cls()
 

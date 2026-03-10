@@ -93,7 +93,6 @@ class EvaluationRunner:
         self.llm_instances = llm_instances
         self.llm_gpus = llm_gpus
         self.sim_gpus = sim_gpus
-        self._xorg_instances: list | None = None
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         if self.model:
             safe_model = self.model.replace("/", "_")
@@ -139,6 +138,36 @@ class EvaluationRunner:
             for k, v in self._cli_options.items()
         }
 
+    def _setup_render_platform(self, backend: str | None = None):
+        """Resolve, setup, and return the global render platform (if any).
+
+        Calls ``platform.setup(gpu_ids=...)`` so lifecycle platforms (xorg)
+        can start external services. For built-in platforms, ``setup()`` is a
+        no-op.  Returns ``None`` when no ``--render-platform`` was specified
+        (the platform is then resolved per-simulator in ``_create_simulator``).
+        """
+        from easi.core.render_platform import get_render_platform
+
+        if not self.render_platform_name:
+            return None
+
+        platform = get_render_platform(self.render_platform_name)
+
+        # Warn about GPU contention before setup
+        if (
+            platform.name == "xorg"
+            and not self.sim_gpus
+            and backend in ("vllm", "custom")
+            and not self.llm_gpus
+        ):
+            logger.warning(
+                "Xorg and LLM server will both use GPU 0. "
+                "Use --llm-gpus and --sim-gpus to separate them."
+            )
+
+        platform.setup(gpu_ids=self.sim_gpus)
+        return platform
+
     def run(self) -> list[dict]:
         """Run evaluation and return per-episode metric dicts."""
         if self.resume_dir:
@@ -172,7 +201,7 @@ class EvaluationRunner:
         # 2. Resolve LLM backend and optionally start server
         backend, base_url = self._resolve_llm_backend()
         server = None
-        xorg_mgr = None
+        render_platform = None
 
         try:
             if backend in ("vllm", "custom") and base_url is None:
@@ -187,17 +216,8 @@ class EvaluationRunner:
                 )
                 base_url = server.start()
 
-            # Start Xorg servers if needed
-            if self.render_platform_name == "xorg":
-                from easi.core.xorg_manager import XorgManager
-                gpu_ids = self.sim_gpus or [0]
-                if not self.sim_gpus and backend in ("vllm", "custom") and not self.llm_gpus:
-                    logger.warning(
-                        "Xorg and LLM server will both use GPU 0. "
-                        "Use --llm-gpus and --sim-gpus to separate them."
-                    )
-                xorg_mgr = XorgManager(gpu_ids=gpu_ids)
-                self._xorg_instances = xorg_mgr.start()
+            # Resolve and setup render platform (starts external services if needed)
+            self._render_platform = self._setup_render_platform(backend)
 
             # Compute resolved generation kwargs (YAML defaults + CLI overrides)
             from easi.llm.utils import parse_llm_kwargs, split_kwargs
@@ -334,8 +354,8 @@ class EvaluationRunner:
         finally:
             if server:
                 server.stop()
-            if xorg_mgr is not None:
-                xorg_mgr.stop()
+            if self._render_platform is not None:
+                self._render_platform.teardown()
 
         # 5. Build EpisodeRecords for aggregate_results
         effective = sum(1 for r in all_results if "error" not in r)
@@ -756,7 +776,11 @@ class EvaluationRunner:
                 f"Supported: {env_manager.supported_render_platforms}"
             )
 
-        render_platform = resolve_render_platform(simulator_key, platform_name, env_manager=env_manager)
+        # Use pre-setup global platform if available, else resolve per-simulator
+        if getattr(self, '_render_platform', None) is not None:
+            render_platform = self._render_platform
+        else:
+            render_platform = resolve_render_platform(simulator_key, platform_name, env_manager=env_manager)
 
         # Pass platform name to get_env_vars for conditional logic
         from easi.core.render_platform import EnvVars
@@ -767,14 +791,14 @@ class EvaluationRunner:
         if task and task.extra_env_vars:
             env_vars = EnvVars.merge(env_vars, EnvVars(replace=task.extra_env_vars))
 
-        # Apply per-worker GPU pinning
-        if self._xorg_instances:
-            # Xorg platform owns both DISPLAY and GPU assignment
-            from easi.core.xorg_platform import XorgPlatform
-            instance = self._xorg_instances[worker_id % len(self._xorg_instances)]
-            render_platform = XorgPlatform(display_num=instance.display, gpu_id=instance.gpu_id)
-        elif self.sim_gpus is not None:
-            # Non-xorg: per-worker GPU pinning via round-robin
+        # Per-worker platform instance (lifecycle platforms like xorg return
+        # a worker-specific instance that already handles GPU assignment)
+        render_platform = render_platform.for_worker(worker_id)
+
+        # Apply per-worker GPU pinning via round-robin (skip if platform
+        # already sets CUDA_VISIBLE_DEVICES, e.g. xorg worker platforms)
+        platform_env = render_platform.get_env_vars()
+        if self.sim_gpus is not None and "CUDA_VISIBLE_DEVICES" not in platform_env.replace:
             gpu_id = self.sim_gpus[worker_id % len(self.sim_gpus)]
             env_vars = EnvVars.merge(env_vars, EnvVars(replace={"CUDA_VISIBLE_DEVICES": str(gpu_id)}))
 

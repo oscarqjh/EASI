@@ -374,6 +374,8 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float, render_platform_nam
             )
             sys.exit(1)
         render_platform = resolve_render_platform(simulator, platform_name, env_manager=env_manager)
+        render_platform.setup(gpu_ids=[0])
+        worker_platform = render_platform.for_worker(0)
 
         logger.info("Testing %s...", simulator)
         logger.info("  Python: %s", env_manager.get_python_executable())
@@ -384,7 +386,7 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float, render_platform_nam
         runner = SubprocessRunner(
             python_executable=env_manager.get_python_executable(),
             bridge_script_path=sim._get_bridge_script_path(),
-            render_platform=render_platform,
+            render_platform=worker_platform,
             screen_config=env_manager.screen_config,
             startup_timeout=timeout,
             command_timeout=timeout,
@@ -420,6 +422,8 @@ def cmd_sim_test(simulator: str, steps: int, timeout: float, render_platform_nam
             logger.error("Smoke test FAILED: %s", e)
             sim.close()
             sys.exit(1)
+        finally:
+            render_platform.teardown()
 
 
 def _resolve_task_list(args_ns) -> list[str]:
