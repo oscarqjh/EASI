@@ -117,6 +117,7 @@ class TestXorgManager:
         mock_proc.pid = 12345
         mock_proc.wait.return_value = 0
         mgr._processes = [mock_proc]
+        mgr._used_sudo = [False]
         mgr._instances = [XorgInstance(display=10, gpu_id=0, pid=12345)]
         mgr._conf_files = []
 
@@ -124,6 +125,29 @@ class TestXorgManager:
              patch("easi.core.xorg_manager.os.killpg") as mock_killpg:
             mgr.stop()
             mock_killpg.assert_called_with(12345, signal.SIGTERM)
+
+    def test_stop_uses_sudo_kill_for_sudo_launched(self):
+        """Sudo-launched Xorg processes are killed via sudo kill."""
+        from easi.core.xorg_manager import XorgInstance, XorgManager
+
+        mgr = XorgManager(gpu_ids=[0])
+        mock_proc = MagicMock()
+        mock_proc.pid = 12345
+        mock_proc.wait.return_value = 0
+        mgr._processes = [mock_proc]
+        mgr._used_sudo = [True]
+        mgr._instances = [XorgInstance(display=10, gpu_id=0, pid=12345)]
+        mgr._conf_files = []
+
+        with patch("easi.core.xorg_manager.os.getpgid", return_value=12345), \
+             patch("easi.core.xorg_manager.os.killpg") as mock_killpg, \
+             patch("easi.core.xorg_manager.subprocess.run") as mock_run:
+            mgr.stop()
+            mock_killpg.assert_not_called()
+            mock_run.assert_called_once_with(
+                ["sudo", "-n", "kill", f"-{signal.SIGTERM}", "-12345"],
+                capture_output=True, timeout=5,
+            )
 
     def test_sudo_fallback(self):
         """If direct Xorg fails with PermissionError, retry with sudo."""
@@ -156,6 +180,7 @@ class TestXorgManager:
 
             assert len(instances) == 1
             assert call_count == 2
+            assert mgr._used_sudo == [True]
 
     def test_start_failure_stops_all(self):
         """If one GPU's Xorg fails, previously started ones are stopped."""

@@ -103,6 +103,7 @@ class XorgManager:
         self.gpu_ids = gpu_ids
         self.base_display = base_display
         self._processes: list[subprocess.Popen] = []
+        self._used_sudo: list[bool] = []
         self._instances: list[XorgInstance] = []
         self._conf_files: list[str] = []
 
@@ -152,8 +153,9 @@ class XorgManager:
             display_str, gpu_id, pci_bus_id,
         )
 
-        proc = self._launch_xorg(cmd, xorg_path)
+        proc, used_sudo = self._launch_xorg(cmd, xorg_path)
         self._processes.append(proc)
+        self._used_sudo.append(used_sudo)
 
         self._wait_for_ready(display_num, proc)
 
@@ -163,22 +165,27 @@ class XorgManager:
         )
         return XorgInstance(display=display_num, gpu_id=gpu_id, pid=proc.pid)
 
-    def _launch_xorg(self, cmd: list[str], xorg_path: str) -> subprocess.Popen:
-        """Try launching Xorg directly, fall back to sudo on PermissionError."""
+    def _launch_xorg(self, cmd: list[str], xorg_path: str) -> tuple[subprocess.Popen, bool]:
+        """Try launching Xorg directly, fall back to sudo on PermissionError.
+
+        Returns (process, used_sudo) so stop() knows whether to use sudo kill.
+        """
         try:
-            return subprocess.Popen(
+            proc = subprocess.Popen(
                 cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 preexec_fn=os.setsid,
             )
+            return proc, False
         except PermissionError:
             logger.info("Direct Xorg launch failed (permission denied), retrying with sudo")
 
         sudo_cmd = ["sudo", "-n"] + cmd
         try:
-            return subprocess.Popen(
+            proc = subprocess.Popen(
                 sudo_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 preexec_fn=os.setsid,
             )
+            return proc, True
         except (PermissionError, FileNotFoundError) as exc:
             raise RuntimeError(
                 f"Xorg requires root privileges. Either run as root, or configure "
@@ -216,24 +223,17 @@ class XorgManager:
 
     def stop(self) -> None:
         """Stop all Xorg servers and clean up."""
-        for proc in self._processes:
-            try:
-                pgid = os.getpgid(proc.pid)
-                os.killpg(pgid, signal.SIGTERM)
-            except (ProcessLookupError, PermissionError):
-                pass
+        for proc, sudo in zip(self._processes, self._used_sudo):
+            self._kill_proc(proc, signal.SIGTERM, sudo)
 
-        for proc in self._processes:
+        for proc, sudo in zip(self._processes, self._used_sudo):
             try:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                try:
-                    pgid = os.getpgid(proc.pid)
-                    os.killpg(pgid, signal.SIGKILL)
-                except (ProcessLookupError, PermissionError):
-                    pass
+                self._kill_proc(proc, signal.SIGKILL, sudo)
 
         self._processes.clear()
+        self._used_sudo.clear()
         self._instances.clear()
 
         for conf in self._conf_files:
@@ -242,3 +242,18 @@ class XorgManager:
             except OSError:
                 pass
         self._conf_files.clear()
+
+    @staticmethod
+    def _kill_proc(proc: subprocess.Popen, sig: int, used_sudo: bool) -> None:
+        """Send a signal to a process group, using sudo if the process was sudo-launched."""
+        try:
+            pgid = os.getpgid(proc.pid)
+            if used_sudo:
+                subprocess.run(
+                    ["sudo", "-n", "kill", f"-{sig}", f"-{pgid}"],
+                    capture_output=True, timeout=5,
+                )
+            else:
+                os.killpg(pgid, sig)
+        except (ProcessLookupError, PermissionError, subprocess.TimeoutExpired):
+            pass
