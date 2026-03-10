@@ -324,10 +324,26 @@ class ParallelRunner(EvaluationRunner):
                                             sim.close()
                                         except Exception:
                                             pass
-                                        sim, sim_runner = self._create_simulator(
-                                            task.simulator_key, task=task,
-                                            label=f"bridge-{worker_id}",
-                                        )
+                                        try:
+                                            sim, sim_runner = self._create_simulator(
+                                                task.simulator_key, task=task,
+                                                label=f"bridge-{worker_id}",
+                                            )
+                                        except Exception as restart_exc:
+                                            logger.error(
+                                                "[Worker %d] Simulator restart failed: %s",
+                                                worker_id, restart_exc,
+                                            )
+                                            result = {
+                                                "episode_id": episode_id,
+                                                "instruction": task.get_instruction(episode),
+                                                "success": 0.0,
+                                                "num_steps": 0,
+                                                "elapsed_seconds": 0.0,
+                                                "error": f"simulator restart failed: {restart_exc}",
+                                            }
+                                            sim = None
+                                            break
                                     else:
                                         logger.error(
                                             "[Worker %d] Episode %s failed after %d attempts, skipping",
@@ -370,6 +386,13 @@ class ParallelRunner(EvaluationRunner):
                             )
 
                             episodes_done += 1
+
+                            # If simulator restart failed, stop this worker
+                            if sim is None:
+                                logger.warning(
+                                    "[Worker %d] No simulator, stopping worker", worker_id,
+                                )
+                                break
 
                     finally:
                         logger.trace("[Worker %d] Shutting down simulator", worker_id)

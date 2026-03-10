@@ -258,9 +258,24 @@ class EvaluationRunner:
                                         sim.close()
                                     except Exception:
                                         pass
-                                    sim, sim_runner = self._create_simulator(
-                                        task.simulator_key, task=task,
-                                    )
+                                    try:
+                                        sim, sim_runner = self._create_simulator(
+                                            task.simulator_key, task=task,
+                                        )
+                                    except Exception as restart_exc:
+                                        logger.error(
+                                            "Simulator restart failed: %s", restart_exc,
+                                        )
+                                        result = {
+                                            "episode_id": episode_id,
+                                            "instruction": task.get_instruction(episode),
+                                            "success": 0.0,
+                                            "num_steps": 0,
+                                            "elapsed_seconds": 0.0,
+                                            "error": f"simulator restart failed: {restart_exc}",
+                                        }
+                                        sim = None
+                                        break
                                 else:
                                     logger.error(
                                         "Episode %s failed after %d attempts, skipping",
@@ -293,9 +308,15 @@ class EvaluationRunner:
                             json.dumps(result_to_save, indent=2)
                         )
 
+                        # If simulator restart failed, stop evaluation
+                        if sim is None:
+                            logger.error("No simulator available, stopping evaluation early.")
+                            break
+
                 finally:
                     progress_bar.stop()
-                    sim.close()
+                    if sim is not None:
+                        sim.close()
         finally:
             if server:
                 server.stop()
