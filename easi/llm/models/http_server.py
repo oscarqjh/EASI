@@ -66,7 +66,7 @@ def create_app(model: Any) -> Any:
                 gen_kwargs[key] = request[key]
 
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             content = await loop.run_in_executor(
                 None, partial(model.generate, messages, **gen_kwargs)
             )

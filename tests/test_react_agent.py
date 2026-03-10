@@ -2,8 +2,6 @@
 import json
 
 import pytest
-from litellm.exceptions import BadRequestError
-
 from easi.agents.prompt_builder import DefaultPromptBuilder, PromptBuilderProtocol
 from easi.agents.react_agent import ReActAgent
 from easi.core.episode import Action, Observation
@@ -309,6 +307,8 @@ class TestResponseFormatFallback:
 
     def test_fallback_on_exception(self):
         """When generate() raises with response_format, agent retries without it."""
+        from litellm.exceptions import BadRequestError
+
         call_log = []
 
         class FailOnSchemaLLM:
@@ -343,6 +343,8 @@ class TestResponseFormatFallback:
 
     def test_fallback_cached_after_first_failure(self):
         """After first failure, subsequent calls skip response_format entirely."""
+        from litellm.exceptions import BadRequestError
+
         call_log = []
 
         class FailOnSchemaLLM:

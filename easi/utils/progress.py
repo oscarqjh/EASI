@@ -26,6 +26,10 @@ import sys
 import threading
 import time
 
+from easi.utils.logging import get_logger
+
+_logger = get_logger(__name__)
+
 
 _CLEAR = "\r\033[K"  # carriage return + ANSI erase to end of line
 _REFRESH_INTERVAL = 0.5  # seconds between redraws
@@ -234,8 +238,7 @@ class ProgressBar:
         """Emit a plain log line (for non-TTY mode)."""
         elapsed = time.monotonic() - self._elapsed_start
         mins, secs = divmod(int(elapsed), 60)
-        logger = logging.getLogger("easi.evaluation.progress")
-        logger.info(
+        _logger.info(
             "[Progress] %d/%d episodes (%d failed) — %dm%02ds elapsed",
             self._completed, self.total, self._failed, mins, secs,
         )
