@@ -23,6 +23,7 @@ _HEALTH_POLL_INTERVAL = 0.5
 
 class XorgInstance(NamedTuple):
     """A running Xorg server bound to a GPU."""
+
     display: int
     gpu_id: int
     pid: int
@@ -42,9 +43,16 @@ def _find_available_display(start: int, max_probe: int = 50) -> int:
 def _get_pci_bus_id(gpu_index: int) -> str:
     """Query PCI BusID for a GPU via nvidia-smi, return Xorg format (PCI:B:D:F)."""
     result = subprocess.run(
-        ["nvidia-smi", "--query-gpu=pci.bus_id", "--format=csv,noheader",
-         "-i", str(gpu_index)],
-        capture_output=True, text=True, timeout=10,
+        [
+            "nvidia-smi",
+            "--query-gpu=pci.bus_id",
+            "--format=csv,noheader",
+            "-i",
+            str(gpu_index),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
     )
     if result.returncode != 0 or not result.stdout.strip():
         raise RuntimeError(
@@ -138,7 +146,10 @@ class XorgManager:
         return list(self._instances)
 
     def _start_one(
-        self, xorg_path: str, gpu_id: int, display_num: int,
+        self,
+        xorg_path: str,
+        gpu_id: int,
+        display_num: int,
     ) -> XorgInstance:
         """Start a single Xorg server on the given GPU and display."""
         pci_bus_id = _get_pci_bus_id(gpu_id)
@@ -146,53 +157,95 @@ class XorgManager:
         self._conf_files.append(conf_path)
 
         display_str = f":{display_num}"
-        cmd = [xorg_path, display_str, "-config", conf_path, "-noreset", "-nolisten", "tcp"]
+        cmd = [
+            xorg_path,
+            display_str,
+            "-config",
+            conf_path,
+            "-noreset",
+            "-nolisten",
+            "tcp",
+        ]
 
         logger.info(
             "Starting Xorg on display %s using GPU %d (%s)",
-            display_str, gpu_id, pci_bus_id,
+            display_str,
+            gpu_id,
+            pci_bus_id,
         )
 
         proc, used_sudo = self._launch_xorg(cmd, xorg_path)
         self._processes.append(proc)
         self._used_sudo.append(used_sudo)
 
-        self._wait_for_ready(display_num, proc)
+        try:
+            self._wait_for_ready(display_num, proc)
+        except RuntimeError as exc:
+            if not used_sudo and proc.poll() is not None:
+                if self._passwordless_sudo_available(xorg_path):
+                    logger.info(
+                        "Direct Xorg launch exited early on display %s; retrying with sudo",
+                        display_str,
+                    )
+                    self._processes.pop()
+                    self._used_sudo.pop()
+                    proc, used_sudo = self._launch_xorg_with_sudo(cmd, xorg_path)
+                    self._processes.append(proc)
+                    self._used_sudo.append(used_sudo)
+                    self._wait_for_ready(display_num, proc)
+                else:
+                    raise RuntimeError(
+                        self._sudo_required_message(xorg_path, display_str)
+                    ) from exc
+            else:
+                raise
 
         logger.info(
             "Xorg ready on display %s (PID %d, GPU %d)",
-            display_str, proc.pid, gpu_id,
+            display_str,
+            proc.pid,
+            gpu_id,
         )
         return XorgInstance(display=display_num, gpu_id=gpu_id, pid=proc.pid)
 
-    def _launch_xorg(self, cmd: list[str], xorg_path: str) -> tuple[subprocess.Popen, bool]:
+    def _launch_xorg(
+        self, cmd: list[str], xorg_path: str
+    ) -> tuple[subprocess.Popen, bool]:
         """Try launching Xorg directly, fall back to sudo on PermissionError.
 
         Returns (process, used_sudo) so stop() knows whether to use sudo kill.
         """
         try:
             proc = subprocess.Popen(
-                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 preexec_fn=os.setsid,
             )
             return proc, False
         except PermissionError:
-            logger.info("Direct Xorg launch failed (permission denied), retrying with sudo")
+            logger.info(
+                "Direct Xorg launch failed (permission denied), retrying with sudo"
+            )
 
+        return self._launch_xorg_with_sudo(cmd, xorg_path)
+
+    def _launch_xorg_with_sudo(
+        self,
+        cmd: list[str],
+        xorg_path: str,
+    ) -> tuple[subprocess.Popen, bool]:
         sudo_cmd = ["sudo", "-n"] + cmd
         try:
             proc = subprocess.Popen(
-                sudo_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                sudo_cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 preexec_fn=os.setsid,
             )
             return proc, True
         except (PermissionError, FileNotFoundError) as exc:
-            raise RuntimeError(
-                f"Xorg requires root privileges. Either run as root, or configure "
-                f"passwordless sudo:\n\n"
-                f"  sudo bash -c 'echo \"$USER ALL=(ALL) NOPASSWD: {xorg_path}\" "
-                f">> /etc/sudoers.d/easi-xorg'"
-            ) from exc
+            raise RuntimeError(self._sudo_required_message(xorg_path)) from exc
 
     def _wait_for_ready(self, display_num: int, proc: subprocess.Popen) -> None:
         """Poll until the X server responds or timeout."""
@@ -208,7 +261,8 @@ class XorgManager:
             try:
                 result = subprocess.run(
                     ["xset", "-display", display_str, "q"],
-                    capture_output=True, timeout=2,
+                    capture_output=True,
+                    timeout=2,
                 )
                 if result.returncode == 0:
                     return
@@ -231,6 +285,10 @@ class XorgManager:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._kill_proc(proc, signal.SIGKILL, sudo)
+                try:
+                    proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    pass
 
         self._processes.clear()
         self._used_sudo.clear()
@@ -251,9 +309,37 @@ class XorgManager:
             if used_sudo:
                 subprocess.run(
                     ["sudo", "-n", "kill", f"-{sig}", f"-{pgid}"],
-                    capture_output=True, timeout=5,
+                    capture_output=True,
+                    timeout=5,
                 )
             else:
                 os.killpg(pgid, sig)
         except (ProcessLookupError, PermissionError, subprocess.TimeoutExpired):
             pass
+
+    @staticmethod
+    def _passwordless_sudo_available(xorg_path: str) -> bool:
+        """Probe ``sudo -n -l <xorg_path>`` — sudoers may only whitelist specific commands."""
+        try:
+            result = subprocess.run(
+                ["sudo", "-n", "-l", xorg_path],
+                capture_output=True,
+                timeout=5,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+        return result.returncode == 0
+
+    @staticmethod
+    def _sudo_required_message(xorg_path: str, display_str: str | None = None) -> str:
+        display_hint = ""
+        if display_str is not None:
+            display_hint = (
+                f"Xorg exited before becoming ready on display {display_str}. "
+            )
+        user = os.environ.get("USER", "$USER")
+        return (
+            f"{display_hint}This usually requires root or a console session.\n"
+            f"To fix this, run EASI as root or authorize passwordless sudo:\n\n"
+            f"  sudo bash -c 'echo \"{user} ALL=(ALL) NOPASSWD: {xorg_path}, /usr/bin/kill\" > /etc/sudoers.d/easi-xorg'"
+        )

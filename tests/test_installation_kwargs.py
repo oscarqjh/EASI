@@ -53,7 +53,7 @@ class TestRunnerUsesFactory:
     """EvaluationRunner._create_simulator uses the factory."""
 
     def test_runner_passes_installation_kwargs(self):
-        from easi.core.render_platform import EnvVars, get_render_platform
+        from easi.core.render_platforms import EnvVars, get_render_platform
         from easi.evaluation.runner import EvaluationRunner
 
         runner = EvaluationRunner.__new__(EvaluationRunner)

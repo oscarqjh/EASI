@@ -28,7 +28,7 @@ from easi.communication.filesystem import (
     write_command,
 )
 from easi.core.exceptions import SimulatorError, SimulatorTimeoutError
-from easi.core.render_platform import EnvVars, RenderPlatform
+from easi.core.render_platforms import EnvVars, RenderPlatform
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)

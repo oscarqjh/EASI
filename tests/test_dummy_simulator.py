@@ -14,7 +14,7 @@ from easi.simulators.subprocess_runner import SubprocessRunner
 @pytest.fixture
 def dummy_simulator():
     """Create and start a dummy simulator, cleaning up after the test."""
-    from easi.core.render_platform import get_render_platform
+    from easi.core.render_platforms import get_render_platform
 
     env_manager = DummyEnvManager()
     sim = DummySimulator()
@@ -88,7 +88,7 @@ def test_is_running(dummy_simulator):
 
 def test_dummy_simulator_with_env_vars_wiring():
     """Verify DummyEnvManager.get_env_vars() returns empty EnvVars and doesn't break launch."""
-    from easi.core.render_platform import get_render_platform
+    from easi.core.render_platforms import get_render_platform
 
     env_manager = DummyEnvManager()
     env_vars = env_manager.get_env_vars()

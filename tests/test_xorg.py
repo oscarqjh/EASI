@@ -8,18 +8,21 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+_MGR = "easi.core.render_platforms.xorg_manager"  # canonical module for XorgManager internals
+_XORG = "easi.core.render_platforms.xorg"          # canonical module for XorgPlatform
+
 
 class TestXorgWorkerPlatform:
     """Test _XorgWorkerPlatform env vars and command wrapping."""
 
     def test_name(self):
-        from easi.core.xorg_platform import _XorgWorkerPlatform
+        from easi.core.render_platforms.xorg import _XorgWorkerPlatform
 
         p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         assert p.name == "xorg"
 
     def test_env_vars(self):
-        from easi.core.xorg_platform import _XorgWorkerPlatform
+        from easi.core.render_platforms.xorg import _XorgWorkerPlatform
 
         p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         ev = p.get_env_vars()
@@ -28,14 +31,14 @@ class TestXorgWorkerPlatform:
         assert ev.replace["EASI_GPU_DISPLAY"] == "1"
 
     def test_wrap_command_passthrough(self):
-        from easi.core.xorg_platform import _XorgWorkerPlatform
+        from easi.core.render_platforms.xorg import _XorgWorkerPlatform
 
         p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         cmd = ["python", "bridge.py", "--workspace", "/tmp"]
         assert p.wrap_command(cmd, "1024x768x24") == cmd
 
     def test_is_available(self):
-        from easi.core.xorg_platform import _XorgWorkerPlatform
+        from easi.core.render_platforms.xorg import _XorgWorkerPlatform
 
         p = _XorgWorkerPlatform(display_num=10, gpu_id=4)
         assert p.is_available() is True
@@ -45,20 +48,20 @@ class TestXorgPlatformLifecycle:
     """Test XorgPlatform setup/teardown/for_worker lifecycle."""
 
     def test_name(self):
-        from easi.core.xorg_platform import XorgPlatform
+        from easi.core.render_platforms.xorg import XorgPlatform
 
         p = XorgPlatform()
         assert p.name == "xorg"
 
     def test_for_worker_without_setup_raises(self):
-        from easi.core.xorg_platform import XorgPlatform
+        from easi.core.render_platforms.xorg import XorgPlatform
 
         p = XorgPlatform()
         with pytest.raises(RuntimeError, match="setup.*must be called"):
             p.for_worker(0)
 
     def test_teardown_without_setup_is_safe(self):
-        from easi.core.xorg_platform import XorgPlatform
+        from easi.core.render_platforms.xorg import XorgPlatform
 
         p = XorgPlatform()
         p.teardown()  # should not raise
@@ -68,26 +71,26 @@ class TestXorgManager:
     """Test XorgManager lifecycle with mocked subprocesses."""
 
     def test_no_xorg_binary_raises(self):
-        from easi.core.xorg_manager import XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgManager
 
-        with patch("easi.core.xorg_manager.shutil.which", return_value=None):
+        with patch(f"{_MGR}.shutil.which", return_value=None):
             mgr = XorgManager(gpu_ids=[0])
             with pytest.raises(RuntimeError, match="Xorg is not installed"):
                 mgr.start()
 
     def test_start_single_gpu(self):
-        from easi.core.xorg_manager import XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgManager
 
         mock_proc = MagicMock()
         mock_proc.pid = 12345
         mock_proc.poll.return_value = None
 
         with (
-            patch("easi.core.xorg_manager.shutil.which", return_value="/usr/lib/xorg/Xorg"),
-            patch("easi.core.xorg_manager.subprocess.Popen", return_value=mock_proc),
-            patch("easi.core.xorg_manager.subprocess.run") as mock_run,
-            patch("easi.core.xorg_manager.os.path.exists", return_value=False),
-            patch("easi.core.xorg_manager._write_xorg_conf", return_value="/tmp/easi-xorg-gpu0.conf"),
+            patch(f"{_MGR}.shutil.which", return_value="/usr/lib/xorg/Xorg"),
+            patch(f"{_MGR}.subprocess.Popen", return_value=mock_proc),
+            patch(f"{_MGR}.subprocess.run") as mock_run,
+            patch(f"{_MGR}.os.path.exists", return_value=False),
+            patch(f"{_MGR}._write_xorg_conf", return_value="/tmp/easi-xorg-gpu0.conf"),
         ):
             nvidia_result = MagicMock()
             nvidia_result.returncode = 0
@@ -105,18 +108,18 @@ class TestXorgManager:
             assert instances[0].pid == 12345
 
     def test_start_multi_gpu(self):
-        from easi.core.xorg_manager import XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgManager
 
         mock_proc = MagicMock()
         mock_proc.pid = 99999
         mock_proc.poll.return_value = None
 
         with (
-            patch("easi.core.xorg_manager.shutil.which", return_value="/usr/lib/xorg/Xorg"),
-            patch("easi.core.xorg_manager.subprocess.Popen", return_value=mock_proc),
-            patch("easi.core.xorg_manager.subprocess.run") as mock_run,
-            patch("easi.core.xorg_manager.os.path.exists", return_value=False),
-            patch("easi.core.xorg_manager._write_xorg_conf", return_value="/tmp/easi-xorg-gpu.conf"),
+            patch(f"{_MGR}.shutil.which", return_value="/usr/lib/xorg/Xorg"),
+            patch(f"{_MGR}.subprocess.Popen", return_value=mock_proc),
+            patch(f"{_MGR}.subprocess.run") as mock_run,
+            patch(f"{_MGR}.os.path.exists", return_value=False),
+            patch(f"{_MGR}._write_xorg_conf", return_value="/tmp/easi-xorg-gpu.conf"),
         ):
             nvidia0 = MagicMock(returncode=0, stdout="00000000:3F:00.0\n")
             xset0 = MagicMock(returncode=0)
@@ -133,7 +136,7 @@ class TestXorgManager:
             assert instances[0].display != instances[1].display
 
     def test_stop_sends_sigterm(self):
-        from easi.core.xorg_manager import XorgInstance, XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgInstance, XorgManager
 
         mgr = XorgManager(gpu_ids=[0])
         mock_proc = MagicMock()
@@ -144,14 +147,14 @@ class TestXorgManager:
         mgr._instances = [XorgInstance(display=10, gpu_id=0, pid=12345)]
         mgr._conf_files = []
 
-        with patch("easi.core.xorg_manager.os.getpgid", return_value=12345), \
-             patch("easi.core.xorg_manager.os.killpg") as mock_killpg:
+        with patch(f"{_MGR}.os.getpgid", return_value=12345), \
+             patch(f"{_MGR}.os.killpg") as mock_killpg:
             mgr.stop()
             mock_killpg.assert_called_with(12345, signal.SIGTERM)
 
     def test_stop_uses_sudo_kill_for_sudo_launched(self):
         """Sudo-launched Xorg processes are killed via sudo kill."""
-        from easi.core.xorg_manager import XorgInstance, XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgInstance, XorgManager
 
         mgr = XorgManager(gpu_ids=[0])
         mock_proc = MagicMock()
@@ -162,9 +165,9 @@ class TestXorgManager:
         mgr._instances = [XorgInstance(display=10, gpu_id=0, pid=12345)]
         mgr._conf_files = []
 
-        with patch("easi.core.xorg_manager.os.getpgid", return_value=12345), \
-             patch("easi.core.xorg_manager.os.killpg") as mock_killpg, \
-             patch("easi.core.xorg_manager.subprocess.run") as mock_run:
+        with patch(f"{_MGR}.os.getpgid", return_value=12345), \
+             patch(f"{_MGR}.os.killpg") as mock_killpg, \
+             patch(f"{_MGR}.subprocess.run") as mock_run:
             mgr.stop()
             mock_killpg.assert_not_called()
             mock_run.assert_called_once_with(
@@ -174,7 +177,7 @@ class TestXorgManager:
 
     def test_sudo_fallback(self):
         """If direct Xorg fails with PermissionError, retry with sudo."""
-        from easi.core.xorg_manager import XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgManager
 
         call_count = 0
         def mock_popen(cmd, **kwargs):
@@ -188,11 +191,11 @@ class TestXorgManager:
             return proc
 
         with (
-            patch("easi.core.xorg_manager.shutil.which", return_value="/usr/lib/xorg/Xorg"),
-            patch("easi.core.xorg_manager.subprocess.Popen", side_effect=mock_popen),
-            patch("easi.core.xorg_manager.subprocess.run") as mock_run,
-            patch("easi.core.xorg_manager.os.path.exists", return_value=False),
-            patch("easi.core.xorg_manager._write_xorg_conf", return_value="/tmp/easi-xorg-gpu0.conf"),
+            patch(f"{_MGR}.shutil.which", return_value="/usr/lib/xorg/Xorg"),
+            patch(f"{_MGR}.subprocess.Popen", side_effect=mock_popen),
+            patch(f"{_MGR}.subprocess.run") as mock_run,
+            patch(f"{_MGR}.os.path.exists", return_value=False),
+            patch(f"{_MGR}._write_xorg_conf", return_value="/tmp/easi-xorg-gpu0.conf"),
         ):
             nvidia_result = MagicMock(returncode=0, stdout="00000000:3F:00.0\n")
             xset_result = MagicMock(returncode=0)
@@ -207,7 +210,7 @@ class TestXorgManager:
 
     def test_start_failure_stops_all(self):
         """If one GPU's Xorg fails, previously started ones are stopped."""
-        from easi.core.xorg_manager import XorgManager
+        from easi.core.render_platforms.xorg_manager import XorgManager
 
         started_procs = []
 
@@ -222,13 +225,13 @@ class TestXorgManager:
             return proc
 
         with (
-            patch("easi.core.xorg_manager.shutil.which", return_value="/usr/lib/xorg/Xorg"),
-            patch("easi.core.xorg_manager.subprocess.Popen", side_effect=mock_popen),
-            patch("easi.core.xorg_manager.subprocess.run") as mock_run,
-            patch("easi.core.xorg_manager.os.path.exists", return_value=False),
-            patch("easi.core.xorg_manager.os.getpgid", return_value=11111),
-            patch("easi.core.xorg_manager.os.killpg"),
-            patch("easi.core.xorg_manager._write_xorg_conf", return_value="/tmp/easi-xorg-gpu.conf"),
+            patch(f"{_MGR}.shutil.which", return_value="/usr/lib/xorg/Xorg"),
+            patch(f"{_MGR}.subprocess.Popen", side_effect=mock_popen),
+            patch(f"{_MGR}.subprocess.run") as mock_run,
+            patch(f"{_MGR}.os.path.exists", return_value=False),
+            patch(f"{_MGR}.os.getpgid", return_value=11111),
+            patch(f"{_MGR}.os.killpg"),
+            patch(f"{_MGR}._write_xorg_conf", return_value="/tmp/easi-xorg-gpu.conf"),
         ):
             nvidia0 = MagicMock(returncode=0, stdout="00000000:3F:00.0\n")
             xset0 = MagicMock(returncode=0)
@@ -243,57 +246,60 @@ class TestXorgManager:
 
 
 class TestPerWorkerGpuPinning:
-    """Test per-worker GPU round-robin in _create_simulator."""
+    """Test per-worker GPU round-robin via XorgPlatform.for_worker()."""
 
     def test_round_robin_two_gpus(self):
         """Workers are assigned to GPUs in round-robin order."""
-        sim_gpus = [4, 5]
-        for worker_id in range(6):
-            expected_gpu = sim_gpus[worker_id % len(sim_gpus)]
-            actual_gpu = sim_gpus[worker_id % len(sim_gpus)]
-            assert actual_gpu == expected_gpu
+        from easi.core.render_platforms.xorg import XorgPlatform
+        from easi.core.render_platforms.xorg_manager import XorgInstance
+
+        p = XorgPlatform()
+        p._instances = [
+            XorgInstance(display=10, gpu_id=4, pid=1),
+            XorgInstance(display=11, gpu_id=5, pid=2),
+        ]
+        gpus = [p.for_worker(i).gpu_id for i in range(6)]
+        assert gpus == [4, 5, 4, 5, 4, 5]
 
     def test_single_gpu_all_workers_same(self):
         """With one GPU, all workers get the same GPU."""
-        sim_gpus = [4]
+        from easi.core.render_platforms.xorg import XorgPlatform
+        from easi.core.render_platforms.xorg_manager import XorgInstance
+
+        p = XorgPlatform()
+        p._instances = [XorgInstance(display=10, gpu_id=4, pid=1)]
         for worker_id in range(4):
-            assert sim_gpus[worker_id % len(sim_gpus)] == 4
+            assert p.for_worker(worker_id).gpu_id == 4
 
 
 class TestXorgRunnerIntegration:
     """Test Xorg integration logic in runners."""
 
-    def test_xorg_defaults_to_gpu_0(self):
-        """Without --sim-gpus, xorg defaults to GPU 0."""
-        gpu_ids = None or [0]
-        assert gpu_ids == [0]
+    def test_xorg_defaults_to_gpu_0_when_no_sim_gpus(self):
+        """XorgPlatform.setup() uses GPU 0 when gpu_ids is None."""
+        from easi.core.render_platforms.xorg import XorgPlatform
+        from easi.core.render_platforms.xorg_manager import XorgInstance
+
+        p = XorgPlatform()
+        mock_mgr = MagicMock()
+        mock_mgr.start.return_value = [XorgInstance(display=10, gpu_id=0, pid=1)]
+
+        with patch(f"{_XORG}.XorgManager", return_value=mock_mgr) as MockMgr:
+            p.setup(gpu_ids=None)
+        MockMgr.assert_called_once_with(gpu_ids=[0])
 
     def test_xorg_uses_sim_gpus_when_specified(self):
-        """With --sim-gpus, xorg uses those GPUs."""
-        sim_gpus = [2, 3]
-        gpu_ids = sim_gpus or [0]
-        assert gpu_ids == [2, 3]
+        """XorgPlatform.setup() uses provided gpu_ids."""
+        from easi.core.render_platforms.xorg import XorgPlatform
+        from easi.core.render_platforms.xorg_manager import XorgInstance
 
-    def test_xorg_warns_on_gpu_contention(self):
-        """Warn when xorg + local LLM both default to GPU 0."""
-        render_platform = "xorg"
-        sim_gpus = None
-        backend = "vllm"
-        llm_gpus = None
-        should_warn = (
-            render_platform == "xorg"
-            and not sim_gpus
-            and backend in ("vllm", "custom")
-            and not llm_gpus
-        )
-        assert should_warn is True
+        p = XorgPlatform()
+        mock_mgr = MagicMock()
+        mock_mgr.start.return_value = [
+            XorgInstance(display=10, gpu_id=2, pid=1),
+            XorgInstance(display=11, gpu_id=3, pid=2),
+        ]
 
-    def test_xorg_no_warn_with_sim_gpus(self):
-        """No warning when sim_gpus is specified."""
-        should_warn = (
-            "xorg" == "xorg"
-            and not [2, 3]
-            and "vllm" in ("vllm", "custom")
-            and not None
-        )
-        assert should_warn is False
+        with patch(f"{_XORG}.XorgManager", return_value=mock_mgr) as MockMgr:
+            p.setup(gpu_ids=[2, 3])
+        MockMgr.assert_called_once_with(gpu_ids=[2, 3])

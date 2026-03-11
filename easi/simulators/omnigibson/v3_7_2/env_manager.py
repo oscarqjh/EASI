@@ -30,7 +30,7 @@ import tempfile
 from pathlib import Path
 
 from easi.core.base_env_manager import BaseEnvironmentManager
-from easi.core.render_platform import EnvVars
+from easi.core.render_platforms import EnvVars
 from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)

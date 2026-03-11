@@ -150,7 +150,7 @@ def resolve_render_platform(key: str, platform_name: str, env_manager=None):
     Returns:
         Instantiated RenderPlatform.
     """
-    from easi.core.render_platform import get_render_platform
+    from easi.core.render_platforms import get_render_platform
 
     entry = get_simulator_entry(key)
     custom_class_path = entry.render_platforms.get(platform_name)

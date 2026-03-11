@@ -146,7 +146,7 @@ class EvaluationRunner:
         no-op.  Returns ``None`` when no ``--render-platform`` was specified
         (the platform is then resolved per-simulator in ``_create_simulator``).
         """
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platforms import get_render_platform
 
         if not self.render_platform_name:
             return None
@@ -201,7 +201,7 @@ class EvaluationRunner:
         # 2. Resolve LLM backend and optionally start server
         backend, base_url = self._resolve_llm_backend()
         server = None
-        render_platform = None
+        self._render_platform = None
 
         try:
             if backend in ("vllm", "custom") and base_url is None:
@@ -728,7 +728,7 @@ class EvaluationRunner:
         # --- Docker runtime path ---
         if entry.runtime == "docker":
             from easi.core.docker_env_manager import DockerEnvironmentManager
-            from easi.core.render_platform import get_render_platform
+            from easi.core.render_platforms import get_render_platform
 
             assert isinstance(env_manager, DockerEnvironmentManager), (
                 f"Simulator {simulator_key} declares runtime=docker but env_manager "
@@ -783,7 +783,7 @@ class EvaluationRunner:
             render_platform = resolve_render_platform(simulator_key, platform_name, env_manager=env_manager)
 
         # Pass platform name to get_env_vars for conditional logic
-        from easi.core.render_platform import EnvVars
+        from easi.core.render_platforms import EnvVars
 
         env_vars = env_manager.get_env_vars(render_platform_name=platform_name)
 

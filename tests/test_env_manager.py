@@ -12,7 +12,7 @@ class TestEnvManagerGetEnvVars:
     """Tests for the get_env_vars() method."""
 
     def test_default_returns_empty_envvars(self):
-        from easi.core.render_platform import EnvVars
+        from easi.core.render_platforms import EnvVars
         from easi.simulators.dummy.v1.env_manager import DummyEnvManager
 
         mgr = DummyEnvManager()
@@ -21,7 +21,7 @@ class TestEnvManagerGetEnvVars:
         assert not result
 
     def test_returns_envvars_type(self):
-        from easi.core.render_platform import EnvVars
+        from easi.core.render_platforms import EnvVars
         from easi.simulators.dummy.v1.env_manager import DummyEnvManager
 
         mgr = DummyEnvManager()

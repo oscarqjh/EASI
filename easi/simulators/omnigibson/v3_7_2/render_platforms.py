@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-from easi.core.render_platform import AutoPlatform, EnvVars, NativePlatform
+from easi.core.render_platforms import AutoPlatform, EnvVars, NativePlatform
 
 
 class OmniGibsonNativePlatform(NativePlatform):

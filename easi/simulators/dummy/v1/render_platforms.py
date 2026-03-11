@@ -1,6 +1,6 @@
 """Custom render platforms for the dummy simulator (for testing)."""
 
-from easi.core.render_platform import EnvVars, HeadlessPlatform
+from easi.core.render_platforms import EnvVars, HeadlessPlatform
 
 
 class DummyCustomPlatform(HeadlessPlatform):

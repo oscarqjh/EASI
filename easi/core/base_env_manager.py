@@ -114,7 +114,7 @@ class BaseEnvironmentManager(ABC):
         Returns:
             EnvVars instance. Empty by default.
         """
-        from easi.core.render_platform import EnvVars
+        from easi.core.render_platforms import EnvVars
 
         return EnvVars()
 

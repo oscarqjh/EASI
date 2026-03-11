@@ -11,8 +11,10 @@ Two classes:
 
 from __future__ import annotations
 
-from easi.core.render_platform import EnvVars, RenderPlatform
 from easi.utils.logging import get_logger
+
+from .base import EnvVars, RenderPlatform
+from .xorg_manager import XorgManager
 
 logger = get_logger(__name__)
 
@@ -53,7 +55,7 @@ class XorgPlatform(RenderPlatform):
 
     def __init__(self, env_manager=None):
         super().__init__(env_manager=env_manager)
-        self._xorg_mgr = None
+        self._xorg_mgr: XorgManager | None = None
         self._instances: list = []
 
     @property
@@ -71,9 +73,7 @@ class XorgPlatform(RenderPlatform):
 
     def setup(self, gpu_ids: list[int] | None = None) -> None:
         """Start one Xorg server per GPU."""
-        from easi.core.xorg_manager import XorgManager
-        resolved_gpu_ids = gpu_ids or [0]
-        self._xorg_mgr = XorgManager(gpu_ids=resolved_gpu_ids)
+        self._xorg_mgr = XorgManager(gpu_ids=gpu_ids or [0])
         self._instances = self._xorg_mgr.start()
 
     def teardown(self) -> None:

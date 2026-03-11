@@ -197,7 +197,7 @@ class TestSubprocessRunnerDockerMode:
         """launch_docker() builds a docker run command and spawns it."""
         from easi.core.docker_env_manager import DockerEnvironmentManager
         from easi.simulators.subprocess_runner import SubprocessRunner
-        from easi.core.render_platform import get_render_platform
+        from easi.core.render_platforms import get_render_platform
 
         # Use a real bridge script path under the EASI repo root so that
         # relative_to() in _build_docker_launch_command works correctly.

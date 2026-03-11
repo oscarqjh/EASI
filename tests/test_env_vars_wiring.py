@@ -10,7 +10,7 @@ class TestEnvVarsWiring:
     """Verify env vars flow from env_manager to SubprocessRunner."""
 
     def test_runner_passes_env_vars_to_subprocess(self):
-        from easi.core.render_platform import EnvVars, get_render_platform
+        from easi.core.render_platforms import EnvVars, get_render_platform
         from easi.evaluation.runner import EvaluationRunner
 
         runner = EvaluationRunner.__new__(EvaluationRunner)
@@ -51,7 +51,7 @@ class TestEnvVarsWiring:
             assert extra_env.replace == {"SIM_ROOT": "/opt/sim"}
 
     def test_runner_passes_none_when_no_env_vars(self):
-        from easi.core.render_platform import EnvVars, get_render_platform
+        from easi.core.render_platforms import EnvVars, get_render_platform
         from easi.evaluation.runner import EvaluationRunner
 
         runner = EvaluationRunner.__new__(EvaluationRunner)

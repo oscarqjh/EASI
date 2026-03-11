@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from easi.core.render_platform import EnvVars, get_render_platform
+from easi.core.render_platforms import EnvVars, get_render_platform
 from easi.simulators.subprocess_runner import SubprocessRunner
 
 
