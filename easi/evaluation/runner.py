@@ -853,6 +853,9 @@ class EvaluationRunner:
             render_platform = resolve_render_platform(
                 simulator_key, platform_name, env_manager=env_manager
             )
+            render_platform.setup(gpu_ids=self.sim_gpus)
+            # Register so teardown() is called in the finally block
+            self._render_platform = render_platform
             logger.info("Render platform: %s", render_platform.log_name)
 
         from easi.core.render_platforms import EnvVars
