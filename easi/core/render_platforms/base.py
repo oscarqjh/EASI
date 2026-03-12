@@ -113,6 +113,11 @@ class RenderPlatform(ABC):
         """Short identifier (e.g. 'xvfb', 'egl')."""
         ...
 
+    @property
+    def resolved_name(self) -> str:
+        """Actual backend after auto-detection. Defaults to :attr:`name`."""
+        return self.name
+
     @abstractmethod
     def wrap_command(self, cmd: list[str], screen_config: str) -> list[str]:
         """Optionally wrap the bridge launch command.

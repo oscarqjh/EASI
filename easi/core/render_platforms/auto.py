@@ -15,6 +15,10 @@ class AutoPlatform(RenderPlatform):
     def name(self) -> str:
         return "auto"
 
+    @property
+    def resolved_name(self) -> str:
+        return "native" if os.environ.get("DISPLAY", "") else "xvfb"
+
     def wrap_command(self, cmd: list[str], screen_config: str) -> list[str]:
         if os.environ.get("DISPLAY", ""):
             return cmd
