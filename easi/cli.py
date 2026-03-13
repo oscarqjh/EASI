@@ -286,6 +286,32 @@ def build_parser() -> argparse.ArgumentParser:
         "--kill", action="store_true", help="Kill all found EASI processes"
     )
 
+    # --- analyze command group ---
+    analyze_parser = subparsers.add_parser(
+        "analyze", help="Post-evaluation analysis tools", parents=[common]
+    )
+    analyze_sub = analyze_parser.add_subparsers(dest="analyze_action")
+
+    traj_parser = analyze_sub.add_parser(
+        "trajectory", help="Generate trajectory videos", parents=[common]
+    )
+    traj_parser.add_argument(
+        "run_dir", type=str, help="Path to evaluation run directory"
+    )
+    traj_parser.add_argument(
+        "--filter", choices=["success", "failed"],
+        help="Filter episodes by outcome",
+    )
+    traj_parser.add_argument(
+        "--sample", type=int, help="Random sample N episodes"
+    )
+    traj_parser.add_argument(
+        "--fps", type=int, default=4, help="Video frame rate (default: 4)"
+    )
+    traj_parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed for --sample (default: 42)"
+    )
+
     # --- llm-server command ---
     llm_parser = subparsers.add_parser(
         "llm-server", help="Start dummy LLM server", parents=[common]
@@ -1004,6 +1030,19 @@ def _main() -> None:
 
     elif args.command == "model":
         cmd_model(args)
+
+    elif args.command == "analyze":
+        if args.analyze_action == "trajectory":
+            from easi.analysis.trajectory_video import generate_trajectory_videos
+            generate_trajectory_videos(
+                run_dir=args.run_dir,
+                filter_by=getattr(args, "filter", None),
+                sample_n=args.sample,
+                fps=args.fps,
+                seed=args.seed,
+            )
+        else:
+            parser.parse_args(["analyze", "--help"])
 
     elif args.command == "llm-server":
         cmd_llm_server(args.host, args.port, args.mode, args.action_space)
