@@ -98,6 +98,22 @@ class BaseBridge:
         """Custom step logic. Default: call env.step(action_text)."""
         return env.step(action_text)
 
+    def _get_topdown_map(self):
+        """Return (rgb_array, metadata_dict) or None.
+
+        Called once after _on_reset() inside the bridge subprocess.
+        Override in subclasses that support top-down map rendering.
+        """
+        return None
+
+    def _get_episode_meta(self):
+        """Return episode metadata dict or None.
+
+        Called once after _on_reset(). Override to persist gt_locations,
+        goal_position, start_position, etc. for post-processing.
+        """
+        return None
+
     # --- Image saving ---
 
     def _save_image(self, image_array):
@@ -133,6 +149,29 @@ class BaseBridge:
             self.env = self._create_env(reset_config, self.simulator_kwargs)
         self.step_count = 0
         obs = self._on_reset(self.env, reset_config)
+
+        # Save topdown map and episode metadata (optional, non-fatal)
+        if self.episode_output_dir:
+            save_dir = Path(self.episode_output_dir)
+            try:
+                map_result = self._get_topdown_map()
+                if map_result is not None:
+                    map_image, map_meta = map_result
+                    from PIL import Image
+                    Image.fromarray(map_image).save(str(save_dir / "topdown_map.png"))
+                    with open(save_dir / "topdown_map_meta.json", "w") as f:
+                        json.dump(map_meta, f)
+            except Exception:
+                logger.warning("Failed to save topdown map, continuing without it")
+
+            try:
+                ep_meta = self._get_episode_meta()
+                if ep_meta is not None:
+                    with open(save_dir / "episode_meta.json", "w") as f:
+                        json.dump(ep_meta, f)
+            except Exception:
+                logger.warning("Failed to save episode metadata, continuing without it")
+
         return self._make_response(obs)
 
     def step(self, action_text):
