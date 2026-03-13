@@ -115,6 +115,48 @@ class VLNCEBridge(BaseBridge):
                 clean[k] = json.dumps([float(x) for x in v] if hasattr(v, '__iter__') else str(v))
         return clean
 
+    def _get_topdown_map(self):
+        """Render habitat-sim navmesh as top-down RGB map."""
+        if self._scene_sim is None:
+            return None
+        sim = self._scene_sim._sim
+        if not sim.pathfinder.is_loaded:
+            return None
+
+        meters_per_pixel = 0.1
+        height = float(sim.get_agent(0).get_state().position[1])
+        try:
+            # habitat-sim 0.1.7 API: get_topdown_view(meters_per_pixel, height)
+            topdown = sim.pathfinder.get_topdown_view(meters_per_pixel, height)
+        except Exception:
+            logger.warning("Failed to get topdown map from pathfinder")
+            return None
+
+        # Colorize: navigable=light gray, obstacle=dark gray
+        rgb = np.full((*topdown.shape, 3), 60, dtype=np.uint8)
+        rgb[topdown == 1] = [240, 240, 240]
+
+        bounds = sim.pathfinder.get_bounds()
+        return rgb, {
+            "bounds_lower": [float(x) for x in bounds[0]],
+            "bounds_upper": [float(x) for x in bounds[1]],
+            "meters_per_pixel": meters_per_pixel,
+            "height": float(sim.get_agent(0).get_state().position[1]),
+        }
+
+    def _get_episode_meta(self):
+        """Persist start position, goal, and ground truth path."""
+        if self._scene_sim is None:
+            return None
+        meta = {}
+        agent_state = self._scene_sim._sim.get_agent(0).get_state()
+        meta["start_position"] = [float(x) for x in agent_state.position]
+        if self._scene_sim._gt_locations:
+            meta["gt_locations"] = self._scene_sim._gt_locations
+        if self._scene_sim._goal_position is not None:
+            meta["goal_position"] = [float(x) for x in self._scene_sim._goal_position]
+        return meta
+
     def close(self):
         """Close the SceneSimulator."""
         if self._scene_sim is not None:
