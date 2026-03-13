@@ -27,6 +27,9 @@ if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 
 from easi.simulators.base_bridge import BaseBridge
+from easi.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class EBHabitatBridge(BaseBridge):
@@ -94,8 +97,15 @@ class EBHabitatBridge(BaseBridge):
         from easi.tasks.ebhabitat.vendor.utils import observations_to_image
         return observations_to_image(obs, "head_rgb")
 
+    def _get_sim(self):
+        """Access the underlying habitat-sim Simulator instance."""
+        try:
+            return self.env.env.env._env.task._sim
+        except AttributeError:
+            return None
+
     def _extract_info(self, info):
-        return {
+        clean = {
             "task_success": float(info.get("task_success", 0.0)),
             "task_progress": float(info.get("task_progress", 0.0)),
             "subgoal_reward": float(info.get("subgoal_reward", 0.0)),
@@ -103,6 +113,55 @@ class EBHabitatBridge(BaseBridge):
             "feedback": str(info.get("env_feedback", "")),
             "action_id": int(info.get("action_id", -1)),
         }
+        # Add agent position for trajectory visualization
+        sim = self._get_sim()
+        if sim is not None:
+            try:
+                agent = sim.get_agent_data(0).articulated_agent
+                pos = agent.base_pos
+                clean["agent_position"] = json.dumps([float(pos[0]), float(pos[1]), float(pos[2])])
+            except Exception:
+                pass
+        return clean
+
+    def _get_topdown_map(self):
+        """Render habitat-sim navmesh as top-down RGB map."""
+        sim = self._get_sim()
+        if sim is None or not sim.pathfinder.is_loaded:
+            return None
+
+        meters_per_pixel = 0.1
+        try:
+            agent = sim.get_agent_data(0).articulated_agent
+            height = float(agent.base_pos[1])
+            topdown = sim.pathfinder.get_topdown_view(meters_per_pixel, height)
+        except Exception:
+            logger.warning("Failed to get topdown map from pathfinder")
+            return None
+
+        # Colorize: navigable=light gray, obstacle=dark gray
+        rgb = np.full((*topdown.shape, 3), 60, dtype=np.uint8)
+        rgb[topdown == 1] = [240, 240, 240]
+
+        bounds = sim.pathfinder.get_bounds()
+        return rgb, {
+            "bounds_lower": [float(x) for x in bounds[0]],
+            "bounds_upper": [float(x) for x in bounds[1]],
+            "meters_per_pixel": meters_per_pixel,
+            "height": height,
+        }
+
+    def _get_episode_meta(self):
+        """Persist start position for trajectory visualization."""
+        sim = self._get_sim()
+        if sim is None:
+            return None
+        try:
+            agent = sim.get_agent_data(0).articulated_agent
+            pos = agent.base_pos
+            return {"start_position": [float(pos[0]), float(pos[1]), float(pos[2])]}
+        except Exception:
+            return None
 
     def _make_response(self, obs, reward=0.0, done=False, info=None):
         """Override to include dynamic action space in metadata."""
