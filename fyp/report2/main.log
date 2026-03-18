@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 21:03
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 21:11
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1043,17 +1043,17 @@ l.1 \chapter
             {Background and Related Work} [1
 
 
-] [2]
+]
 Chapter 2.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/n' will be
 (Font)              scaled to size 17.28pt on input line 4.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/b/n' will be
 (Font)              scaled to size 17.28pt on input line 4.
-[3
+[2
 
-] [4]) (./ch3_diagnosis.tex [5]
+] [3]) (./ch3_diagnosis.tex [4]
 Chapter 3.
-[6
+[5
 
 ]
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/n' will be
@@ -1110,61 +1110,61 @@ LaTeX Font Info:    Font shape `OT1/ntxtlf/b/n' will be
 (Font)              scaled to size 10.0pt on input line 31.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/it' will be
 (Font)              scaled to size 10.0pt on input line 32.
- [7] [8
+ [6] [7
 pdfTeX warning (ext4): destination with the same identifier (name{table.3.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.60 
-     ]) (./ch4_treatment.tex [9] [10]
+     ]) (./ch4_treatment.tex [8] [9]
 Chapter 4.
-[11
+[10
 
-] [12]
+] [11]
 Overfull \hbox (16.55515pt too wide) in paragraph at lines 35--55
  [][] 
  []
 
-[13
+[12
 pdfTeX warning (ext4): destination with the same identifier (name{table.4.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.60 
-     ]) (./ch5_embodied.tex [14]
+     ]) (./ch5_embodied.tex [13]
 Chapter 5.
-[15
+[14
 
 ]
-<fig/easi_arch.png, id=426, 523.9575pt x 352.31625pt>
+<fig/easi_arch.png, id=422, 523.9575pt x 352.31625pt>
 File: fig/easi_arch.png Graphic file (type png)
 <use fig/easi_arch.png>
 Package pdftex.def Info: fig/easi_arch.png  used on input line 20.
 (pdftex.def)             Requested size: 288.79422pt x 194.19385pt.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/n' will be
 (Font)              scaled to size 14.4pt on input line 25.
- [16
+ [15
 pdfTeX warning (ext4): destination with the same identifier (name{figure.5.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.28 
-      <./fig/easi_arch.png>] [17]
-<fig/prompt.png, id=443, 441.65pt x 141.52875pt>
+      <./fig/easi_arch.png>] [16]
+<fig/prompt.png, id=438, 441.65pt x 141.52875pt>
 File: fig/prompt.png Graphic file (type png)
 <use fig/prompt.png>
 Package pdftex.def Info: fig/prompt.png  used on input line 39.
 (pdftex.def)             Requested size: 288.79422pt x 92.54974pt.
- [18
+ [17
 pdfTeX warning (ext4): destination with the same identifier (name{figure.5.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.51 
-      <./fig/prompt.png>] [19] [20]
+      <./fig/prompt.png>] [18] [19]
 LaTeX Font Info:    Trying to load font information for TS1+ntxtlf on input line 83.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/newtx/ts1ntxtlf.fd
 File: ts1ntxtlf.fd 2015/01/18 v1.0 fd file for TS1/ntxtlf
 )
 LaTeX Font Info:    Font shape `TS1/ntxtlf/m/n' will be
 (Font)              scaled to size 12.0pt on input line 83.
- [21{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/tex-gyre/q-ts1.enc}]
+ [20{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/tex-gyre/q-ts1.enc}]
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/n' will be
 (Font)              scaled to size 10.95pt on input line 102.
 LaTeX Font Info:    Font shape `OT1/minntx/m/n' will be
@@ -1252,7 +1252,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 111--111
 \OT1/minntx/m/n/10.95 EB-Habitat, EB-
  []
 
-[22]
+[21]
 Overfull \hbox (38.6831pt too wide) in paragraph at lines 128--142
  [][] 
  []
@@ -1262,7 +1262,7 @@ Overfull \hbox (8.1191pt too wide) in paragraph at lines 149--161
  [][] 
  []
 
-[23
+[22
 pdfTeX warning (ext4): destination with the same identifier (name{table.5.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
@@ -1272,37 +1272,37 @@ pdfTeX warning (ext4): destination with the same identifier (name{table.5.2}) ha
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.167 
-      ] [24
+      ] [23
 pdfTeX warning (ext4): destination with the same identifier (name{table.5.3}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.171 
-      ]) (./ch6_discussion.tex [25]
+      ]) (./ch6_discussion.tex [24]
 Chapter 6.
-[26
+[25
 
-] [27]) (./ch7_conclusion.tex [28]
+] [26]) (./ch7_conclusion.tex [27]
 Chapter 7.
-) [29
+) [28
 
 ]
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/sc' will be
 (Font)              scaled to size 12.0pt on input line 106.
- [30
+ [29
 
 {/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf-pc.enc}]
 Overfull \hbox (3.22537pt too wide) in paragraph at lines 107--107
 []\OT1/minntx/m/n/12 Zhiwen Fan et al. \OT1/ntxtlf/m/it/12 VLM-3R: Vision-Language Mod-els Aug-mented with Instruction-
  []
 
-[31] (./appendices.tex [32]
+[30] (./appendices.tex [31]
 Appendix A.
-<fig/process_flow.png, id=589, 2826.56pt x 1541.76pt>
+<fig/process_flow.png, id=585, 2826.56pt x 1541.76pt>
 File: fig/process_flow.png Graphic file (type png)
 <use fig/process_flow.png>
 Package pdftex.def Info: fig/process_flow.png  used on input line 12.
 (pdftex.def)             Requested size: 412.56497pt x 225.0198pt.
-[33
+[32
 
 
 pdfTeX warning (ext4): destination with the same identifier (name{figure.A.1}) has been already used, duplicate ignored
@@ -1397,7 +1397,7 @@ Underfull \hbox (badness 2245) in paragraph at lines 64--65
 []|\OT1/minntx/m/n/10.95 Display back-end, Xorg
  []
 
-<fig/parallel_flow.png, id=596, 1191.45125pt x 815.045pt>
+<fig/parallel_flow.png, id=592, 1191.45125pt x 815.045pt>
 File: fig/parallel_flow.png Graphic file (type png)
 <use fig/parallel_flow.png>
 Package pdftex.def Info: fig/parallel_flow.png  used on input line 77.
@@ -1407,22 +1407,22 @@ Overfull \hbox (7.99707pt too wide) in paragraph at lines 85--86
 []\OT1/minntx/m/n/12 GPU/display bind-ing: \OT1/ntxtt/m/n/12 platform.for[]worker(worker[]id) \OT1/minntx/m/n/12 cy-cles through avail-
  []
 
-[34
+[33
 pdfTeX warning (ext4): destination with the same identifier (name{table.A.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.87 \end{itemize}
-                  ] [35
+                  ] [34
 pdfTeX warning (ext4): destination with the same identifier (name{table.A.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.87 \end{itemize}
-                  ] [36
+                  ] [35
 pdfTeX warning (ext4): destination with the same identifier (name{figure.A.2}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.87 \end{itemize}
-                   <./fig/parallel_flow.png>] [37
+                   <./fig/parallel_flow.png>] [36
 pdfTeX warning (ext4): destination with the same identifier (name{table.A.3}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
@@ -1436,14 +1436,14 @@ Underfull \hbox (badness 7415) in paragraph at lines 129--130
 
 (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2025/11/14 1.11b listings language file
-) [38
+) [37
 
 
 pdfTeX warning (ext4): destination with the same identifier (name{table.B.1}) has been already used, duplicate ignored
 <argument> ...shipout:D \box_use:N \l_shipout_box 
                                                   \__shipout_drop_firstpage_...
 l.144  
-              {"action": "move_forward"},] [39] [40]) [41] (./main.aux)
+              {"action": "move_forward"},] [38] [39]) [40] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2020/03/25>
@@ -1455,18 +1455,18 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 24736 strings out of 468658
- 412069 string characters out of 5435235
+ 24735 strings out of 468658
+ 412062 string characters out of 5435235
  1418296 words of memory out of 5000000
  52885 multiletter control sequences out of 15000+600000
  690491 words of font info for 173 fonts, out of 8000000 for 9000
  430 hyphenation exceptions out of 8191
  75i,11n,79p,1470b,2141s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/tex-gyre/qtmr.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/txfonts/txtt.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (48 pages, 2828959 bytes).
+Output written on main.pdf (47 pages, 2828553 bytes).
 PDF statistics:
- 797 PDF objects out of 1000 (max. 8388607)
- 711 compressed objects within 8 object streams
- 207 named destinations out of 1000 (max. 500000)
+ 793 PDF objects out of 1000 (max. 8388607)
+ 708 compressed objects within 8 object streams
+ 206 named destinations out of 1000 (max. 500000)
  386 words of extra memory for PDF output out of 10000 (max. 10000000)
 
