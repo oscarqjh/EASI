@@ -1,0 +1,30 @@
+\chapter{Discussion}
+\label{sec:discussion}
+
+\section{The Arc of the Work}
+
+Looking back, the three phases of this research form a natural scientific progression. The holistic evaluation (Phase 1) provided the diagnosis, revealing that spatial intelligence is a specific, measurable weakness of current models, worst in perspective-taking and metric measurement, present even in frontier proprietary models, and not reducible to general model scale. The data scaling work (Phase 2) provided a treatment, demonstrating that targeted, taxonomy-guided data curation can produce dramatic improvements, with open-source models matching or exceeding proprietary ones on several challenging subtasks. The embodied evaluation library (Phase 3) provides the infrastructure for the next question, namely whether the treatment works in the real world.
+
+This arc also reflects a progression in my own contributions. In the first phase, I built the evaluation infrastructure that made holistic comparison possible, integrating nine benchmarks and two models into a unified framework, fixing inference bugs that would have corrupted results. In the second phase, this infrastructure was reused to validate the SenseNova-SI models, with the benchmarks and model integrations I had built serving directly as the evaluation backbone and baselines. In the third phase, I worked independently to design and implement an entirely new evaluation toolkit, drawing on the insights from the first two phases to frame embodied evaluation as a natural extension of spatial intelligence research.
+
+\section{Reflections on Evaluation-Driven Research}
+
+A recurring theme is that evaluation infrastructure is not merely a support function but rather shapes the research questions that can be asked. The unified lmms-eval integrations made the holistic comparison in~\cite{cai2025holisticevaluationmultimodalllms} possible; without them, the study would have been a collection of disconnected benchmark scores rather than a coherent capability analysis. The EASI taxonomy, in turn, made the data gap analysis in~\cite{cai2025scalingspatialintelligencemultimodal} actionable. By mapping every benchmark subtask to a capability dimension, the team could identify precisely where training data was lacking (perspective-taking) and scale accordingly.
+
+The embodied evaluation library continues this pattern. By unifying ten benchmarks under a single CLI, it becomes feasible to ask questions like ``does improving MindCube performance predict better EB-Manipulation scores?'' or ``which static capability is most predictive of VLN-CE success?'' These are questions that would be impractical if each benchmark required its own evaluation pipeline.
+
+\section{Limitations and Future Directions}
+
+Several important limitations and open questions remain.
+
+\textbf{Cost of embodied evaluation.} Each embodied episode requires multiple simulator steps and LLM calls, making evaluation orders of magnitude more expensive than static benchmarks. A single EB-Alfred episode may involve 50+ LLM calls with image inputs. Efficient evaluation strategies (episode sampling, proxy metrics, early stopping) will be important for making embodied evaluation routine rather than occasional.
+
+\textbf{EASI-Mini is preliminary.} The EASI-Mini experiment samples only 3 to 5 episodes per benchmark per capability dimension, totalling 74 episodes. At this scale, a single lucky or unlucky episode can swing a benchmark's success rate by 33 percentage points. The results provide directional signals rather than statistically robust estimates. A comprehensive transfer study across all ten embodied benchmarks at full scale, with multiple model families and varying amounts of spatial training data, remains future work.
+
+\textbf{Confounding factors in embodied evaluation.} The EASI-Mini results conflate spatial intelligence with other capabilities such as instruction following, structured output generation, and error recovery. The zero-step failures observed for several open-source models on EB-Manipulation and EB-Habitat suggest that format compliance, rather than spatial reasoning, was the binding constraint. Disentangling these factors would require controlled experiments that isolate spatial reasoning from action grounding.
+
+\textbf{Agent architecture.} The ReAct agent is a reasonable baseline but far from the ceiling. More sophisticated architectures incorporating explicit spatial maps, hierarchical planning, or learned exploration strategies could better leverage spatial intelligence. The library's pluggable agent interface is designed to support this exploration.
+
+\textbf{The CoT puzzle.} The finding that text-based chain-of-thought does not reliably improve spatial reasoning~\cite{cai2025scalingspatialintelligencemultimodal} is both surprising and important. It suggests that spatial reasoning may require fundamentally different mechanisms, perhaps visual or geometric chain-of-thought, or internal 3D representations, rather than the linguistic decomposition that works well for mathematical and logical reasoning.
+
+\textbf{Multilingual embodied evaluation.} The VLN-CE RxR benchmark includes Hindi and Telugu instructions alongside English, enabling multilingual embodied evaluation, an area that remains largely unexplored.

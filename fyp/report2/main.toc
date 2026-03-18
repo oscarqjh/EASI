@@ -1,0 +1,45 @@
+\contentsline {chapter}{Abstract}{i}{chapter*.1}%
+\contentsline {chapter}{Acknowledgments}{ii}{chapter*.2}%
+\contentsline {chapter}{Contents}{iii}{chapter*.2}%
+\contentsline {chapter}{List of Tables}{v}{chapter*.2}%
+\contentsline {chapter}{List of Figures}{vi}{chapter*.2}%
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Background and Related Work}{3}{chapter.2}%
+\contentsline {section}{\numberline {2.1}What Is Spatial Intelligence?}{3}{section.2.1}%
+\contentsline {section}{\numberline {2.2}The Benchmark Landscape}{4}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Approaches to Improving Spatial Reasoning}{4}{section.2.3}%
+\contentsline {section}{\numberline {2.4}From Static Benchmarks to Embodied Agents}{5}{section.2.4}%
+\contentsline {chapter}{\numberline {3}Diagnosing the Problem: Holistic Evaluation of Spatial Intelligence}{6}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Building the Evaluation Infrastructure}{6}{section.3.1}%
+\contentsline {section}{\numberline {3.2}The EASI Evaluation Framework}{7}{section.3.2}%
+\contentsline {section}{\numberline {3.3}What the Evaluation Revealed}{7}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Qualitative Insights}{10}{section.3.4}%
+\contentsline {chapter}{\numberline {4}Treating the Problem Through Spatial Data Scaling}{11}{chapter.4}%
+\contentsline {section}{\numberline {4.1}From Diagnosis to Intervention}{11}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Curating SenseNova-SI-8M}{12}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Training the SenseNova-SI Models}{12}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Results: What Data Scaling Achieved}{13}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Deeper Insights from Data Scaling}{14}{section.4.5}%
+\contentsline {chapter}{\numberline {5}From Static Reasoning to Embodied Action}{15}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Why Embodied Evaluation Matters}{15}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Designing the EASI Embodied Evaluation Library}{16}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Unified Multi-Simulator Evaluation}{17}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Standardised Agent-Environment Interface}{17}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Scalable Parallel Evaluation}{18}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Reproducibility and Analysis}{19}{subsection.5.2.4}%
+\contentsline {section}{\numberline {5.3}The Breadth of Embodied Evaluation}{19}{section.5.3}%
+\contentsline {section}{\numberline {5.4}The LLM-Driven Agent}{20}{section.5.4}%
+\contentsline {section}{\numberline {5.5}What Embodied Evaluation Adds to the Picture}{21}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Preliminary Experiment: EASI-Mini}{22}{section.5.6}%
+\contentsline {chapter}{\numberline {6}Discussion}{26}{chapter.6}%
+\contentsline {section}{\numberline {6.1}The Arc of the Work}{26}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Reflections on Evaluation-Driven Research}{27}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Limitations and Future Directions}{27}{section.6.3}%
+\contentsline {chapter}{\numberline {7}Conclusion}{29}{chapter.7}%
+\contentsline {chapter}{\numberline {A}EASI Library Architecture Deep-Dive}{33}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Process Flow}{33}{section.A.1}%
+\contentsline {section}{\numberline {A.2}IPC Protocol}{34}{section.A.2}%
+\contentsline {section}{\numberline {A.3}Parallel Execution and Resource Management}{34}{section.A.3}%
+\contentsline {chapter}{\numberline {B}Prompt Format and Full Example}{38}{appendix.B}%
+\contentsline {section}{\numberline {B.1}Prompt Format Specification}{38}{section.B.1}%
+\contentsline {section}{\numberline {B.2}Complete Prompt Example: Navigation Episode}{39}{section.B.2}%

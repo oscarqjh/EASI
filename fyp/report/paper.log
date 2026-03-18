@@ -1,0 +1,1061 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 13:08
+entering extended mode
+ restricted \write18 enabled.
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**/mnt/umm/users/qianjianheng/workspace/EASI/fyp/report/paper.tex
+(/mnt/umm/users/qianjianheng/workspace/EASI/fyp/report/paper.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2026-01-19>
+(./confart.cls
+Document Class: confart 2025/10/15, 1.0.0: General conference article template
+(/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/l3kernel/expl3.sty
+Package: expl3 2026-01-19 L3 programming layer (loader) 
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count275
+)) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/l3packages/xparse/xparse.sty
+Package: xparse 2025-10-09 L3 Experimental document command parser
+)
+\c@blind=\count276
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrartcl.cls
+Document Class: scrartcl 2026/02/02 v3.49.2 KOMA-Script document class (article)
+(/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrkbase.sty
+Package: scrkbase 2026/02/02 v3.49.2 KOMA-Script package (KOMA-Script-dependent basics and keyval usage)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrbase.sty
+Package: scrbase 2026/02/02 v3.49.2 KOMA-Script package (KOMA-Script-independent basics and keyval usage)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrlfile.sty
+Package: scrlfile 2026/02/02 v3.49.2 KOMA-Script package (file load hooks)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrlfile-hook.sty
+Package: scrlfile-hook 2026/02/02 v3.49.2 KOMA-Script package (using LaTeX hooks)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrlogo.sty
+Package: scrlogo 2026/02/02 v3.49.2 KOMA-Script package (logo)
+))) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
+\KV@toks@=\toks17
+)
+Applying: [2021/05/01] Usage of raw or classic option list on input line 254.
+Already applied: [0000/00/00] Usage of raw or classic option list on input line 370.
+)) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/tocbasic.sty
+Package: tocbasic 2026/02/02 v3.49.2 KOMA-Script package (handling toc-files)
+\scr@dte@tocline@numberwidth=\skip49
+\scr@dte@tocline@numbox=\box53
+)
+Package tocbasic Info: omitting babel extension for `toc'
+(tocbasic)             because of feature `nobabel' available
+(tocbasic)             for `toc' on input line 141.
+Class scrartcl Info: File `scrsize11pt.clo' used instead of
+(scrartcl)           file `scrsize11.clo' to setup font sizes on input line 2489.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrsize11pt.clo
+File: scrsize11pt.clo 2026/02/02 v3.49.2 KOMA-Script font size class option (11pt)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/typearea.sty
+Package: typearea 2026/02/02 v3.49.2 KOMA-Script package (type area)
+\ta@bcor=\skip50
+\ta@div=\count277
+\ta@hblk=\skip51
+\ta@vblk=\skip52
+\ta@temp=\skip53
+\footheight=\skip54
+Package typearea Info: These are the values describing the layout:
+(typearea)             DIV  = 10
+(typearea)             BCOR = 0.0pt
+(typearea)             \paperwidth      = 597.50793pt
+(typearea)              \textwidth      = 418.25555pt
+(typearea)              DIV departure   = -6%
+(typearea)              \evensidemargin = 17.3562pt
+(typearea)              \oddsidemargin  = 17.3562pt
+(typearea)             \paperheight     = 845.04694pt
+(typearea)              \textheight     = 595.80026pt
+(typearea)              \topmargin      = -25.16531pt
+(typearea)              \headheight     = 17.0pt
+(typearea)              \headsep        = 20.40001pt
+(typearea)              \topskip        = 11.0pt
+(typearea)              \footskip       = 47.6pt
+(typearea)              \baselineskip   = 13.6pt
+(typearea)              on input line 1810.
+)
+\c@part=\count278
+\c@section=\count279
+\c@subsection=\count280
+\c@subsubsection=\count281
+\c@paragraph=\count282
+\c@subparagraph=\count283
+\scr@dte@section@maxnumwidth=\skip55
+Class scrartcl Info: using compatibility default `runin=bysign'
+(scrartcl)           for `\section on input line 5015.
+Class scrartcl Info: using compatibility default `afterindent=bysign'
+(scrartcl)           for `\section on input line 5015.
+\scr@dte@part@maxnumwidth=\skip56
+Class scrartcl Info: using compatibility default `afterindent=false'
+(scrartcl)           for `\part on input line 5023.
+\scr@dte@subsection@maxnumwidth=\skip57
+Class scrartcl Info: using compatibility default `runin=bysign'
+(scrartcl)           for `\subsection on input line 5033.
+Class scrartcl Info: using compatibility default `afterindent=bysign'
+(scrartcl)           for `\subsection on input line 5033.
+\scr@dte@subsubsection@maxnumwidth=\skip58
+Class scrartcl Info: using compatibility default `runin=bysign'
+(scrartcl)           for `\subsubsection on input line 5043.
+Class scrartcl Info: using compatibility default `afterindent=bysign'
+(scrartcl)           for `\subsubsection on input line 5043.
+\scr@dte@paragraph@maxnumwidth=\skip59
+Class scrartcl Info: using compatibility default `runin=bysign'
+(scrartcl)           for `\paragraph on input line 5054.
+Class scrartcl Info: using compatibility default `afterindent=bysign'
+(scrartcl)           for `\paragraph on input line 5054.
+\scr@dte@subparagraph@maxnumwidth=\skip60
+Class scrartcl Info: using compatibility default `runin=bysign'
+(scrartcl)           for `\subparagraph on input line 5064.
+Class scrartcl Info: using compatibility default `afterindent=bysign'
+(scrartcl)           for `\subparagraph on input line 5064.
+\abovecaptionskip=\skip61
+\belowcaptionskip=\skip62
+\c@pti@nb@sid@b@x=\box54
+Package tocbasic Info: omitting babel extension for `lof'
+(tocbasic)             because of feature `nobabel' available
+(tocbasic)             for `lof' on input line 6287.
+\scr@dte@figure@maxnumwidth=\skip63
+\c@figure=\count284
+Package tocbasic Info: omitting babel extension for `lot'
+(tocbasic)             because of feature `nobabel' available
+(tocbasic)             for `lot' on input line 6299.
+\scr@dte@table@maxnumwidth=\skip64
+\c@table=\count285
+Class scrartcl Info: Redefining `\numberline' on input line 6469.
+\bibindent=\dimen148
+)
+Package typearea Info: These are the values describing the layout:
+(typearea)             DIV  = 10
+(typearea)             BCOR = 0.0pt
+(typearea)             \paperwidth      = 597.50793pt
+(typearea)              \textwidth      = 418.25555pt
+(typearea)              DIV departure   = -6%
+(typearea)              \evensidemargin = 17.3562pt
+(typearea)              \oddsidemargin  = 17.3562pt
+(typearea)             \paperheight     = 845.04694pt
+(typearea)              \textheight     = 595.80026pt
+(typearea)              \topmargin      = -25.16531pt
+(typearea)              \headheight     = 17.0pt
+(typearea)              \headsep        = 20.40001pt
+(typearea)              \topskip        = 11.0pt
+(typearea)              \footskip       = 47.6pt
+(typearea)              \baselineskip   = 13.6pt
+(typearea)              on input line 77.
+Class scrartcl Info: File `scrsize11pt.clo' used to setup font sizes on input line 81.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrsize11pt.clo
+File: scrsize11pt.clo 2026/02/02 v3.49.2 KOMA-Script font size class option (11pt)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 106.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def
+File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
+))
+\Gin@req@height=\dimen149
+\Gin@req@width=\dimen150
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2025/07/09 v2.17z AMS math features
+\@mathmargin=\skip65
+
+For additional information on amsmath, use the `?' option.
+(/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
+Package: amstext 2024/11/17 v2.01 AMS text
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks18
+\ex@=\dimen151
+)) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+\pmbraise@=\dimen152
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty
+Package: amsopn 2022/04/08 v2.04 operator names
+)
+\inf@bad=\count286
+LaTeX Info: Redefining \frac on input line 233.
+\uproot@=\count287
+\leftroot@=\count288
+LaTeX Info: Redefining \overline on input line 398.
+LaTeX Info: Redefining \colon on input line 409.
+\classnum@=\count289
+\DOTSCASE@=\count290
+LaTeX Info: Redefining \ldots on input line 495.
+LaTeX Info: Redefining \dots on input line 498.
+LaTeX Info: Redefining \cdots on input line 619.
+\Mathstrutbox@=\box55
+\strutbox@=\box56
+LaTeX Info: Redefining \big on input line 721.
+LaTeX Info: Redefining \Big on input line 722.
+LaTeX Info: Redefining \bigg on input line 723.
+LaTeX Info: Redefining \Bigg on input line 724.
+\big@size=\dimen153
+LaTeX Font Info:    Redeclaring font encoding OML on input line 742.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 743.
+\macc@depth=\count291
+LaTeX Info: Redefining \bmod on input line 904.
+LaTeX Info: Redefining \pmod on input line 909.
+LaTeX Info: Redefining \smash on input line 939.
+LaTeX Info: Redefining \relbar on input line 969.
+LaTeX Info: Redefining \Relbar on input line 970.
+\c@MaxMatrixCols=\count292
+\dotsspace@=\muskip17
+\c@parentequation=\count293
+\dspbrk@lvl=\count294
+\tag@help=\toks19
+\row@=\count295
+\column@=\count296
+\maxfields@=\count297
+\andhelp@=\toks20
+\eqnshift@=\dimen154
+\alignsep@=\dimen155
+\tagshift@=\dimen156
+\tagwidth@=\dimen157
+\totwidth@=\dimen158
+\lineht@=\dimen159
+\@envbody=\toks21
+\multlinegap=\skip66
+\multlinetaggap=\skip67
+\mathdisplay@stack=\toks22
+LaTeX Info: Redefining \[ on input line 2950.
+LaTeX Info: Redefining \] on input line 2951.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
+\etb@tempcnta=\count298
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/preprint/balance.sty
+Package: balance 1999/02/23 4.3 (PWD)
+\oldvsize=\dimen160
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
+\heavyrulewidth=\dimen161
+\lightrulewidth=\dimen162
+\cmidrulewidth=\dimen163
+\belowrulesep=\dimen164
+\belowbottomsep=\dimen165
+\aboverulesep=\dimen166
+\abovetopsep=\dimen167
+\cmidrulesep=\dimen168
+\cmidrulekern=\dimen169
+\defaultaddspace=\dimen170
+\@cmidla=\count299
+\@cmidlb=\count300
+\@aboverulesep=\dimen171
+\@belowrulesep=\dimen172
+\@thisruleclass=\count301
+\@lastruleclass=\count302
+\@thisrulewidth=\dimen173
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/makecell/makecell.sty
+Package: makecell 2009/08/03 V0.1e Managing of Tab Column Heads and Cells
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/tools/array.sty
+Package: array 2025/09/25 v2.6n Tabular extension package (FMi)
+\col@sep=\dimen174
+\ar@mcellbox=\box57
+\extrarowheight=\dimen175
+\NC@list=\toks23
+\extratabsurround=\skip68
+\backup@length=\skip69
+\ar@cellbox=\box58
+)
+\rotheadsize=\dimen176
+\c@nlinenum=\count303
+\TeXr@lab=\toks24
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/multirow/multirow.sty
+Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
+\multirow@colwidth=\skip70
+\multirow@cntb=\count304
+\multirow@dima=\skip71
+\bigstrutjot=\dimen177
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/colortbl/colortbl.sty
+Package: colortbl 2024/10/29 v1.0k Color table columns (DPC)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/color.sty
+Package: color 2025/01/14 v1.3e Standard LaTeX Color (DPC)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package color Info: Driver file: pdftex.def on input line 149.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx))
+\everycr=\toks25
+\minrowclearance=\skip72
+\rownum=\count305
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/tools/dcolumn.sty
+Package: dcolumn 2025/10/21 v1.06 decimal alignment package (DPC)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/sttools/stfloats.sty
+Package: stfloats 2025/06/18 v3.4 Improve float mechanism and baselineskip settings
+\@dblbotnum=\count306
+\c@dblbotnumber=\count307
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/tools/xspace.sty
+Package: xspace 2014/10/28 v1.13 Space after command names (DPC,MH)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/xstring/xstring.sty (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/xstring/xstring.tex
+\xs_counta=\count308
+\xs_countb=\count309
+)
+Package: xstring 2023/08/22 v1.86 String manipulations (CT)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/footmisc/footmisc.sty
+Package: footmisc 2025/05/09 v7.0b a miscellany of footnote facilities
+\FN@temptoken=\toks26
+\footnotemargin=\dimen178
+Package footmisc Info: Declaring symbol style bringhurst on input line 549.
+Package footmisc Info: Declaring symbol style chicago on input line 557.
+Package footmisc Info: Declaring symbol style wiley on input line 566.
+Package footmisc Info: Declaring symbol style lamport-robust on input line 577.
+Package footmisc Info: Declaring symbol style lamport* on input line 597.
+Package footmisc Info: Declaring symbol style lamport*-robust on input line 618.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2024/09/29 v3.02 LaTeX color extensions (UK)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package xcolor Info: Driver file: pdftex.def on input line 274.
+LaTeX Info: Redefining \color on input line 762.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/mathcolor.ltx)
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1349.
+Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1353.
+Package xcolor Info: Model `RGB' extended on input line 1365.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1367.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1368.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/xcolor/svgnam.def
+File: svgnam.def 2024/09/29 v3.02 Predefined colors according to SVG 1.1 (UK)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/graphics/dvipsnam.def
+File: dvipsnam.def 2016/06/17 v3.0m Driver-dependent file (DPC,SPQR)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty
+Package: iftex 2024/12/12 v1.0g TeX engine tests
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/microtype/microtype.sty
+Package: microtype 2026/03/01 v3.2d Micro-typographical refinements (RS)
+\MT@toks=\toks27
+\MT@tempbox=\box59
+\MT@count=\count310
+LaTeX Info: Redefining \noprotrusionifhmode on input line 1084.
+LaTeX Info: Redefining \leftprotrusion on input line 1085.
+\MT@prot@toks=\toks28
+LaTeX Info: Redefining \rightprotrusion on input line 1104.
+LaTeX Info: Redefining \textls on input line 1449.
+\MT@outer@kern=\dimen179
+LaTeX Info: Redefining \microtypecontext on input line 2053.
+LaTeX Info: Redefining \textmicrotypecontext on input line 2070.
+\MT@listname@count=\count311
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/microtype/microtype-pdftex.def
+File: microtype-pdftex.def 2026/03/01 v3.2d Definitions specific to pdftex (RS)
+LaTeX Info: Redefining \lsstyle on input line 944.
+LaTeX Info: Redefining \lslig on input line 944.
+\MT@outer@space=\skip73
+)
+Package microtype Info: Loading configuration file microtype.cfg.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/microtype/microtype.cfg
+File: microtype.cfg 2026/03/01 v3.2d microtype main configuration file (RS)
+)
+LaTeX Info: Redefining \microtypesetup on input line 3065.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/cmap/cmap.sty
+Package: cmap 2021/02/06 v1.0j CMap support: searchable PDF
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2026-01-29 v7.01p Hypertext links for LaTeX
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
+Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
+Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty
+Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+Package: nameref 2026-01-29 v2.58 Cross-referencing by name of section
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty
+Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
+Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty
+Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
+))
+\c@section@level=\count312
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty
+Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO)
+)
+\@linkdim=\dimen180
+\Hy@linkcounter=\count313
+\Hy@pagecounter=\count314
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2026-01-29 v7.01p Hyperref: PDFDocEncoding definition (HO)
+Now handling font encoding PD1 ...
+... no UTF-8 mapping file for font encoding PD1
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty
+Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
+)
+\Hy@SavedSpaceFactor=\count315
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def
+File: puenc.def 2026-01-29 v7.01p Hyperref: PDF Unicode definition (HO)
+Now handling font encoding PU ...
+... no UTF-8 mapping file for font encoding PU
+)
+Package hyperref Info: Option `unicode' set `true' on input line 4072.
+Package hyperref Info: Hyper figures OFF on input line 4201.
+Package hyperref Info: Link nesting OFF on input line 4206.
+Package hyperref Info: Hyper index ON on input line 4209.
+Package hyperref Info: Plain pages OFF on input line 4216.
+Package hyperref Info: Backreferencing OFF on input line 4221.
+Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
+Package hyperref Info: Bookmarks ON on input line 4468.
+\c@Hy@tempcnt=\count316
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/url/url.sty
+\Urlmuskip=\muskip18
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 4807.
+\XeTeXLinkMargin=\dimen181
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
+Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
+Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO)
+))
+\Fld@menulength=\count317
+\Field@Width=\dimen182
+\Fld@charsize=\dimen183
+Package hyperref Info: Hyper figures OFF on input line 6084.
+Package hyperref Info: Link nesting OFF on input line 6089.
+Package hyperref Info: Hyper index ON on input line 6092.
+Package hyperref Info: backreferencing OFF on input line 6099.
+Package hyperref Info: Link coloring OFF on input line 6104.
+Package hyperref Info: Link coloring with OCG OFF on input line 6109.
+Package hyperref Info: PDF/A mode OFF on input line 6114.
+\Hy@abspage=\count318
+\c@Item=\count319
+\c@Hfootnote=\count320
+)
+Package hyperref Info: Driver (autodetected): hpdftex.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
+File: hpdftex.def 2026-01-29 v7.01p Hyperref driver for pdfTeX
+\Fld@listcount=\count321
+\c@bookmark@seq@number=\count322
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
+Package: rerunfilecheck 2025-06-21 v1.11 Rerun checks for auxiliary files (HO)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
+Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
+)
+Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 284.
+)
+\Hy@SectionHShift=\skip74
+)
+Package hyperref Info: Option `colorlinks' set `true' on input line 174.
+Package hyperref Info: Option `bookmarksnumbered' set `true' on input line 174.
+Package hyperref Info: Option `unicode' set `true' on input line 174.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/fontawesome5/fontawesome5.sty
+Package: fontawesome5 2022/05/02 v5.15.4 Font Awesome 5
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/l3packages/l3keys2e/l3keys2e.sty
+Package: l3keys2e 2025-10-09 LaTeX2e option processing using LaTeX3 keys
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/fontawesome5/fontawesome5-generic-helper.sty
+Package: fontawesome5-generic-helper 2022/05/02 v5.15.4 non-uTeX helper for fontawesome5
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/fontawesome5/fontawesome5-mapping.def)))
+\g_xmpdata_output_iow=\write3
+\openout3 = `paper.xmpdata'.
+
+\l_conf_title_before_dim=\dimen184
+\l_conf_title_after_dim=\dimen185
+\g_ead_int=\count323
+\g_uad_int=\count324
+\g_orcid_int=\count325
+\@eadauthor=\toks29
+\g_conf_tnote_int=\count326
+\g_conf_fnote_int=\count327
+\g_conf_cor_int=\count328
+\g_conf_au_int=\count329
+\g_conf_aau_int=\count330
+\l_autype_int=\count331
+\l_conf_augroup_before_dim=\dimen186
+\l_conf_augroup_after_dim=\dimen187
+\l_conf_augroup_lskip_tl=\dimen188
+\l_conf_augroup_rskip_tl=\dimen189
+\g_num_short_authors=\count332
+\g_conf_aff_int=\count333
+\l_conf_aff_before_dim=\dimen190
+\l_conf_aff_after_dim=\dimen191
+\l_conf_aff_lskip_dim=\dimen192
+\l_conf_aff_rskip_dim=\dimen193
+\g_conf_augr_int=\count334
+\g_conf_aaugr_int=\count335
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/moreverb/moreverb.sty
+Package: moreverb 2008/06/03 v2.3a `more' verbatim facilities
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/tools/verbatim.sty
+Package: verbatim 2024-01-22 v1.5x LaTeX2e package for verbatim enhancements
+\every@verbatim=\toks30
+\verbatim@line=\toks31
+\verbatim@in@stream=\read2
+)
+\tab@position=\count336
+\tab@size=\count337
+\listing@line=\count338
+)
+\g_conf_abs_box=\box60
+\casgrabsbox=\box61
+\casauhlbox=\box62
+\g_conf_key_box=\box63
+\ccLogoWidth=\dimen194
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/tools/calc.sty
+Package: calc 2025/03/01 v4.3b Infix arithmetic (KKT,FJ)
+\calc@Acount=\count339
+\calc@Bcount=\count340
+\calc@Adimen=\dimen195
+\calc@Bdimen=\dimen196
+\calc@Askip=\skip75
+\calc@Bskip=\skip76
+LaTeX Info: Redefining \setlength on input line 86.
+LaTeX Info: Redefining \addtolength on input line 87.
+\calc@Ccount=\count341
+\calc@Cskip=\skip77
+)
+\g_conf_jtype_int=\count342
+\g_conf_blind_int=\count343
+\c@au=\count344
+\c@cnote=\count345
+\c@tnote=\count346
+\c@fnote=\count347
+\c@aff=\count348
+\g_conf_notes_box=\box64
+\g_conf_front_box=\box65
+\paraindent=\dimen197
+\subparaindent=\dimen198
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrlayer-scrpage.sty
+Package: scrlayer-scrpage 2026/02/02 v3.49.2 KOMA-Script package (end user interface for scrlayer)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/koma-script/scrlayer.sty
+Package: scrlayer 2026/02/02 v3.49.2 KOMA-Script package (defining layers and page styles)
+Package scrlayer Info: patching LaTeX kernel macro \pagestyle on input line 2179.
+)
+Package scrlayer-scrpage Info: Makeing stand-alone element `pagehead' from
+(scrlayer-scrpage)             alias to `pageheadfoot' on input line 1106.
+)
+\FullWidth=\dimen199
+\l_tbl_width_dim=\dimen256
+\l_tbl_abovecap_skip=\skip78
+\l_tbl_belowcap_skip=\skip79
+\l_tbl_abovetbl_skip=\skip80
+\l_tbl_belowtbl_skip=\skip81
+\l_fig_width_dim=\dimen257
+\l_fig_abovecap_skip=\skip82
+\l_fig_belowcap_skip=\skip83
+\l_fig_abovefig_skip=\skip84
+\l_fig_belowfig_skip=\skip85
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/wrapfig/wrapfig.sty
+\wrapoverhang=\dimen258
+\WF@size=\dimen259
+\c@WF@wrappedlines=\count349
+\WF@box=\box66
+\WF@everypar=\toks32
+Package: wrapfig 2003/01/31  v 3.6
+)
+\l_wrap_figwidth_dim=\dimen260
+\l_wrap_fighspace_dim=\dimen261
+\l_wrap_figvspace_dim=\dimen262
+\l_wrap_fighcorr_dim=\dimen263
+\l_wrap_figvcorr_dim=\dimen264
+\l_above_bio_dim=\dimen265
+\l_wrap_figlcorr_int=\count350
+\l_wrap_figlines_int=\count351
+\l_bio_text_box=\box67
+\c@ca_biography_ctr=\count352
+\l_ca_temp_inta=\count353
+\leftMargin=\dimen266
+\@enLab=\toks33
+\@sep=\skip86
+\@@sep=\skip87
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2010/09/13 8.31b (PWD, AO)
+\bibhang=\skip88
+\bibsep=\skip89
+LaTeX Info: Redefining \cite on input line 694.
+\c@NAT@ctr=\count354
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/base/fontenc.sty
+Package: fontenc 2025/07/18 v2.1d Standard LaTeX package
+<<t1.cmap>>) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/libertinus/libertinus.sty
+Package: libertinus 2020/05/06 v. 0.02 (Herbert Voss) Supports libertinus fonts for pdflatex/lualatex/xelatex
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2025/11/04 v2.10 package option processing (HA)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/xkeyval/xkeyval.tex (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/xkeyval/xkvutils.tex
+\XKV@toks=\toks34
+\XKV@tempa@toks=\toks35
+\XKV@tempb@toks=\toks36
+)
+\XKV@depth=\count355
+File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
+)) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/libertinus-type1/libertinus-type1.sty
+Package: libertinus-type1 2025/11/17 (Bob Tennent) Supports libertinus fonts for latex/pdflatex.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/iftex/ifxetex.sty
+Package: ifxetex 2019/10/25 v0.7 ifxetex legacy package. Use iftex instead.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/generic/iftex/ifluatex.sty
+Package: ifluatex 2019/10/25 v1.5 ifluatex legacy package. Use iftex instead.
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/base/textcomp.sty
+Package: textcomp 2024/04/24 v2.1b Standard LaTeX package
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/base/fontenc.sty
+Package: fontenc 2025/07/18 v2.1d Standard LaTeX package
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/fontaxes/fontaxes.sty
+Package: fontaxes 2026-01-02 v2.0.2 Font selection axes (deprecated)
+Applying: [0000-00-00] Fall back to v1 on input line 76.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/fontaxes/fontaxes-v1.sty
+Package: fontaxes 2020/07/21 v1.0e Font selection axes
+LaTeX Info: Redefining \upshape on input line 29.
+LaTeX Info: Redefining \itshape on input line 31.
+LaTeX Info: Redefining \slshape on input line 33.
+LaTeX Info: Redefining \swshape on input line 35.
+LaTeX Info: Redefining \scshape on input line 37.
+LaTeX Info: Redefining \sscshape on input line 39.
+LaTeX Info: Redefining \ulcshape on input line 41.
+LaTeX Info: Redefining \textsw on input line 47.
+LaTeX Info: Redefining \textssc on input line 48.
+LaTeX Info: Redefining \textulc on input line 49.
+))))) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/listings/listings.sty
+\lst@mode=\count356
+\lst@gtempboxa=\box68
+\lst@token=\toks37
+\lst@length=\count357
+\lst@currlwidth=\dimen267
+\lst@column=\count358
+\lst@pos=\count359
+\lst@lostspace=\dimen268
+\lst@width=\dimen269
+\lst@newlines=\count360
+\lst@lineno=\count361
+\lst@maxwidth=\dimen270
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/listings/lstpatch.sty
+File: lstpatch.sty 2025/11/14 1.11b (Carsten Heinz)
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2025/11/14 1.11b (Carsten Heinz)
+\c@lstnumber=\count362
+\lst@skipnumbers=\count363
+\lst@framebox=\box69
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/listings/listings.cfg
+File: listings.cfg 2025/11/14 1.11b listings configuration
+))
+Package: listings 2025/11/14 1.11b (Carsten Heinz)
+
+==> First Aid for listings.sty no longer applied!
+    Expected:
+        2024/09/23 1.10c (Carsten Heinz)
+    but found:
+        2025/11/14 1.11b (Carsten Heinz)
+    so I'm assuming it got fixed.
+(/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/tools/tabularx.sty
+Package: tabularx 2023/12/11 v2.12a `tabularx' package (DPC)
+\TX@col@width=\dimen271
+\TX@old@table=\dimen272
+\TX@old@col=\dimen273
+\TX@target=\dimen274
+\TX@delta=\dimen275
+\TX@cols=\count364
+\TX@ftn=\toks38
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count365
+\float@exts=\toks39
+\float@box=\box70
+\@float@everytoks=\toks40
+\@floatcapt=\box71
+)
+Class scrartcl Info: loading recommended package `bookmark'.
+(scrartcl)           Using `bookmark' together with `hyperref' is recommended,
+(scrartcl)           because of handling of possible bookmark level gaps.
+(scrartcl)           You can avoid loading `bookmark' with KOMA-Script option
+(scrartcl)           `bookmarkpackage=false' before \begin{document} and
+(scrartcl)           you can avoid this message adding:
+(scrartcl)             \usepackage{bookmark}
+(scrartcl)           before \begin{document} on input line 42.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/bookmark/bookmark.sty
+Package: bookmark 2023-12-10 v1.31 PDF bookmarks (HO)
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/bookmark/bkm-pdftex.def
+File: bkm-pdftex.def 2023-12-10 v1.31 bookmark driver for pdfTeX and luaTeX (HO)
+\BKM@id=\count366
+))
+LaTeX Font Info:    Trying to load font information for T1+LibertinusSerif-TLF on input line 42.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/libertinus-type1/T1LibertinusSerif-TLF.fd
+File: T1LibertinusSerif-TLF.fd 2024/09/22 (autoinst) Font definitions for T1/LibertinusSerif-TLF.
+)
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 10.95pt on input line 42.
+ (./paper.aux)
+\openout1 = `paper.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 42.
+LaTeX Font Info:    ... okay on input line 42.
+Package scrbase Info: activating english \abstractname on input line 42.
+Package scrbase Info: activating english \partname on input line 42.
+Package scrbase Info: activating english \figurename on input line 42.
+Package scrbase Info: activating english \tablename on input line 42.
+Package scrbase Info: activating english \contentsname on input line 42.
+Package scrbase Info: activating english \listfigurename on input line 42.
+Package scrbase Info: activating english \listtablename on input line 42.
+Package scrbase Info: activating english \refname on input line 42.
+Package scrbase Info: activating english \indexname on input line 42.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count367
+\scratchdimen=\dimen276
+\scratchbox=\box72
+\nofMPsegments=\count368
+\nofMParguments=\count369
+\everyMPshowfont=\toks41
+\MPscratchCnt=\count370
+\MPscratchDim=\dimen277
+\MPnumerator=\count371
+\makeMPintoPDFobject=\count372
+\everyMPtoPDFconversion=\toks42
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
+))
+LaTeX Info: Redefining \microtypecontext on input line 42.
+Package microtype Info: Applying patch `item' on input line 42.
+Package microtype Info: Applying patch `toc' on input line 42.
+Package microtype Info: Applying patch `eqnum' on input line 42.
+Package microtype Info: Applying patch `footnote' on input line 42.
+Package microtype Info: Applying patch `verbatim' on input line 42.
+LaTeX Info: Redefining \microtypesetup on input line 42.
+Package microtype Info: Generating PDF output.
+Package microtype Info: Character protrusion enabled (level 2).
+Package microtype Info: Using default protrusion set `alltext'.
+Package microtype Info: Automatic font expansion enabled (level 2),
+(microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
+Package microtype Info: Using default expansion set `alltext-nott'.
+Package microtype Info: Patching command `\showhyphens'.
+Package microtype Info: No adjustment of tracking.
+Package microtype Info: No adjustment of interword spacing.
+Package microtype Info: No adjustment of character kerning.
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `LibertinusSerif-TLF' (encoding: T1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+Package hyperref Info: Link coloring ON on input line 42.
+\c@mv@tabular=\count373
+\c@mv@boldtabular=\count374
+\c@lstlisting=\count375
+Package tocbasic Info: omitting babel extension for `lol'
+(tocbasic)             because of missing \bbl@set@language on input line 42.
+\scr@dte@lstlisting@maxnumwidth=\skip90
+\verbatim@out=\write4
+\openout4 = `paper.abs'.
+
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/b/n' will be
+(Font)              scaled to size 10.95pt on input line 69.
+LaTeX Font Info:    Trying to load font information for T1+LibertinusSans-TLF on input line 69.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/libertinus-type1/T1LibertinusSans-TLF.fd
+File: T1LibertinusSans-TLF.fd 2024/09/22 (autoinst) Font definitions for T1/LibertinusSans-TLF.
+)
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/b/n' will be
+(Font)              scaled to size 10.95pt on input line 69.
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `LibertinusSans-TLF' (encoding: T1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 9.0pt on input line 69.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 17.28pt on input line 75.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/m/n' will be
+(Font)              scaled to size 17.28pt on input line 75.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/b/n' will be
+(Font)              scaled to size 17.28pt on input line 75.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 12.0pt on input line 75.
+<<ot1.cmap>> (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/microtype/mt-cmr.cfg
+File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
+)
+LaTeX Font Info:    Trying to load font information for U+msa on input line 75.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg
+File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 75.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+) (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/microtype/mt-msb.cfg
+File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
+)
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 8.0pt on input line 75.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/it' will be
+(Font)              scaled to size 8.0pt on input line 75.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/it' will be
+(Font)              scaled to size 9.0pt on input line 75.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/it' will be
+(Font)              scaled to size 6.0pt on input line 75.
+ (./paper.abs)
+Overfull \hbox (376.42744pt too wide) detected at line 75
+[]
+ []
+
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 6.0pt on input line 75.
+
+Package hyperref Warning: Ignoring empty anchor on input line 75.
+
+
+Package hyperref Warning: Ignoring empty anchor on input line 75.
+
+LaTeX Font Info:    Trying to load font information for U+fontawesomefree1 on input line 75.
+(/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/fontawesome5/ufontawesomefree1.fd)
+
+Package hyperref Warning: Ignoring empty anchor on input line 75.
+
+
+Package hyperref Warning: Ignoring empty anchor on input line 75.
+
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/m/n' will be
+(Font)              scaled to size 10.95pt on input line 78.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/b/n' will be
+(Font)              scaled to size 14.4pt on input line 78.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/it' will be
+(Font)              scaled to size 10.95pt on input line 81.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/b/n' will be
+(Font)              scaled to size 12.0pt on input line 92.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/m/n' will be
+(Font)              scaled to size 10.0pt on input line 96.
+LaTeX Font Info:    Font shape `T1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 10.0pt on input line 96.
+[1
+
+{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_mfadfl.enc}{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_75t36g.enc}{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_sncvby.enc}{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/fontawesome5/fa5free1.enc}] [2{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_sfissr.enc}] [3]
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/b/n' will be
+(Font)              scaled to size 10.0pt on input line 145.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/m/n' will be
+(Font)              scaled to size 9.0pt on input line 148.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/b/n' will be
+(Font)              scaled to size 9.0pt on input line 152.
+LaTeX Font Info:    Font shape `T1/LibertinusSans-TLF/m/it' will be
+(Font)              scaled to size 9.0pt on input line 153.
+ [4] [5
+pdfTeX warning (ext4): destination with the same identifier (name{table.1}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.187 
+      {/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_hvvyjb.enc}] [6] [7
+pdfTeX warning (ext4): destination with the same identifier (name{table.2}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.251 
+      ] [8]
+<assets/easi_arch.png, id=125, 523.9575pt x 352.31625pt>
+File: assets/easi_arch.png Graphic file (type png)
+<use assets/easi_arch.png>
+Package pdftex.def Info: assets/easi_arch.png  used on input line 286.
+(pdftex.def)             Requested size: 292.7776pt x 196.87105pt.
+LaTeX Font Info:    Trying to load font information for T1+LibertinusMono-TLF on input line 293.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/libertinus-type1/T1LibertinusMono-TLF.fd
+File: T1LibertinusMono-TLF.fd 2025/01/11 (autoinst) Font definitions for T1/LibertinusMono-TLF.
+)
+LaTeX Font Info:    Font shape `T1/LibertinusMono-TLF/m/n' will be
+(Font)              scaled to size 9.30756pt on input line 293.
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `LibertinusMono-TLF' (encoding: T1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+Package microtype Info: Character `guilsinglleft ' is missing
+(microtype)             in font `T1/LibertinusMono-TLF/m/n/10.95'.
+(microtype)             Ignoring protrusion settings for this character.
+Package microtype Info: Character `guilsinglright ' is missing
+(microtype)             in font `T1/LibertinusMono-TLF/m/n/10.95'.
+(microtype)             Ignoring protrusion settings for this character.
+ [9
+pdfTeX warning (ext4): destination with the same identifier (name{figure.1}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.294 
+       <./assets/easi_arch.png>]
+<assets/prompt.png, id=139, 441.65pt x 141.52875pt>
+File: assets/prompt.png Graphic file (type png)
+<use assets/prompt.png>
+Package pdftex.def Info: assets/prompt.png  used on input line 305.
+(pdftex.def)             Requested size: 292.7776pt x 93.82605pt.
+ [10{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_or3pzs.enc}
+pdfTeX warning (ext4): destination with the same identifier (name{figure.2}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.311 
+       <./assets/prompt.png>]
+Underfull \hbox (badness 2478) in paragraph at lines 316--317
+[]\T1/LibertinusSerif-TLF/m/n/10.95 (+20) For lo-cal in-fer-ence us-ing vLLM, the li-brary man-ages the full server life-cy-cle: a
+ []
+
+[11] [12]
+LaTeX Font Info:    Trying to load font information for TS1+LibertinusSerif-TLF on input line 349.
+ (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/libertinus-type1/TS1LibertinusSerif-TLF.fd
+File: TS1LibertinusSerif-TLF.fd 2024/09/22 (autoinst) Font definitions for TS1/LibertinusSerif-TLF.
+)
+LaTeX Font Info:    Font shape `TS1/LibertinusSerif-TLF/m/n' will be
+(Font)              scaled to size 10.95pt on input line 349.
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `LibertinusSerif-TLF' (encoding: TS1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+
+Underfull \hbox (badness 10000) in paragraph at lines 373--373
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) EB-Alfred, EB-Habitat, EB-
+ []
+
+[13{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_rlktsf.enc}] [14
+pdfTeX warning (ext4): destination with the same identifier (name{table.3}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.433 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{table.4}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.433 
+      ] [15
+pdfTeX warning (ext4): destination with the same identifier (name{table.5}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.448 
+      ] [16] (./paper.bbl [17] [18])
+<assets/process_flow.png, id=270, 2826.56pt x 1541.76pt>
+File: assets/process_flow.png Graphic file (type png)
+<use assets/process_flow.png>
+Package pdftex.def Info: assets/process_flow.png  used on input line 505.
+(pdftex.def)             Requested size: 418.25555pt x 228.12515pt.
+LaTeX Font Info:    Font shape `T1/LibertinusMono-TLF/m/n' will be
+(Font)              scaled to size 8.50006pt on input line 506.
+Package microtype Info: Character `guilsinglleft ' is missing
+(microtype)             in font `T1/LibertinusMono-TLF/m/n/10'.
+(microtype)             Ignoring protrusion settings for this character.
+Package microtype Info: Character `guilsinglright ' is missing
+(microtype)             in font `T1/LibertinusMono-TLF/m/n/10'.
+(microtype)             Ignoring protrusion settings for this character.
+ [19]
+Underfull \hbox (badness 10000) in paragraph at lines 551--551
+[]|\T1/LibertinusMono-TLF/m/n/10 cli.py\T1/LibertinusSans-TLF/m/n/10 (+20) , Run-ners,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 554--555
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) Unified LLM in-ter-face,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 555--555
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) SimulatorRegistry,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 555--555
+\T1/LibertinusSans-TLF/m/n/10 (+20) Sub-pro-cess-Run-ner,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 556--556
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) filesystem.py,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 557--557
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) RenderPlatform,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 557--558
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) Display back-end, Xorg
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 558--558
+[]|\T1/LibertinusSans-TLF/m/n/10 (+20) TrajectoryVideo, Pro-
+ []
+
+<assets/parallel_flow.png, id=282, 1191.45125pt x 815.045pt>
+File: assets/parallel_flow.png Graphic file (type png)
+<use assets/parallel_flow.png>
+Package pdftex.def Info: assets/parallel_flow.png  used on input line 570.
+(pdftex.def)             Requested size: 418.25555pt x 286.1157pt.
+[20
+pdfTeX warning (ext4): destination with the same identifier (name{figure.3}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.577     \item L
+                 LM URLs: \texttt{base\_urls[worker\_id \% len(base\_urls)]}...
+pdfTeX warning (ext4): destination with the same identifier (name{table.6}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.577     \item L
+                 LM URLs: \texttt{base\_urls[worker\_id \% len(base\_urls)]}... <./assets/process_flow.png>] [21
+pdfTeX warning (ext4): destination with the same identifier (name{table.7}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.610 
+      
+pdfTeX warning (ext4): destination with the same identifier (name{table.8}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.610 
+      ] (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2025/11/14 1.11b listings language file
+) [22
+pdfTeX warning (ext4): destination with the same identifier (name{figure.4}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.645 ...kgroundcolor=\color{white}, frame=single]
+                                                   <./assets/parallel_flow.png>] [23
+pdfTeX warning (ext4): destination with the same identifier (name{table.9}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.684  
+         the described destination] [24] [25] (./paper.aux)
+ ***********
+LaTeX2e <2025-11-01>
+L3 programming layer <2026-01-19>
+ ***********
+ ) 
+Here is how much of TeX's memory you used:
+ 26735 strings out of 468658
+ 519461 string characters out of 5435235
+ 1445001 words of memory out of 5000000
+ 54476 multiletter control sequences out of 15000+600000
+ 794058 words of font info for 370 fonts, out of 8000000 for 9000
+ 430 hyphenation exceptions out of 8191
+ 122i,21n,121p,11283b,2082s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/fontawesome5/FontAwesome5Free-Regular.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusMono-Regular.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusSans-Bold.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusSans-Italic.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusSans-Regular.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusSerif-Bold.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusSerif-Italic.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/libertinus-type1/LibertinusSerif-Regular.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb>
+Output written on paper.pdf (25 pages, 3231535 bytes).
+PDF statistics:
+ 623 PDF objects out of 1000 (max. 8388607)
+ 558 compressed objects within 6 object streams
+ 183 named destinations out of 1000 (max. 500000)
+ 91493 words of extra memory for PDF output out of 106986 (max. 10000000)
+

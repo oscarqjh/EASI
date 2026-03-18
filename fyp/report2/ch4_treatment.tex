@@ -1,0 +1,71 @@
+\chapter{Treating the Problem Through Spatial Data Scaling}
+\label{sec:treatment}
+
+\section{From Diagnosis to Intervention}
+
+The holistic evaluation provided a precise diagnosis, showing that models are weakest at perspective-taking and metric measurement, moderately weak at spatial relations and mental reconstruction, and relatively stronger (though still far from human) at comprehensive reasoning when it can be solved through language-level inference. The natural next question was whether targeted data curation and scaling could close these gaps.
+
+This question drove the second publication, \textit{``Scaling Spatial Intelligence with Multimodal Foundation Models''}~\cite{cai2025scalingspatialintelligencemultimodal}, which I contributed to through evaluation infrastructure and execution. The team adopted a deliberately data-centric approach. Rather than modifying model architectures, they scaled up spatial training data while preserving the original architectures of established foundation models (Qwen3-VL, InternVL3, and Bagel). The reasoning was pragmatic, since if data alone could unlock spatial intelligence, the benefit would be immediately transferable to any model family.
+
+\section{Curating SenseNova-SI-8M}
+
+The team constructed SenseNova-SI-8M, a collection of eight million spatial QA samples organized under the EASI taxonomy. The curation process began by auditing existing open-source spatial datasets (Open3D-VQA, the CLEVR series, MultiSpa, MindCube, ViCA, VLM-3R, VSI-590K), yielding approximately 3.3 million QA pairs. An additional 0.6 million general visual QA pairs (from VQA, GQA, IconQA, etc.) were included to maintain general capabilities.
+
+The audit revealed significant gaps. Metric measurement (MM) and spatial relations (SR) dominated the existing data, while perspective-taking (PT) and mental reconstruction (MR) were severely underrepresented. Point-level and scene-level correspondence tasks were limited to a single dataset. Camera motion reasoning existed only in sparse form. Allocentric viewpoint transformation, especially object-centric and hypothetical views, was largely unexplored, since real-world QA labels for these tasks are scarce.
+
+To address these gaps, the team leveraged richly annotated 3D scene datasets (ScanNet, ScanNet++, SUN RGB-D, Matterport3D, Ego-Exo4D, MessyTable, and CA-1M) to synthesize 4.5 million additional QA pairs with special emphasis on perspective-taking. The resulting 8.5M samples spanned all five capability dimensions with deliberate attention to balance.
+
+\section{Training the SenseNova-SI Models}
+
+Three base models were selected for SFT, namely InternVL3 (natively multimodal, joint vision-language pre-training), Qwen3-VL (language-foundation-first, expanded to vision), and Bagel (unified understanding and generation). Each was fine-tuned on subsets of SenseNova-SI-8M without architectural modification.
+
+The benchmark integrations I had built in lmms-eval (VSI-Bench, MMSI, MindCube-Tiny, ViewSpatial, SITE) formed the evaluation backbone for validating the trained models. The Cambrian-S and Bagel model integrations I had built, served directly as baselines; the SenseNova-SI Bagel-7B-MoT variant, for instance, builds on the same Bagel model I had integrated for evaluation.
+
+\section{Results: What Data Scaling Achieved}
+
+Table~\ref{tab:scaling_results} shows the impact of SenseNova-SI data scaling, evaluated on the five core spatial benchmarks, all of which were benchmarks I had integrated into lmms-eval during the first phase of work.
+
+\begin{table}[htbp]
+\centering
+\caption{SenseNova-SI results on spatial intelligence benchmarks, adapted from~\cite{cai2025scalingspatialintelligencemultimodal}. The benchmarks used for evaluation are the same integrations built during Phase 1 (Chapter~\ref{sec:diagnosis}).}
+\label{tab:scaling_results}
+\renewcommand{\arraystretch}{1.1}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{VSI} & \textbf{MMSI} & \textbf{MindC.*} & \textbf{ViewSp.} & \textbf{SITE} & \textbf{MMB-En} \\
+\textit{Metric} & \textit{MRA,Acc} & \textit{Acc} & \textit{Acc} & \textit{Acc} & \textit{CAA} & \textit{Acc} \\
+\midrule
+Human & 79.2 & 97.2 & 94.5 & --- & 67.5 & --- \\
+GPT-5 & 55.0 & 41.8 & 56.3 & 45.5 & 61.8 & 85.2 \\
+Gemini-2.5-Pro & 53.5 & 38.0 & 57.6 & 46.0 & 57.0 & 90.1 \\
+\midrule
+\multicolumn{7}{l}{\textit{Base models}} \\
+InternVL3-8B & 42.1 & 28.0 & 41.5 & 38.6 & 41.1 & 81.7 \\
+Qwen3-VL-8B & 57.9 & 31.1 & 29.4 & 42.2 & 45.8 & 84.6 \\
+Bagel-7B-MoT & 31.4 & 31.0 & 34.7 & 41.3 & 37.0 & 82.8 \\
+\midrule
+\multicolumn{7}{l}{\textit{After SenseNova-SI SFT}} \\
+SN-SI InternVL3-8B & \textbf{68.7} (+26.6) & \textbf{43.3} (+15.3) & \textbf{85.6} (+44.1) & \textbf{54.6} (+16.0) & \textbf{50.1} (+9.0) & 84.9 \\
+SN-SI Qwen3-VL-8B & 62.9 (+5.0) & 37.5 (+6.4) & 74.8 (+45.4) & 47.7 (+5.5) & 47.7 (+1.9) & 83.8 \\
+SN-SI Bagel-7B-MoT & 41.6 (+10.2) & 36.2 (+5.2) & 50.8 (+16.1) & 43.9 (+2.6) & 42.5 (+5.5) & 79.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The improvements were dramatic. SenseNova-SI InternVL3-8B jumped from 42.1\% to 68.7\% on VSI-Bench, from 28.0\% to 43.3\% on MMSI, and most strikingly from 41.5\% to 85.6\% on MindCube, a 44-point gain from data scaling alone, with no architectural changes. General capability on MMBench-En was preserved (84.9\% vs.\ 81.7\% baseline), confirming that spatial training did not come at the cost of general understanding.
+
+Perhaps most remarkably, the data-scaled open-source models surpassed proprietary models on several benchmarks. On MindCube, SenseNova-SI InternVL3-8B (85.6\%) exceeded GPT-5 (56.3\%), Gemini-2.5-Pro (57.6\%), and Grok-4 (63.5\%) by wide margins. On VSI-Bench, it surpassed GPT-5 (68.7\% vs.\ 55.0\%). On MMSI's camera-object perspective-taking subtask, SenseNova-SI (62.7\%) outperformed GPT-5 (49.8\%). These results validated the insight from Phase 1 that the spatial intelligence gap is primarily a \textit{data} problem rather than a model capacity problem. An 8B-parameter open-source model, given the right training data, can surpass frontier proprietary models that are orders of magnitude larger. This suggests that for spatial intelligence, investing in targeted data curation may yield greater returns than scaling model parameters or adopting more complex training paradigms such as reinforcement learning.
+
+\section{Deeper Insights from Data Scaling}
+
+Beyond the headline numbers, the data scaling experiments revealed several nuanced findings.
+
+\textbf{Scaling laws vary by capability.} Not all spatial capabilities scale at the same rate. Perspective-taking showed the most dramatic improvement with additional data, consistent with it being the most data-starved capability in existing training corpora. Metric measurement improved more modestly, suggesting it may require different kinds of training signal (perhaps grounded depth estimation rather than QA-style supervision).
+
+\textbf{Emergent generalization.} Models trained on one set of spatial tasks exhibited nontrivial transfer to seemingly unrelated tasks, and demonstrated extrapolation to longer spatial contexts beyond the training distribution. This hinted at the formation of genuine spatial representations rather than mere pattern matching.
+
+\textbf{Robustness against shortcuts.} Through controlled experiments including circular test designs, the team validated that SenseNova-SI genuinely acquired spatial capabilities rather than exploiting memorization, annotation biases, or language shortcuts in the training data. This was a critical validation, as earlier work had shown that many spatial benchmarks contain exploitable non-visual shortcuts~\cite{brown2025benchmarkdesignerstraintest}.
+
+\textbf{Spatial chain-of-thought is not a silver bullet.} The team constructed and evaluated three representative text-based CoT schemes for spatial reasoning but found that none reliably improved performance beyond what QA-style data scaling achieved. This suggested that extending text-based CoT to spatial intelligence may require fundamentally different reasoning mechanisms, perhaps visual or geometric rather than linguistic.

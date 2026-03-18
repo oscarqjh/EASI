@@ -1,0 +1,69 @@
+\chapter{Diagnosing the Problem: Holistic Evaluation of Spatial Intelligence}
+\label{sec:diagnosis}
+
+\section{Building the Evaluation Infrastructure}
+
+The first phase of work addressed a practical prerequisite. Before we could holistically evaluate spatial intelligence, we needed the benchmarks to actually work within a unified evaluation framework. The lmms-eval framework~\cite{Zhang_2025} provided the foundation, but most spatial benchmarks had not yet been integrated.
+
+I integrated nine spatial benchmarks into lmms-eval, including VSI-Bench in its debiased and pruned variants (removing annotation shortcuts that could inflate scores), a multi-image variant of VSI-Bench (critical for models that handle frame sequences differently from single images), ViewSpatial, SITE, SparBench, MMSI-Video, OSI-Bench, 3DSR-Bench, and a bugfix for MindCube-Tiny. Each integration required implementing the benchmark's specific evaluation protocol (prompt templates, answer extraction, metric computation) and validating results against published baselines.
+
+Alongside the benchmarks, I integrated two models that would serve as important baselines, namely Cambrian-S, a spatial intelligence model family trained on 590K spatial video samples, and Bagel, a unified understanding-and-generation model. I also fixed several inference bugs that surfaced during large-scale evaluation. Qwen3-VL was incorrectly sampling video frames due to an nframes bug, InternVL had an image token formatting issue in interleaved multi-image mode, and various issues appeared in LLaVA-OV-1.5, InternVL3, and Cambrian-S when processing certain benchmark formats. These fixes were essential because without them, the evaluation results for these models would have been unreliable.
+
+\section{The EASI Evaluation Framework}
+
+With the infrastructure in place, the team conducted a comprehensive evaluation across eight key benchmarks~\cite{cai2025holisticevaluationmultimodalllms}. The study, titled \textit{``Holistic Evaluation of Multimodal LLMs on Spatial Intelligence''} (EASI), tested the leading proprietary models (GPT-5, Gemini-2.5-Pro, Grok-4, Seed-1.6) and open-source models (Qwen2.5-VL, InternVL3, and others).
+
+The EASI framework's core contribution is a unified evaluation protocol that maps every benchmark subtask onto the six-capability taxonomy, enabling apples-to-apples comparison across models and capabilities. A standardized zero-shot chain-of-thought prompt is applied uniformly, and results are reported both per-benchmark and aggregated by capability.
+
+\section{What the Evaluation Revealed}
+
+Table~\ref{tab:main_results} presents the main results across eight spatial intelligence benchmarks. Four of these benchmarks (VSI-Bench, SITE, MMSI, and MindCube-Tiny) were evaluated using the integrations I built in lmms-eval, while OmniSpatial, STARE, CoreCognition, and SpatialViz were integrated by other team members.
+
+\begin{table}[htbp]
+\centering
+\caption{Evaluation on eight spatial intelligence benchmarks (Official Protocol), adapted from~\cite{cai2025holisticevaluationmultimodalllms}. MindCube* denotes MindCube-Tiny. Proprietary model versions: Seed-1.6 (2025-06-15), Gemini-2.5-Pro (2025-06), Grok-4 (2025-07-09), GPT-5 family (2025-08-07).}
+\label{tab:main_results}
+\renewcommand{\arraystretch}{1.1}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Model} & \textbf{VSI} & \textbf{SITE} & \textbf{MMSI} & \textbf{Omni.} & \textbf{MindC.*} & \textbf{STARE} & \textbf{CoreC.} & \textbf{Spat.Viz} \\
+\textit{Metric} & \textit{MRA,Acc} & \textit{CAA} & \textit{Acc} & \textit{Acc} & \textit{Acc} & \textit{Acc,F1} & \textit{Acc} & \textit{Acc} \\
+\midrule
+Random Choice & 34.0 & 0.0 & 25.0 & 25.0 & 32.4 & 34.8 & 33.9 & 25.1 \\
+\midrule
+\multicolumn{9}{l}{\textit{Proprietary}} \\
+Seed-1.6 & 49.9 & 54.6 & 38.3 & 49.3 & 48.8 & 46.1 & 77.2 & 34.6 \\
+Gemini-2.5-Pro & 53.6 & 57.1 & 38.0 & 55.4 & 57.6 & 49.1 & 76.7 & 42.7 \\
+Grok-4 & 47.9 & 47.0 & 37.8 & 46.8 & 63.6 & 26.9 & 79.3 & 19.4 \\
+GPT-5-nano & 43.2 & 35.8 & 28.9 & 47.8 & 41.5 & 46.1 & 67.9 & 35.6 \\
+GPT-5-mini & 48.7 & 52.5 & 34.1 & 55.5 & 56.7 & 52.5 & 77.8 & 44.7 \\
+GPT-5 & \textbf{55.0} & \textbf{61.9} & \textbf{41.8} & \textbf{59.9} & 56.3 & \textbf{54.6} & \textbf{84.4} & \textbf{51.3} \\
+\midrule
+\multicolumn{9}{l}{\textit{Open-source}} \\
+Qwen2.5-VL-3B & 27.0 & 33.1 & 28.6 & 42.5 & 37.6 & 37.8 & 60.2 & 21.9 \\
+Qwen2.5-VL-7B & 32.3 & 37.6 & 26.8 & 39.1 & 36.1 & 35.0 & 62.2 & 26.8 \\
+Qwen2.5-VL-72B & 35.8 & 47.4 & 32.5 & 47.8 & 42.4 & 38.4 & 69.2 & 32.5 \\
+InternVL3-8B & 42.1 & 41.2 & 28.0 & 46.3 & 41.5 & 41.4 & 60.9 & 30.0 \\
+InternVL3-78B & 47.6 & 52.7 & 30.5 & 51.0 & 49.5 & 42.0 & 71.2 & 31.1 \\
+InternVL3.5-8B & 56.1 & 43.8 & 27.3 & 46.7 & 42.5 & 40.2 & 66.4 & 24.0 \\
+Qwen3-8B & 57.9 & 45.8 & 31.1 & 45.7 & 29.4 & 39.8 & 69.7 & 17.5 \\
+\midrule
+\textbf{Human} & \textbf{79.2} & \textbf{67.5} & \textbf{97.2} & \textbf{92.6} & \textbf{94.6} & \textbf{96.5} & \textbf{87.0} & \textbf{82.5} \\
+$\Delta$ (best $-$ human) & $-$21.3 & $-$5.6 & $-$55.4 & $-$32.7 & $-$31.0 & $-$42.1 & $-$2.6 & $-$31.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The results painted a stark picture. GPT-5, the most powerful model tested, set a new state of the art, yet the human-model gap remained enormous on most benchmarks. Consider the MMSI column, which I integrated into lmms-eval, humans score 97.2\% while GPT-5 manages just 41.8\%, a gap of over 55 points. On MindCube-Tiny (another benchmark I integrated, with its evaluation bugs fixed), human performance of 94.6\% dwarfs GPT-5's 56.3\%. Even SITE, where the gap appears smallest at 5.6 points, benefits from a relatively low human baseline of 67.5\%; the model's 61.9\% is impressive but deceptive without context.
+
+More revealing than the absolute gaps were the patterns across capabilities. Perspective-taking (PT) and metric measurement (MM) emerged as the weakest dimensions across all models. Drilling into the per-subtask breakdowns that I helped produce by running evaluations across models, the picture sharpened further. On MMSI's camera-to-camera perspective-taking questions, the best model (GPT-5) scored 41.9\% against a human baseline of 95.7\%, a gap of over 53 points. On MindCube's ``among'' subtask (perspective-taking over multiple objects), GPT-5 reached only 38.2\% versus humans at 94.5\%. The VSI-Bench results, evaluated using the debiased variant that removes annotation shortcuts which could inflate scores, showed that even basic spatial relation tasks like route planning had a 68-point gap between GPT-5 and humans.
+
+A particularly striking finding was that proprietary models did not hold a decisive advantage over open-source models on the hardest spatial tasks. Looking at Table~\ref{tab:main_results}, InternVL3-78B (47.6\%) nearly matches GPT-5-nano (43.2\%) on VSI-Bench and exceeds it on SITE (52.7\% vs.\ 35.8\%). On OmniSpatial's geometric reasoning and hypothetical perspective-taking subtasks, the strongest open-source models actually matched or exceeded some proprietary models. This suggested that the gap was not simply about model scale but about something more fundamental, perhaps the training data itself. This insight would prove pivotal for the data scaling work that followed.
+
+The evaluation also revealed that spatial intelligence tasks exposed \textit{greater} model capability deficiency than non-SI tasks. On CoreCognition, models had already reached human-level accuracy on several non-spatial tasks (Boundary, Perceptual Constancy, Conservation), yet the spatial subtasks remained far behind. On SpatialViz, the best model scored 46 percentage points lower on 3D mental rotation than on 2D mental rotation. The models were not uniformly weak; they were \textit{specifically} weak at spatial reasoning.
+
+\section{Qualitative Insights}
+
+The EASI qualitative analysis~\cite{cai2025holisticevaluationmultimodalllms} revealed several concrete failure modes. GPT-5 performs worse than random guessing on two mental reconstruction subtasks, namely the Attribute (Appearance) task in MMSI and the 3D Mental Rotation task in SpatialViz, suggesting that the model's reasoning process can be actively counterproductive for certain spatial tasks. Case studies further showed that models misinterpret camera rotations in perspective-taking tasks, fail at mental folding (e.g.\ folding a 2D net into a 3D cube), and struggle to infer occluded objects through spatial reasoning even when they reliably recognise the visible ones. These failures point to a systematic absence of internal 3D spatial representations rather than a general reasoning deficit.

@@ -1,0 +1,14 @@
+\chapter*{Acknowledgments}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+
+I would like to express my gratitude to Dr. Cai Zhongang and the SenseTime Research team for their guidance and support during this research attachment. Their expertise in spatial intelligence and multimodal evaluation shaped the direction of this work and provided invaluable feedback throughout.
+
+\vspace{1em}
+
+\textbf{Statement of Contributions.} To maintain academic integrity and clearly attribute credit, this section distinguishes between team-level work and my individual contributions.
+
+Within the EASI project~\cite{cai2025holisticevaluationmultimodalllms, cai2025scalingspatialintelligencemultimodal}, I was responsible for evaluation infrastructure. This encompassed integrating nine spatial benchmarks (VSI-Bench variants, ViewSpatial, SITE, SparBench, MMSI-Video, OSI-Bench, 3DSR-Bench, MindCube-Tiny) and two models (Cambrian-S, Bagel) into lmms-eval, fixing inference bugs in Qwen3-VL, InternVL, LLaVA-OV, and Cambrian-S, and running evaluations across models and benchmarks. This infrastructure was used to produce the results in both publications.
+
+The EASI spatial intelligence taxonomy, paper writing and narrative design, SenseNova-SI-8M dataset curation and synthesis, model training and SFT experiments, data scaling analysis, emergent capability analysis, overfitting and shortcut studies, spatial chain-of-thought experiments, and qualitative failure analysis were all conducted by other team members.
+
+The EASI embodied evaluation library is entirely my own design and implementation. This includes the full software architecture, all ten benchmark integrations across five simulators, the parallel evaluation pipeline with vLLM support and the 540+ test suite.
