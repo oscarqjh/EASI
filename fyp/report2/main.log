@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 16:48
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 20:55
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -909,19 +909,19 @@ Package biblatex Info: ... file 'main.bbl' found.
 Package biblatex Info: Reference section=0 on input line 73.
 Package biblatex Info: Reference segment=0 on input line 73.
 \c@lstlisting=\count474
- (./cover.tex
+ (./title.tex
+<fig/ntu_logo.png, id=181, 314.67563pt x 112.92188pt>
+File: fig/ntu_logo.png Graphic file (type png)
+<use fig/ntu_logo.png>
+Package pdftex.def Info: fig/ntu_logo.png  used on input line 5.
+(pdftex.def)             Requested size: 206.28249pt x 74.0238pt.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/b/n' will be
-(Font)              scaled to size 12.0pt on input line 5.
+(Font)              scaled to size 12.0pt on input line 7.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/b/n' will be
-(Font)              scaled to size 14.4pt on input line 5.
+(Font)              scaled to size 14.4pt on input line 7.
  [1
 
-{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf.enc}]) (./title.tex
-pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
-<to be read again> 
-                   \relax 
-l.26 \end{titlepage}
-                     [1]) (./abstract.tex
+{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf.enc} <./fig/ntu_logo.png (PNG copy)>]) (./abstract.tex
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/n' will be
 (Font)              scaled to size 24.88pt on input line 1.
 LaTeX Font Info:    Font shape `OT1/ntxtlf/b/n' will be
@@ -1134,7 +1134,7 @@ Chapter 5.
 [15
 
 ]
-<fig/easi_arch.png, id=428, 523.9575pt x 352.31625pt>
+<fig/easi_arch.png, id=426, 523.9575pt x 352.31625pt>
 File: fig/easi_arch.png Graphic file (type png)
 <use fig/easi_arch.png>
 Package pdftex.def Info: fig/easi_arch.png  used on input line 20.
@@ -1147,7 +1147,7 @@ pdfTeX warning (ext4): destination with the same identifier (name{figure.5.1}) h
                                                   \__shipout_drop_firstpage_...
 l.28 
       <./fig/easi_arch.png>] [17]
-<fig/prompt.png, id=446, 441.65pt x 141.52875pt>
+<fig/prompt.png, id=443, 441.65pt x 141.52875pt>
 File: fig/prompt.png Graphic file (type png)
 <use fig/prompt.png>
 Package pdftex.def Info: fig/prompt.png  used on input line 39.
@@ -1287,17 +1287,17 @@ Chapter 7.
 
 ]
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/sc' will be
-(Font)              scaled to size 12.0pt on input line 106.
+(Font)              scaled to size 12.0pt on input line 105.
  [30
 
 {/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf-pc.enc}]
-Overfull \hbox (3.22537pt too wide) in paragraph at lines 107--107
+Overfull \hbox (3.22537pt too wide) in paragraph at lines 106--106
 []\OT1/minntx/m/n/12 Zhiwen Fan et al. \OT1/ntxtlf/m/it/12 VLM-3R: Vision-Language Mod-els Aug-mented with Instruction-
  []
 
 [31] (./appendices.tex [32]
 Appendix A.
-<fig/process_flow.png, id=591, 2826.56pt x 1541.76pt>
+<fig/process_flow.png, id=589, 2826.56pt x 1541.76pt>
 File: fig/process_flow.png Graphic file (type png)
 <use fig/process_flow.png>
 Package pdftex.def Info: fig/process_flow.png  used on input line 12.
@@ -1397,7 +1397,7 @@ Underfull \hbox (badness 2245) in paragraph at lines 64--65
 []|\OT1/minntx/m/n/10.95 Display back-end, Xorg
  []
 
-<fig/parallel_flow.png, id=598, 1191.45125pt x 815.045pt>
+<fig/parallel_flow.png, id=596, 1191.45125pt x 815.045pt>
 File: fig/parallel_flow.png Graphic file (type png)
 <use fig/parallel_flow.png>
 Package pdftex.def Info: fig/parallel_flow.png  used on input line 77.
@@ -1455,18 +1455,18 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 24734 strings out of 468658
- 411976 string characters out of 5435235
- 1418211 words of memory out of 5000000
- 52880 multiletter control sequences out of 15000+600000
+ 24735 strings out of 468658
+ 412059 string characters out of 5435235
+ 1418259 words of memory out of 5000000
+ 52884 multiletter control sequences out of 15000+600000
  690491 words of font info for 173 fonts, out of 8000000 for 9000
  430 hyphenation exceptions out of 8191
  75i,11n,79p,1470b,2141s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/tex-gyre/qtmr.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/txfonts/txtt.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (49 pages, 2727767 bytes).
+Output written on main.pdf (48 pages, 2828943 bytes).
 PDF statistics:
- 800 PDF objects out of 1000 (max. 8388607)
- 714 compressed objects within 8 object streams
+ 797 PDF objects out of 1000 (max. 8388607)
+ 711 compressed objects within 8 object streams
  207 named destinations out of 1000 (max. 500000)
- 381 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 386 words of extra memory for PDF output out of 10000 (max. 10000000)
 
