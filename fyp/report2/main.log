@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 20:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.3.15)  18 MAR 2026 21:03
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -782,55 +782,55 @@ Package: makecell 2009/08/03 V0.1e Managing of Tab Column Heads and Cells
 \c@nlinenum=\count463
 \TeXr@lab=\toks35
 )
-LaTeX Font Info:    Trying to load font information for OT1+ntxtlf on input line 73.
+LaTeX Font Info:    Trying to load font information for OT1+ntxtlf on input line 74.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/newtx/ot1ntxtlf.fd
 File: ot1ntxtlf.fd 2021/05/24 v1.0 font definition file for OT1/ntx/tlf
 )
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/n' will be
-(Font)              scaled to size 12.0pt on input line 73.
+(Font)              scaled to size 12.0pt on input line 74.
 \@quotelevel=\count464
 \@quotereset=\count465
  (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/ntxmi/m/it on input line 73.
-LaTeX Font Info:    Trying to load font information for OML+ntxmi on input line 73.
+LaTeX Font Info:    Checking defaults for OML/ntxmi/m/it on input line 74.
+LaTeX Font Info:    Trying to load font information for OML+ntxmi on input line 74.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/newtx/omlntxmi.fd
 File: omlntxmi.fd 2015/08/25 Fontinst v1.933 font definitions for OML/ntxmi.
 )
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for U/ntxexa/m/n on input line 73.
-LaTeX Font Info:    Trying to load font information for U+ntxexa on input line 73.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for U/ntxexa/m/n on input line 74.
+LaTeX Font Info:    Trying to load font information for U+ntxexa on input line 74.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/newtx/untxexa.fd
 File: untxexa.fd 2012/04/16 Fontinst v1.933 font definitions for U/ntxexa.
 )
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for LMS/ntxsy/m/n on input line 73.
-LaTeX Font Info:    Trying to load font information for LMS+ntxsy on input line 73.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for LMS/ntxsy/m/n on input line 74.
+LaTeX Font Info:    Trying to load font information for LMS+ntxsy on input line 74.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/newtx/lmsntxsy.fd
 File: lmsntxsy.fd 2016/07/02 Fontinst v1.933 font definitions for LMS/ntxsy.
 )
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for LMX/ntxexx/m/n on input line 73.
-LaTeX Font Info:    Trying to load font information for LMX+ntxexx on input line 73.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for LMX/ntxexx/m/n on input line 74.
+LaTeX Font Info:    Trying to load font information for LMX+ntxexx on input line 74.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/latex/newtx/lmxntxexx.fd
 File: lmxntxexx.fd 2016/07/03 Fontinst v1.933 font definitions for LMX/ntxexx.
 )
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 73.
-LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 74.
+LaTeX Font Info:    ... okay on input line 74.
  (/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count466
@@ -852,8 +852,8 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 \c@mv@tabular=\count472
 \c@mv@boldtabular=\count473
-LaTeX Info: Command `\dddot' is already robust on input line 73.
-LaTeX Info: Command `\ddddot' is already robust on input line 73.
+LaTeX Info: Command `\dddot' is already robust on input line 74.
+LaTeX Info: Command `\ddddot' is already robust on input line 74.
 
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -888,7 +888,7 @@ LaTeX Info: Command `\ddddot' is already robust on input line 73.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring OFF on input line 73.
+Package hyperref Info: Link coloring OFF on input line 74.
 (./main.out) (./main.out)
 \@outlinefile=\write4
 \openout4 = `main.out'.
@@ -906,8 +906,8 @@ Package biblatex Info: Automatic encoding selection.
 Package biblatex Info: Trying to load bibliographic data...
 Package biblatex Info: ... file 'main.bbl' found.
  (./main.bbl)
-Package biblatex Info: Reference section=0 on input line 73.
-Package biblatex Info: Reference segment=0 on input line 73.
+Package biblatex Info: Reference section=0 on input line 74.
+Package biblatex Info: Reference segment=0 on input line 74.
 \c@lstlisting=\count474
  (./title.tex
 <fig/ntu_logo.png, id=181, 314.67563pt x 112.92188pt>
@@ -1287,11 +1287,11 @@ Chapter 7.
 
 ]
 LaTeX Font Info:    Font shape `OT1/ntxtlf/m/sc' will be
-(Font)              scaled to size 12.0pt on input line 105.
+(Font)              scaled to size 12.0pt on input line 106.
  [30
 
 {/mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf-pc.enc}]
-Overfull \hbox (3.22537pt too wide) in paragraph at lines 106--106
+Overfull \hbox (3.22537pt too wide) in paragraph at lines 107--107
 []\OT1/minntx/m/n/12 Zhiwen Fan et al. \OT1/ntxtlf/m/it/12 VLM-3R: Vision-Language Mod-els Aug-mented with Instruction-
  []
 
@@ -1455,15 +1455,15 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 24735 strings out of 468658
- 412059 string characters out of 5435235
- 1418259 words of memory out of 5000000
- 52884 multiletter control sequences out of 15000+600000
+ 24736 strings out of 468658
+ 412069 string characters out of 5435235
+ 1418296 words of memory out of 5000000
+ 52885 multiletter control sequences out of 15000+600000
  690491 words of font info for 173 fonts, out of 8000000 for 9000
  430 hyphenation exceptions out of 8191
  75i,11n,79p,1470b,2141s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/tex-gyre/qtmr.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/txsys.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/txfonts/txtt.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></mnt/aigc/users/qianjianheng/texlive/2026/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (48 pages, 2828943 bytes).
+Output written on main.pdf (48 pages, 2828959 bytes).
 PDF statistics:
  797 PDF objects out of 1000 (max. 8388607)
  711 compressed objects within 8 object streams
