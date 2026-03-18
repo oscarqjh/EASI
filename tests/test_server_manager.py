@@ -63,8 +63,8 @@ class TestPortCheck:
         sock.listen(1)
         try:
             sm = ServerManager("vllm", "test", port=19877)
-            with pytest.raises(RuntimeError, match="already in use"):
-                sm._check_port()
+            with pytest.raises(RuntimeError, match="in use"):
+                sm._check_port(retries=1, delay=0)
         finally:
             sock.close()
 

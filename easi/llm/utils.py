@@ -36,8 +36,10 @@ _SERVER_KWARGS = {
     "tokenizer_mode",
     "seed",
     "max_num_seqs",
-    "disable_log_requests",
+    "enable_log_requests",
     "limit_mm_per_prompt",
+    "chat_template_content_format",
+    "chat_template",
     "model_path",
 }
 

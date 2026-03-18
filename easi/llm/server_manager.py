@@ -24,7 +24,7 @@ _HEALTH_POLL_INTERVAL = 5.0
 _DEFAULT_STARTUP_TIMEOUT = 600.0
 _DEFAULT_VLLM_SERVER_FLAGS = {
     "enable_prefix_caching": True,
-    "disable_log_requests": True,
+    "enable_log_requests": False,
 }
 
 
@@ -138,15 +138,27 @@ class ServerManager:
             return False
         return self._process.poll() is None
 
-    def _check_port(self) -> None:
-        """Raise if port is already in use."""
+    def _check_port(self, retries: int = 6, delay: float = 5.0) -> None:
+        """Raise if port is already in use.
+
+        Retries a few times to handle TIME_WAIT from a recently stopped
+        server (common when running tasks back-to-back).
+        """
         logger.trace("[%s] Checking if port %d is available...", self.label, self.port)
-        if not _port_is_available(self.port):
-            raise RuntimeError(
-                f"Port {self.port} is already in use. "
-                f"Use --port <N> to specify a different port, "
-                f"or --llm-url to connect to an existing server."
-            )
+        for attempt in range(retries):
+            if _port_is_available(self.port):
+                return
+            if attempt < retries - 1:
+                logger.trace(
+                    "[%s] Port %d in use, waiting %.0fs (%d/%d)...",
+                    self.label, self.port, delay, attempt + 1, retries,
+                )
+                time.sleep(delay)
+        raise RuntimeError(
+            f"Port {self.port} is still in use after {retries * delay:.0f}s. "
+            f"Use --port <N> to specify a different port, "
+            f"or --llm-url to connect to an existing server."
+        )
 
     def _build_command(self) -> tuple[list[str], dict]:
         """Build the server launch command and environment overrides.
@@ -176,7 +188,8 @@ class ServerManager:
                     if value:
                         cmd.append(flag)
                     else:
-                        logger.trace("[%s] Skipping disabled bool flag: %s", self.label, flag)
+                        no_flag = "--no-" + key.replace("_", "-")
+                        cmd.append(no_flag)
                 else:
                     cmd.extend([flag, str(value)])
         elif self.backend == "custom":
