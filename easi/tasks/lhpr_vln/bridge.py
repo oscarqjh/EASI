@@ -70,7 +70,10 @@ class LHPRVLNBridge(BaseBridge):
         max_steps = self._sim_kwargs.get("max_steps", 500)
         width = self._sim_kwargs.get("screen_width", 512)
         height = self._sim_kwargs.get("screen_height", 512)
-        success_distance = self._sim_kwargs.get("success_distance", 1.0)
+        success_distance = self._sim_kwargs.get("success_distance", 0.25)
+        forward_step_size = self._sim_kwargs.get("forward_step_size", 0.25)
+        turn_angle = self._sim_kwargs.get("turn_angle", 30.0)
+        sensors = self._sim_kwargs.get("sensors", None)
 
         self._scene_sim = SceneSimulator(
             scene_id=reset_config["scene_id"],
@@ -86,6 +89,9 @@ class LHPRVLNBridge(BaseBridge):
             max_steps=max_steps,
             width=width,
             height=height,
+            forward_step_size=forward_step_size,
+            turn_angle=turn_angle,
+            sensors=sensors,
         )
 
         # Get initial observation (step -1 in SceneSimulator)
@@ -134,7 +140,13 @@ class LHPRVLNBridge(BaseBridge):
 
     def _extract_image(self, obs):
         """Return front RGB view as the primary observation image."""
-        return obs["color_sensor_f"][:, :, :3]  # RGBA -> RGB
+        if "color_sensor_f" in obs:
+            return obs["color_sensor_f"][:, :, :3]  # RGBA -> RGB
+        # Fallback to any available RGB sensor
+        for key in ("color_sensor_l", "color_sensor_r"):
+            if key in obs:
+                return obs[key][:, :, :3]
+        return None
 
     def _make_response(self, obs, reward=0.0, done=False, info=None):
         """Override to save 3 separate RGB views and pass paths in metadata.
@@ -147,15 +159,35 @@ class LHPRVLNBridge(BaseBridge):
         save_dir = Path(self.episode_output_dir) if self.episode_output_dir else self.workspace
         save_dir.mkdir(parents=True, exist_ok=True)
 
+        from PIL import Image
+
         paths = {}
         for view_name, sensor_key in [("left", "color_sensor_l"),
                                        ("front", "color_sensor_f"),
                                        ("right", "color_sensor_r")]:
+            if sensor_key not in obs:
+                continue
             rgb = obs[sensor_key][:, :, :3]
             path = save_dir / ("step_%04d_%s.png" % (self.step_count, view_name))
-            from PIL import Image
             Image.fromarray(rgb).save(str(path))
             paths[view_name] = str(path)
+
+        # Save depth images when present
+        depth_paths = {}
+        for view_name, sensor_key in [("left", "depth_sensor_l"),
+                                       ("front", "depth_sensor_f"),
+                                       ("right", "depth_sensor_r")]:
+            if sensor_key not in obs:
+                continue
+            depth = obs[sensor_key]
+            clipped = np.clip(depth, 0, 10.0)
+            depth_uint16 = (clipped / 10.0 * 65535).astype(np.uint16)
+            # Squeeze to 2D if needed (H, W, 1) -> (H, W)
+            if depth_uint16.ndim == 3:
+                depth_uint16 = depth_uint16[:, :, 0]
+            path = save_dir / ("step_%04d_%s_depth.png" % (self.step_count, view_name))
+            Image.fromarray(depth_uint16).save(str(path))
+            depth_paths[view_name] = str(path)
 
         clean_info = self._extract_info(info or {})
         clean_info["step"] = str(self.step_count)
@@ -163,10 +195,19 @@ class LHPRVLNBridge(BaseBridge):
         # Build metadata with image paths + environmental feedback for prompt builder
         metadata = {
             "step": str(self.step_count),
-            "left_rgb_path": paths["left"],
-            "front_rgb_path": paths["front"],
-            "right_rgb_path": paths["right"],
         }
+        if "left" in paths:
+            metadata["left_rgb_path"] = paths["left"]
+        if "front" in paths:
+            metadata["front_rgb_path"] = paths["front"]
+        if "right" in paths:
+            metadata["right_rgb_path"] = paths["right"]
+        if "front" in depth_paths:
+            metadata["front_depth_path"] = depth_paths["front"]
+        if "left" in depth_paths:
+            metadata["left_depth_path"] = depth_paths["left"]
+        if "right" in depth_paths:
+            metadata["right_depth_path"] = depth_paths["right"]
 
         # Expose environmental feedback in metadata so the prompt builder can use it
         sim = self._scene_sim
@@ -196,8 +237,11 @@ class LHPRVLNBridge(BaseBridge):
             if pos is not None:
                 agent_pose = [float(pos[0]), float(pos[1]), float(pos[2]), 0.0, 0.0, 0.0]
 
+        # Use front as primary rgb_path, fall back to any available view
+        primary_rgb = paths.get("front") or paths.get("left") or paths.get("right") or ""
+
         return make_observation_response(
-            rgb_path=paths["front"],
+            rgb_path=primary_rgb,
             agent_pose=agent_pose,
             metadata=metadata,
             reward=reward,

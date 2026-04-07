@@ -128,6 +128,7 @@ class LHPRVLNPromptBuilder:
         use_subtask_progress: bool = True,
         use_agent_position: bool = False,
         use_target_coordinate: bool = False,
+        use_depth: bool = False,
         action_history_len: int = -1,
         chat_history: bool = False,
         message_window_len: int = 5,
@@ -138,6 +139,7 @@ class LHPRVLNPromptBuilder:
         self.use_subtask_progress = use_subtask_progress
         self.use_agent_position = use_agent_position
         self.use_target_coordinate = use_target_coordinate
+        self.use_depth = use_depth
         self.action_history_len = action_history_len
         self.chat_history = chat_history
         self.message_window_len = message_window_len
@@ -423,17 +425,27 @@ class LHPRVLNPromptBuilder:
         """
         content: list[dict] = []
 
-        # Add 3 RGB views as separate images
+        # Add 3 RGB views as separate images, interleaving depth when enabled
         if observation and observation.metadata:
-            for view_label, meta_key in [("Left view (-60 deg)", "left_rgb_path"),
-                                          ("Front view (0 deg)", "front_rgb_path"),
-                                          ("Right view (+60 deg)", "right_rgb_path")]:
-                path = observation.metadata.get(meta_key)
-                if path:
-                    image_url = _encode_image_base64(path)
+            views = [
+                ("Left view (-60 deg)", "left_rgb_path", "Left depth", "left_depth_path"),
+                ("Front view (0 deg)", "front_rgb_path", "Front depth", "front_depth_path"),
+                ("Right view (+60 deg)", "right_rgb_path", "Right depth", "right_depth_path"),
+            ]
+            for rgb_label, rgb_key, depth_label, depth_key in views:
+                rgb_path = observation.metadata.get(rgb_key)
+                if rgb_path:
+                    image_url = _encode_image_base64(rgb_path)
                     if image_url:
-                        content.append({"type": "text", "text": f"[{view_label}]"})
+                        content.append({"type": "text", "text": f"[{rgb_label}]"})
                         content.append({"type": "image_url", "image_url": {"url": image_url}})
+                if self.use_depth:
+                    depth_path = observation.metadata.get(depth_key)
+                    if depth_path:
+                        depth_url = _encode_image_base64(depth_path)
+                        if depth_url:
+                            content.append({"type": "text", "text": f"[{depth_label}]"})
+                            content.append({"type": "image_url", "image_url": {"url": depth_url}})
         elif observation and observation.rgb_path:
             # Fallback: single image (e.g., testing without full bridge)
             image_url = _encode_image_base64(observation.rgb_path)

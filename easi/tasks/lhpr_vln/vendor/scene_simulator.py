@@ -31,6 +31,9 @@ class SceneSimulator:
         max_steps: int = 500,
         width: int = 512,
         height: int = 512,
+        forward_step_size: float = 0.25,
+        turn_angle: float = 30.0,
+        sensors: dict | None = None,
     ):
         self.scene_id = scene_id
         self.robot = robot
@@ -45,8 +48,8 @@ class SceneSimulator:
         scene_path = scene_base_path + split + scene_id
 
         # Init simulator
-        sim_settings = make_setting(scene_path, scene_dataset_path, robot, width, height)
-        cfg = make_cfg(sim_settings, gpu_device_id)
+        sim_settings = make_setting(scene_path, scene_dataset_path, robot, width, height, sensors)
+        cfg = make_cfg(sim_settings, gpu_device_id, forward_step_size, turn_angle)
         self.sim = habitat_sim.Simulator(cfg)
         self.sim_settings = sim_settings
 

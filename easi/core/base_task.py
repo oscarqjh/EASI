@@ -50,6 +50,7 @@ class BaseTask(ABC):
         self._episodes: list[dict] | None = None
         self._action_space_cache: list[str] | None = None
         self._data_dir = data_dir
+        self._simulator_kwarg_overrides: dict = {}
 
     @abstractmethod
     def get_task_yaml_path(self) -> Path:
@@ -148,16 +149,12 @@ class BaseTask(ABC):
         cfg.update(self._simulator_kwarg_overrides)
         return cfg
 
-    _simulator_kwarg_overrides: dict = {}
-
     def inject_simulator_kwarg(self, key: str, value) -> None:
         """Inject a per-worker override into simulator_kwargs.
 
         Used by the runner to pass worker-specific values (e.g. assigned GPU ID)
         without mutating the shared task config.
         """
-        if not self._simulator_kwarg_overrides:
-            self._simulator_kwarg_overrides = {}
         self._simulator_kwarg_overrides[key] = value
 
     @property

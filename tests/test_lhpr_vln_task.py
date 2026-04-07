@@ -1,11 +1,61 @@
 """Tests for LHPR-VLN task integration."""
 import json
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from easi.core.episode import Action, EpisodeRecord, Observation, StepResult
 from easi.tasks.lhpr_vln.actions import get_action_space
 from easi.tasks.lhpr_vln.vendor.metrics import NavigationMetrics
+
+
+class TestSceneConfig:
+    """Test make_setting sensor parameterization (no habitat_sim needed)."""
+
+    def test_make_setting_default_sensors(self):
+        from easi.tasks.lhpr_vln.vendor.scene_config import _resolve_sensor_flags
+        flags = _resolve_sensor_flags(None)
+        assert flags["color_sensor_f"] is True
+        assert flags["color_sensor_l"] is True
+        assert flags["color_sensor_r"] is True
+        assert flags["color_sensor_3rd"] is True
+        assert flags["depth_sensor_f"] is True
+        assert flags["depth_sensor_l"] is True
+        assert flags["depth_sensor_r"] is True
+        assert flags["semantic_sensor"] is True
+
+    def test_make_setting_disable_depth(self):
+        from easi.tasks.lhpr_vln.vendor.scene_config import _resolve_sensor_flags
+        flags = _resolve_sensor_flags({
+            "rgb": ["front", "left", "right"],
+            "depth": [],
+            "semantic": True,
+            "third_person": True,
+        })
+        assert flags["color_sensor_f"] is True
+        assert flags["color_sensor_l"] is True
+        assert flags["color_sensor_r"] is True
+        assert flags["color_sensor_3rd"] is True
+        assert flags["depth_sensor_f"] is False
+        assert flags["depth_sensor_l"] is False
+        assert flags["depth_sensor_r"] is False
+        assert flags["semantic_sensor"] is True
+
+    def test_make_setting_partial_rgb(self):
+        from easi.tasks.lhpr_vln.vendor.scene_config import _resolve_sensor_flags
+        flags = _resolve_sensor_flags({
+            "rgb": ["front"],
+            "depth": ["front", "left", "right"],
+            "semantic": False,
+            "third_person": False,
+        })
+        assert flags["color_sensor_f"] is True
+        assert flags["color_sensor_l"] is False
+        assert flags["color_sensor_r"] is False
+        assert flags["color_sensor_3rd"] is False
+        assert flags["depth_sensor_f"] is True
+        assert flags["depth_sensor_l"] is True
+        assert flags["depth_sensor_r"] is True
+        assert flags["semantic_sensor"] is False
 
 
 class TestActionSpace:
@@ -402,3 +452,61 @@ class TestPromptBuilder:
         messages = builder.build_messages(memory)
         text = "\n".join(b["text"] for b in messages[0]["content"] if b.get("type") == "text")
         assert "3-5 actions" in text
+
+
+class TestPromptBuilderDepth:
+    """Test use_depth toggle in LHPRVLNPromptBuilder."""
+
+    def _make_obs_with_depth(self):
+        return Observation(
+            rgb_path="/tmp/test_front.png",
+            metadata={
+                "left_rgb_path": "/tmp/test_left.png",
+                "front_rgb_path": "/tmp/test_front.png",
+                "right_rgb_path": "/tmp/test_right.png",
+                "left_depth_path": "/tmp/test_left_depth.png",
+                "front_depth_path": "/tmp/test_front_depth.png",
+                "right_depth_path": "/tmp/test_right_depth.png",
+            },
+        )
+
+    def _make_obs_no_depth(self):
+        return Observation(
+            rgb_path="/tmp/test_front.png",
+            metadata={
+                "left_rgb_path": "/tmp/test_left.png",
+                "front_rgb_path": "/tmp/test_front.png",
+                "right_rgb_path": "/tmp/test_right.png",
+            },
+        )
+
+    def test_use_depth_false_no_depth_labels(self):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder(use_depth=False)
+        obs = self._make_obs_with_depth()
+        with patch("easi.tasks.lhpr_vln.prompts._encode_image_base64", return_value="data:image/png;base64,fake"):
+            messages = builder._wrap_as_user_message("test prompt", obs)
+        text_items = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
+        assert not any("depth" in t.lower() for t in text_items), \
+            f"Depth labels found when use_depth=False: {text_items}"
+
+    def test_use_depth_true_includes_depth_labels(self):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder(use_depth=True)
+        obs = self._make_obs_with_depth()
+        with patch("easi.tasks.lhpr_vln.prompts._encode_image_base64", return_value="data:image/png;base64,fake"):
+            messages = builder._wrap_as_user_message("test prompt", obs)
+        text_items = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
+        assert "[Front depth]" in text_items
+        assert "[Left depth]" in text_items
+        assert "[Right depth]" in text_items
+
+    def test_use_depth_true_no_depth_available_graceful(self):
+        from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
+        builder = LHPRVLNPromptBuilder(use_depth=True)
+        obs = self._make_obs_no_depth()
+        with patch("easi.tasks.lhpr_vln.prompts._encode_image_base64", return_value="data:image/png;base64,fake"):
+            messages = builder._wrap_as_user_message("test prompt", obs)
+        text_items = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
+        assert not any("depth" in t.lower() for t in text_items), \
+            f"Depth labels found when no depth paths available: {text_items}"

@@ -15,19 +15,27 @@ simulator_configs:
   screen_height: 512
   screen_width: 512
   device: gpu
-  success_distance: 1.0
+  success_distance: 0.25
+  forward_step_size: 0.25
+  turn_angle: 30
+  sensors:
+    rgb: [front, left, right]
+    depth: []
+    semantic: false
+    third_person: false
   additional_deps: []
 agent:
   prompt_builder: "easi.tasks.lhpr_vln.prompts.LHPRVLNPromptBuilder"
   prompt_builder_kwargs:
-    use_feedback: true              # Include action execution feedback in history
-    use_geo_distance: true          # Show geodesic distance to current target
-    use_subtask_progress: true      # Show subtask stage/total + current target name
-    use_agent_position: false       # Show agent 3D position (x, y, z)
-    use_target_coordinate: false    # Show target 3D coordinate (x, y, z)
-    action_history_len: 20          # Action history entries: 0=off, -1=unlimited, N=last N
-    chat_history: false             # Stateless (false) or accumulated messages (true)
-    message_window_len: 5           # Sliding window for chat history mode
+    use_feedback: true
+    use_geo_distance: true
+    use_subtask_progress: true
+    use_agent_position: false
+    use_target_coordinate: false
+    use_depth: false
+    action_history_len: 20
+    chat_history: false
+    message_window_len: 5
   generation_kwargs:
     temperature: 0
     max_tokens: 4096

@@ -2,38 +2,79 @@
 
 Vendored from LH-VLN/habitat_base/config.py with parameterization.
 """
+from __future__ import annotations
+
 import math
 
-import habitat_sim
-import magnum as mn
+
+def _resolve_sensor_flags(sensors: dict | None) -> dict[str, bool]:
+    """Convert a human-friendly sensors dict to flat setting-key booleans.
+
+    Parameters
+    ----------
+    sensors : dict or None
+        When *None* every sensor is enabled (backward-compatible default).
+        Otherwise a dict with optional keys:
+        - ``"rgb"``: list of directions, subset of ``["front", "left", "right"]``
+        - ``"depth"``: list of directions, subset of ``["front", "left", "right"]``
+        - ``"semantic"``: bool
+        - ``"third_person"``: bool
+    """
+    _dir_map = {"front": "f", "left": "l", "right": "r"}
+
+    if sensors is None:
+        return {
+            "color_sensor_f": True, "color_sensor_l": True, "color_sensor_r": True,
+            "color_sensor_3rd": True,
+            "depth_sensor_f": True, "depth_sensor_l": True, "depth_sensor_r": True,
+            "semantic_sensor": True,
+        }
+
+    flags: dict[str, bool] = {
+        "color_sensor_f": False, "color_sensor_l": False, "color_sensor_r": False,
+        "color_sensor_3rd": False,
+        "depth_sensor_f": False, "depth_sensor_l": False, "depth_sensor_r": False,
+        "semantic_sensor": False,
+    }
+
+    for direction in sensors.get("rgb", []):
+        flags[f"color_sensor_{_dir_map[direction]}"] = True
+    for direction in sensors.get("depth", []):
+        flags[f"depth_sensor_{_dir_map[direction]}"] = True
+    if sensors.get("semantic", False):
+        flags["semantic_sensor"] = True
+    if sensors.get("third_person", False):
+        flags["color_sensor_3rd"] = True
+
+    return flags
 
 
 def make_setting(scene_path: str, scene_dataset_path: str, robot: str,
-                 width: int = 512, height: int = 512) -> dict:
+                 width: int = 512, height: int = 512,
+                 sensors: dict | None = None) -> dict:
     """Build Habitat-Sim settings dict for an HM3D scene."""
     sensor_height = 0.5 if robot == "spot" else 1.0
-    return {
+    settings = {
         "width": width,
         "height": height,
         "scene": scene_path,
         "scene_dataset": scene_dataset_path,
         "default_agent": 0,
         "sensor_height": sensor_height,
-        "color_sensor_f": True,
-        "color_sensor_l": True,
-        "color_sensor_r": True,
-        "color_sensor_3rd": True,
-        "depth_sensor_f": True,
-        "depth_sensor_l": True,
-        "depth_sensor_r": True,
-        "semantic_sensor": True,
         "seed": 1,
         "enable_physics": False,
     }
+    settings.update(_resolve_sensor_flags(sensors))
+    return settings
 
 
-def make_cfg(settings: dict, gpu_device_id: int = -1) -> habitat_sim.Configuration:
+def make_cfg(settings: dict, gpu_device_id: int = -1,
+             forward_step_size: float = 0.25,
+             turn_angle: float = 30.0):
     """Build Habitat-Sim Configuration from settings dict."""
+    import habitat_sim
+    import magnum as mn
+
     sim_cfg = habitat_sim.SimulatorConfiguration()
     sim_cfg.gpu_device_id = gpu_device_id
     sim_cfg.scene_id = settings["scene"]
@@ -108,13 +149,13 @@ def make_cfg(settings: dict, gpu_device_id: int = -1) -> habitat_sim.Configurati
     agent_cfg.sensor_specifications = sensor_specs
     agent_cfg.action_space = {
         "move_forward": habitat_sim.agent.ActionSpec(
-            "move_forward", habitat_sim.agent.ActuationSpec(amount=0.25)
+            "move_forward", habitat_sim.agent.ActuationSpec(amount=forward_step_size)
         ),
         "turn_left": habitat_sim.agent.ActionSpec(
-            "turn_left", habitat_sim.agent.ActuationSpec(amount=30.0)
+            "turn_left", habitat_sim.agent.ActuationSpec(amount=turn_angle)
         ),
         "turn_right": habitat_sim.agent.ActionSpec(
-            "turn_right", habitat_sim.agent.ActuationSpec(amount=30.0)
+            "turn_right", habitat_sim.agent.ActuationSpec(amount=turn_angle)
         ),
     }
     return habitat_sim.Configuration(sim_cfg, [agent_cfg])
