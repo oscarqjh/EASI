@@ -349,10 +349,10 @@ class LHPRVLNPromptBuilder:
         parts = []
 
         if self.use_subtask_progress:
-            stage = meta.get("subtask_stage", "")
-            total = meta.get("subtask_total", "")
+            stage = meta.get("subtask_stage")
+            total = meta.get("subtask_total")
             target = meta.get("current_target", "")
-            if stage and total:
+            if stage is not None and total is not None:
                 stage_int = int(float(stage)) + 1
                 total_int = int(float(total))
                 line = f"Current subtask: {stage_int}/{total_int}"
@@ -361,8 +361,8 @@ class LHPRVLNPromptBuilder:
                 parts.append(line)
 
         if self.use_geo_distance:
-            distance = meta.get("current_geo_distance", "")
-            if distance:
+            distance = meta.get("current_geo_distance")
+            if distance is not None:
                 parts.append(f"Geodesic distance to current target: {float(distance):.2f}m")
 
         if self.use_agent_position:
