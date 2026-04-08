@@ -41,6 +41,7 @@ _SERVER_KWARGS = {
     "chat_template_content_format",
     "chat_template",
     "model_path",
+    "startup_timeout",
 }
 
 

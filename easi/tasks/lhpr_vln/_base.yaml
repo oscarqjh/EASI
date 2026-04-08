@@ -15,7 +15,7 @@ simulator_configs:
   screen_height: 512
   screen_width: 512
   device: gpu
-  success_distance: 0.25
+  success_distance: 1.0
   forward_step_size: 0.25
   turn_angle: 30
   sensors:
@@ -25,6 +25,9 @@ simulator_configs:
     third_person: false
   additional_deps: []
 agent:
+  fallback_strategy: reprompt         # "default_action" or "reprompt"
+  fallback_action: move_forward       # last-resort action when all retries fail (one of: move_forward, turn_left, turn_right, stop)
+  max_fallback_retries: 2             # only used by "reprompt" strategy: number of re-prompt attempts before giving up
   prompt_builder: "easi.tasks.lhpr_vln.prompts.LHPRVLNPromptBuilder"
   prompt_builder_kwargs:
     use_feedback: true

@@ -218,11 +218,13 @@ class EvaluationRunner:
 
                 all_kwargs = parse_llm_kwargs(self.llm_kwargs_raw)
                 server_kwargs, _ = split_kwargs(all_kwargs)
+                startup_timeout = float(server_kwargs.pop("startup_timeout", 300.0))
                 server = ServerManager(
                     backend,
                     self.model,
                     port=self.port,
                     server_kwargs=server_kwargs,
+                    startup_timeout=startup_timeout,
                 )
                 base_url = server.start()
 
@@ -397,7 +399,7 @@ class EvaluationRunner:
         for r in all_results:
             trajectory = r.pop("_trajectory", [])
             episode = r.pop("_episode", {})
-            episode_results = {k: v for k, v in r.items() if not k.startswith("_")}
+            episode_results = dict(r)
             records.append(
                 EpisodeRecord(
                     episode=episode,
@@ -585,6 +587,7 @@ class EvaluationRunner:
                 llm_response = agent.memory.steps[-1].llm_response
 
             # Write step entry to trajectory
+            triggered_fallback = getattr(agent, "triggered_fallback", False)
             self._write_trajectory_entry(
                 trajectory_path,
                 {
@@ -592,6 +595,7 @@ class EvaluationRunner:
                     "type": "step",
                     "action": action.action_name,
                     "llm_response": llm_response,
+                    "triggered_fallback": triggered_fallback,
                     "rgb_path": Path(step_result.observation.rgb_path).name,
                     "agent_pose": step_result.observation.agent_pose,
                     "reward": step_result.reward,
@@ -745,6 +749,9 @@ class EvaluationRunner:
                 llm_client=llm,
                 action_space=action_space,
                 prompt_builder=prompt_builder,
+                fallback_action=agent_config.get("fallback_action"),
+                fallback_strategy=agent_config.get("fallback_strategy", "default_action"),
+                max_fallback_retries=agent_config.get("max_fallback_retries", 1),
             )
         else:
             raise ValueError(f"Unknown agent type: {self.agent_type}")
@@ -890,13 +897,21 @@ class EvaluationRunner:
 
         if self.sim_gpus is not None and binding.cuda_visible_devices is None:
             gpu_id = self.sim_gpus[worker_id % len(self.sim_gpus)]
-            env_vars = EnvVars.merge(
-                env_vars, EnvVars(replace={"CUDA_VISIBLE_DEVICES": str(gpu_id)})
-            )
-            # Inject assigned GPU ID into simulator_kwargs for simulators
-            # that don't respect CUDA_VISIBLE_DEVICES (e.g. Habitat-Sim)
+            # Inject assigned GPU ID for simulators that manage GPU
+            # selection natively (e.g. Habitat-Sim via gpu_device_id).
+            # These declare "device: gpu" in their YAML.
             if task is not None:
                 task.inject_simulator_kwarg("_assigned_gpu_id", gpu_id)
+            # Only set CUDA_VISIBLE_DEVICES for simulators that don't
+            # handle GPU selection themselves (i.e. no "device" config).
+            uses_native_gpu = (
+                task is not None
+                and task.simulator_configs.get("device") in ("gpu", "cpu")
+            )
+            if not uses_native_gpu:
+                env_vars = EnvVars.merge(
+                    env_vars, EnvVars(replace={"CUDA_VISIBLE_DEVICES": str(gpu_id)})
+                )
 
         env_vars = EnvVars.merge(env_vars, binding_env)
         render_platform = base_render_platform

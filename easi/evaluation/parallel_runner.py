@@ -136,12 +136,15 @@ class ParallelRunner(EvaluationRunner):
                 num_instances = self.llm_instances or 1
                 gpu_ids = self.llm_gpus
 
+                startup_timeout = float(srv_kw.pop("startup_timeout", 300.0))
+
                 server_mgr = MultiServerManager(
                     model=self.model,
                     num_instances=num_instances,
                     gpu_ids=gpu_ids,
                     base_port=self.port,
                     server_kwargs=srv_kw,
+                    startup_timeout=startup_timeout,
                     backend=backend,
                 )
                 base_urls = server_mgr.start()
@@ -451,7 +454,7 @@ class ParallelRunner(EvaluationRunner):
             for r in all_results:
                 trajectory = r.pop("_trajectory", [])
                 episode = r.pop("_episode", {})
-                episode_results = {k: v for k, v in r.items() if not k.startswith("_")}
+                episode_results = dict(r)
                 records.append(EpisodeRecord(
                     episode=episode,
                     trajectory=trajectory,

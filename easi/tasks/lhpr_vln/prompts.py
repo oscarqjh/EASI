@@ -4,7 +4,7 @@ Aligned with the EmbodiedBench 4-field response format used by EB-Navigation,
 EB-Habitat, and EB-Alfred, adapted for LHPR-VLN multi-subtask navigation.
 
 Builds prompts with:
-- 3 RGB camera views (left -60deg, front 0deg, right +60deg)
+- 3 RGB camera views (left, front, right)
 - Task instruction with subtask targets
 - Toggleable environmental feedback (geodesic distance, subtask progress,
   target name, agent position, target coordinate)
@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 # System prompt adapted for LHPR-VLN multi-subtask navigation.
 # Three format placeholders: max_action_id, action_list, examples.
-LHPRVLN_SYSTEM_PROMPT = '''## You are a robot navigating in a 3D indoor environment. You observe the environment through three camera views (left at -60 degrees, front at 0 degrees, right at +60 degrees) and must navigate to sequential target objects.
+LHPRVLN_SYSTEM_PROMPT = '''## You are a robot navigating in a 3D indoor environment. You observe the environment through three camera views (left, front, right) and must navigate to sequential target objects.
 
 ## The available action id (0 ~ {}) and action names are: {}.
 
@@ -386,7 +386,7 @@ class LHPRVLNPromptBuilder:
         return (
             f'''\nTo achieve the task, 1. Reason about the current visual state from the three camera views and your final goal, and 2. Reflect on the effect of previous actions.'''
             f'''\nAim for about 1-3 actions in this step. !!!Notice: you cannot assess the situation until the whole plan in this planning step is finished executed, so plan accordingly.'''
-            f'''\nAt last, output the action id(s) (0 ~ {max_id}) from the available actions to execute. '''
+            f'''\nAt last, output the action id(s) (0 ~ {max_id}) from the available actions to execute. You MUST always include at least one action in the executable_plan — never return an empty list.'''
             f'''\n\nThe input given to you is three first person view observations (left, front, right). Plan accordingly based on the visual observations.'''
             f'''\n\nYou are supposed to output in JSON.{OUTPUT_TEMPLATE}'''
         )
@@ -395,7 +395,7 @@ class LHPRVLNPromptBuilder:
         return (
             f'''\nTo achieve the task, 1. Reason about the current visual state from the three camera views and your final goal, and 2. Reflect on the effect of previous actions.'''
             f'''\nAim for about 3-5 actions in this step to be closer to the target object. !!!Notice: you cannot assess the situation until the whole plan in this planning step is finished executed, so plan accordingly.'''
-            f'''\nAt last, output the action id(s) (0 ~ {max_id}) from the available actions to execute. '''
+            f'''\nAt last, output the action id(s) (0 ~ {max_id}) from the available actions to execute. You MUST always include at least one action in the executable_plan — never return an empty list.'''
             f'''\n\nThe input given to you is three first person view observations (left, front, right). Plan accordingly based on the visual observations.'''
             f'''\n\nYou are supposed to output in JSON.{OUTPUT_TEMPLATE}'''
         )
@@ -403,18 +403,21 @@ class LHPRVLNPromptBuilder:
     def _format_action_history(self, action_history: list[tuple[str, str]]) -> str:
         if self.action_history_len == 0:
             return ""
+        total = len(action_history)
         if self.action_history_len > 0:
             action_history = action_history[-self.action_history_len:]
+        start_step = total - len(action_history)
         text = '\n\n The action history:'
         for i, (action_name, feedback) in enumerate(action_history):
+            step_num = start_step + i
             action_id = self._action_id_map.get(action_name, -1)
             if self.use_feedback:
                 text += '\n Step {}, action id {}, {}, env feedback: {}'.format(
-                    i, action_id, action_name, feedback,
+                    step_num, action_id, action_name, feedback,
                 )
             else:
                 text += '\n Step {}, action id {}, {}'.format(
-                    i, action_id, action_name,
+                    step_num, action_id, action_name,
                 )
         return text
 
@@ -428,9 +431,9 @@ class LHPRVLNPromptBuilder:
         # Add 3 RGB views as separate images, interleaving depth when enabled
         if observation and observation.metadata:
             views = [
-                ("Left view (-60 deg)", "left_rgb_path", "Left depth", "left_depth_path"),
-                ("Front view (0 deg)", "front_rgb_path", "Front depth", "front_depth_path"),
-                ("Right view (+60 deg)", "right_rgb_path", "Right depth", "right_depth_path"),
+                ("Left view", "left_rgb_path", "Left depth", "left_depth_path"),
+                ("Front view", "front_rgb_path", "Front depth", "front_depth_path"),
+                ("Right view", "right_rgb_path", "Right depth", "right_depth_path"),
             ]
             for rgb_label, rgb_key, depth_label, depth_key in views:
                 rgb_path = observation.metadata.get(rgb_key)

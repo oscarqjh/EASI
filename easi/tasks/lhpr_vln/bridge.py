@@ -36,6 +36,7 @@ class LHPRVLNBridge(BaseBridge):
     """
 
     _scene_sim = None  # The vendored SceneSimulator (recreated per episode)
+    _prev_position = None  # For collision detection
 
     def _create_env(self, reset_config, simulator_kwargs):
         """Called once on first reset. We store simulator_kwargs and return
@@ -96,32 +97,61 @@ class LHPRVLNBridge(BaseBridge):
 
         # Get initial observation (step -1 in SceneSimulator)
         obs, done, info = self._scene_sim.actor("move_forward")
+        # Initialize position tracking for collision detection
+        sim_info = self._scene_sim.info or {}
+        self._prev_position = sim_info.get("agent_position")
         return obs
 
     def _on_step(self, env, action_text):
         """Step the SceneSimulator and return (obs, reward, done, info)."""
+        # Capture position before action for collision detection
+        pre_pos = self._prev_position
+
         obs, done, info = self._scene_sim.actor(action_text)
         episode_over = self._scene_sim.episode_over
 
+        # Get current position
+        sim_info = self._scene_sim.info or {}
+        cur_pos = sim_info.get("agent_position")
+
+        # Detect collision: move_forward with no position change
+        collided = False
+        if action_text == "move_forward" and pre_pos is not None and cur_pos is not None:
+            collided = all(
+                abs(float(a) - float(b)) < 1e-4
+                for a, b in zip(pre_pos, cur_pos)
+            )
+
+        self._prev_position = cur_pos
+
         # Build info dict with subtask state
-        step_info = self._build_step_info(done, episode_over)
+        step_info = self._build_step_info(done, episode_over, action_text, collided)
         return obs, 0.0, episode_over, step_info
 
-    def _build_step_info(self, all_done: bool, episode_over: bool) -> dict:
+    def _build_step_info(self, all_done: bool, episode_over: bool,
+                         action: str = "", collided: bool = False) -> dict:
         """Build info dict with subtask completion state for metrics."""
         sim = self._scene_sim
         results = sim.return_results()
 
         task_success = 1.0 if all(sim.successes) else 0.0
+        geo_dis = sim.info.get("geo_dis", -1)
 
-        # Build feedback string for the agent
-        if episode_over and all_done:
+        # Build feedback reporting action outcome only
+        # (subtask progress/distance is shown separately in Environmental Feedback)
+        if action == "stop":
+            if geo_dis < sim.success_distance:
+                feedback = "Subtask completed successfully."
+            else:
+                feedback = f"Stop failed: too far from target ({geo_dis:.1f}m away, need < {sim.success_distance}m)."
+        elif collided:
+            feedback = "Blocked: move_forward hit an obstacle, position unchanged. Try turning."
+        elif episode_over and all_done:
             feedback = "All subtasks completed. Navigation finished."
         elif episode_over:
-            feedback = f"Maximum steps reached. Completed {sim.stage}/{sim.target_num} subtasks."
+            feedback = f"Maximum steps reached ({sim.stage}/{sim.target_num} subtasks completed)."
         else:
-            current_target = sim.targets[sim.stage] if sim.stage < sim.target_num else "N/A"
-            feedback = f"Subtask {sim.stage + 1}/{sim.target_num}: navigate to {current_target}. Distance: {sim.info.get('geo_dis', -1):.1f}m"
+            feedback = "OK"
 
         return {
             "task_success": task_success,

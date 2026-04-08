@@ -1,8 +1,8 @@
 """LHPR-VLN task for EASI.
 
 Adapts the LHPR-VLN benchmark to EASI's task interface.
-Episodes are loaded from preprocessed JSONL files (data/val.jsonl,
-data/test.jsonl) via EASI's default HuggingFace dataset loading.
+Episodes are loaded from preprocessed JSONL files (data/{split}.jsonl)
+with custom split names (val, test, unseen_val, unseen_test).
 Each episode contains 2-4 sequential navigation subtasks in HM3D scenes.
 
 Metrics:
@@ -14,6 +14,7 @@ Metrics:
 from __future__ import annotations
 
 import json
+import tempfile
 from pathlib import Path
 
 from easi.core.base_task import BaseTask
@@ -29,6 +30,34 @@ class LHPRVLNTask(BaseTask):
 
     def _build_action_space(self) -> list[str]:
         return get_action_space()
+
+    def _load_episodes_from_hf(self, dataset_config: dict) -> list[dict]:
+        """Load episodes from HF dataset with custom split names.
+
+        HF auto-detection merges val/unseen_val into a single 'validation'
+        split. We bypass this by loading the specific JSONL file directly.
+        """
+        from datasets import load_dataset
+        from easi.core.base_task import hf_row_to_episode
+
+        data_dir = self.download_dataset()
+        split_name = dataset_config.get("split")
+        data_file = str(data_dir / "data" / f"{split_name}.jsonl")
+
+        logger.info("Loading episodes from %s (split=%s)", data_file, split_name)
+
+        hf_cache = Path(tempfile.gettempdir()) / "easi_hf_cache"
+        ds = load_dataset(
+            "json", data_files=data_file, split="train",
+            cache_dir=str(hf_cache),
+        )
+        episodes = [hf_row_to_episode(row) for row in ds]
+
+        for ep in episodes:
+            ep["_data_dir"] = str(data_dir)
+
+        logger.info("Loaded %d episodes (split=%s)", len(episodes), split_name)
+        return episodes
 
     def get_task_yaml_path(self) -> Path:
         return Path(__file__).parent / "_base.yaml"

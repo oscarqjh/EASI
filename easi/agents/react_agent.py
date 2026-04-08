@@ -63,17 +63,35 @@ class ReActAgent(BaseAgent):
     6. On failure feedback -> clear buffer -> next act() re-queries LLM
     """
 
+    # Registry of fallback strategies. To add a new strategy:
+    # 1. Add a _fallback_<name> method that takes (messages, response_format, failed_response)
+    #    and returns list[Action] (empty = give up, use default action)
+    # 2. Register it here
+    _FALLBACK_STRATEGIES = {"default_action", "reprompt"}
+
     def __init__(
         self,
         llm_client,
         action_space: list[str] | None = None,
         prompt_builder: PromptBuilderProtocol | None = None,
+        fallback_action: str | None = None,
+        fallback_strategy: str = "default_action",
+        max_fallback_retries: int = 1,
     ):
         super().__init__(llm_client=llm_client, action_space=action_space or [])
         self.prompt_builder: PromptBuilderProtocol = prompt_builder or DefaultPromptBuilder()
         self.memory = AgentMemory(action_space=self.action_space)
         self._action_buffer: list[Action] = []
         self._supports_response_format: bool | None = None  # None = unknown
+        self._fallback_action_name = fallback_action
+        self._fallback_strategy = fallback_strategy
+        self._max_fallback_retries = max_fallback_retries
+        self.triggered_fallback: bool = False
+        if fallback_strategy not in self._FALLBACK_STRATEGIES:
+            raise ValueError(
+                f"Unknown fallback_strategy '{fallback_strategy}'. "
+                f"Available: {sorted(self._FALLBACK_STRATEGIES)}"
+            )
 
     def reset(self) -> None:
         super().reset()
@@ -97,6 +115,7 @@ class ReActAgent(BaseAgent):
         if self._action_buffer:
             action = self._action_buffer.pop(0)
             self.memory.record_step(observation, action, llm_response=None)
+            self.triggered_fallback = False
             return action
 
         # LLM call path
@@ -119,12 +138,20 @@ class ReActAgent(BaseAgent):
                      self._step_count + 1, response)
 
         actions = self.prompt_builder.parse_response(response, self.memory)
+
+        # If parsing failed, run the configured fallback strategy
         if not actions:
-            action = self._fallback_action()
+            actions = self._run_fallback(messages, response_format, response)
+
+        # If still no actions after fallback, use the default action
+        if not actions:
+            action = self._default_fallback_action()
             self.memory.record_step(observation, action, llm_response=response)
             self._step_count += 1
+            self.triggered_fallback = True
             return action
 
+        self.triggered_fallback = False
         self.memory.record_step(observation, actions[0], llm_response=response)
         self._step_count += 1
 
@@ -144,15 +171,99 @@ class ReActAgent(BaseAgent):
                 )
                 self._action_buffer.clear()
 
-    def _fallback_action(self) -> Action:
-        """Return a safe fallback action when parsing fails.
+    # ---- Fallback system ----
 
-        If the action space has "Stop", use it.
-        Otherwise, signal that the episode should end via "<<STOP>>"
+    def _run_fallback(
+        self,
+        messages: list[dict],
+        response_format: dict | None,
+        failed_response: str,
+    ) -> list[Action]:
+        """Dispatch to the configured fallback strategy.
+
+        Returns a list of actions if the strategy recovered, or [] to
+        fall through to _default_fallback_action().
         """
-        if "Stop" in self.action_space:
-            return Action(action_name="Stop")
+        handler = getattr(self, f"_fallback_{self._fallback_strategy}", None)
+        if handler is None:
+            return []
+        return handler(messages, response_format, failed_response)
+
+    def _default_fallback_action(self) -> Action:
+        """Last-resort action when all fallback strategies fail.
+
+        Priority:
+        1. Configured fallback_action (from YAML agent config)
+        2. "stop"/"Stop" if in action space (case-insensitive)
+        3. "<<STOP>>" sentinel to end the episode
+        """
+        if self._fallback_action_name:
+            logger.warning("Fallback: using configured action '%s'", self._fallback_action_name)
+            return Action(action_name=self._fallback_action_name)
+        stop_names = {a for a in self.action_space if a.lower() == "stop"}
+        if stop_names:
+            name = next(iter(stop_names))
+            logger.warning("Fallback: using '%s' from action space", name)
+            return Action(action_name=name)
+        logger.warning("Fallback: no suitable action, signalling <<STOP>>")
         return Action(action_name="<<STOP>>")
+
+    def _fallback_default_action(
+        self, messages, response_format, failed_response,
+    ) -> list[Action]:
+        """Strategy 'default_action': skip reprompt, go straight to default."""
+        return []
+
+    def _fallback_reprompt(
+        self, messages, response_format, failed_response,
+    ) -> list[Action]:
+        """Strategy 'reprompt': re-query the LLM with a warning about the failure.
+
+        Appends the failed response + a correction prompt, then retries.
+        Falls through to default action after max_fallback_retries attempts.
+        """
+        retry_messages = list(messages)
+
+        for attempt in range(1, self._max_fallback_retries + 1):
+            # Append the failed response as assistant + correction as user
+            retry_messages.append({
+                "role": "assistant",
+                "content": [{"type": "text", "text": failed_response}],
+            })
+            retry_messages.append({
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": (
+                        "Your previous response could not be executed. "
+                        "Make sure you reply in proper JSON format and "
+                        "do NOT leave the executable_plan field as an empty list. "
+                        "You MUST include at least one valid action."
+                    ),
+                }],
+            })
+
+            logger.info(
+                "Fallback reprompt attempt %d/%d",
+                attempt, self._max_fallback_retries,
+            )
+
+            response = self._generate_with_fallback(retry_messages, response_format)
+            logger.trace("Reprompt attempt %d response:\n%s", attempt, response)
+
+            actions = self.prompt_builder.parse_response(response, self.memory)
+            if actions:
+                logger.info("Reprompt attempt %d succeeded with %d actions", attempt, len(actions))
+                return actions
+
+            # Update failed_response for next iteration
+            failed_response = response
+
+        logger.warning(
+            "Reprompt failed after %d attempts, falling back to default action",
+            self._max_fallback_retries,
+        )
+        return []
 
     def _generate_with_fallback(
         self, messages: list[dict], response_format: dict | None,
