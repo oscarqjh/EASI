@@ -738,9 +738,6 @@ def cmd_start(args):
         else:
             run_kwargs["sim_gpus"] = [int(g) for g in sim_gpus_val.split(",")]
 
-    from easi.core.episode import EpisodeRecord
-    from easi.evaluation.metrics import default_aggregate
-
     all_summaries: list[tuple[str, dict]] = []
 
     for task_name in task_list:
@@ -767,14 +764,30 @@ def cmd_start(args):
         results = runner.run()
         logger.info("Completed %d episodes for %s.", len(results), task_name)
 
-        records = [
-            EpisodeRecord(episode={}, trajectory=[], episode_results=r) for r in results
-        ]
-        summary = {"num_episodes": len(results)}
-        summary.update(default_aggregate(records))
+        # Read the summary.json that the runner just saved
+        run_dir = runner.run_dir if hasattr(runner, "run_dir") else None
+        summary = {}
+        if run_dir:
+            summary_file = Path(run_dir) / "summary.json"
+            if summary_file.exists():
+                import json as _json
+                summary = _json.loads(summary_file.read_text())
+
         all_summaries.append((task_name, summary))
-        for key, value in summary.items():
-            logger.info("  %s: %s", key, value)
+
+        # Log generic metrics (top-level)
+        for key in ("num_episodes", "success_rate", "avg_steps", "median_steps"):
+            if key in summary:
+                logger.info("  %s: %s", key, summary[key])
+
+        # Log task-specific metrics
+        metrics = summary.get("metrics", {})
+        if isinstance(metrics, dict):
+            # If metrics has sub-groups (e.g. base/spot/stretch), log the base group
+            base = metrics.get("base", metrics)
+            for key, value in base.items():
+                if key not in ("num_episodes", "success_rate"):
+                    logger.info("  %s: %s", key, value)
 
     # Combined summary when multiple tasks were evaluated
     if len(all_summaries) > 1:

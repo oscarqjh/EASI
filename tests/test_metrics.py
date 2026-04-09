@@ -184,6 +184,9 @@ class TestSummaryJsonStructure:
         assert "effective_episodes" in summary
         assert summary["effective_episodes"] <= summary["num_episodes"]
 
-        # Metric keys should NOT be at the top level
+        # Generic metrics should be at the top level
+        assert "success_rate" in summary
+        assert "avg_steps" in summary
+
+        # Task-specific metric keys should NOT be at the top level
         assert "avg_success" not in summary
-        assert "success_rate" not in summary

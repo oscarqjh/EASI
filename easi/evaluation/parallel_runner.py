@@ -185,6 +185,7 @@ class ParallelRunner(EvaluationRunner):
             # Handle resume
             if self.resume_dir:
                 run_dir = self.resume_dir
+                self.run_dir = run_dir
                 completed_results, start_index = self._load_completed_results(
                     run_dir, len(episodes),
                 )
@@ -195,6 +196,7 @@ class ParallelRunner(EvaluationRunner):
                 )
             else:
                 run_dir = self.output_dir / self.task_name / self.run_id
+                self.run_dir = run_dir
                 completed_results = []
                 start_index = 0
 
@@ -462,13 +464,17 @@ class ParallelRunner(EvaluationRunner):
                 ))
 
             # Aggregate and save summary
+            from easi.evaluation.metrics import generic_aggregate
+
             try:
                 metric_results = task.aggregate_results(records)
             except Exception as exc:
                 logger.error("aggregate_results() failed: %s", exc, exc_info=True)
                 metric_results = {"aggregation_error": str(exc)}
+
+            generic = generic_aggregate(records)
             summary = {
-                "num_episodes": len(all_results),
+                **generic,
                 "effective_episodes": effective,
                 "metrics": metric_results,
             }
@@ -480,7 +486,6 @@ class ParallelRunner(EvaluationRunner):
                 summary["backend"] = backend
             (run_dir / "summary.json").write_text(json.dumps(summary, indent=2))
             logger.info("Results saved to: %s", run_dir)
-            logger.info("Summary: %s", summary)
 
             return all_results
         finally:

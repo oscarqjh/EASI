@@ -163,12 +163,14 @@ class LHPRVLNTask(BaseTask):
         base = self._compute_group_metrics(records)
         base["num_episodes"] = len(records)
         base["success_rate"] = base["SR"]
+        base.update(self._compute_step_stats(records))
         output["base"] = base
 
         # Per-robot groups
         for robot_type, group_records in sorted(groups.items()):
             group = self._compute_group_metrics(group_records)
             group["num_episodes"] = len(group_records)
+            group.update(self._compute_step_stats(group_records))
             output[robot_type] = group
 
         return output
@@ -224,6 +226,19 @@ class LHPRVLNTask(BaseTask):
             "CGT": round(result["conditional_path_length"], 4),
             "TAR": round(result["tar"], 4),
             "contest_score": round(contest_score, 4),
+        }
+
+    @staticmethod
+    def _compute_step_stats(records: list[EpisodeRecord]) -> dict[str, float]:
+        """Compute step count statistics across episodes."""
+        steps = [r.episode_results.get("num_steps", 0) for r in records]
+        if not steps:
+            return {"avg_steps": 0.0, "median_steps": 0.0, "max_steps_reached": 0}
+        sorted_steps = sorted(steps)
+        return {
+            "avg_steps": round(sum(steps) / len(steps), 1),
+            "median_steps": round(sorted_steps[len(sorted_steps) // 2], 1),
+            "max_steps_reached": sum(1 for s in steps if s >= 500),
         }
 
     def _empty_metrics(self) -> dict[str, float]:

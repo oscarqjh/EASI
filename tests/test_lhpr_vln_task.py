@@ -260,7 +260,7 @@ class TestPromptBuilder:
     @pytest.fixture
     def mock_encode(self):
         """Mock image encoding to avoid file I/O."""
-        import easi.tasks.lhpr_vln.prompts as prompts_mod
+        import easi.tasks.lhpr_vln.prompts.default as prompts_mod
         original = prompts_mod._encode_image_base64
         prompts_mod._encode_image_base64 = lambda x: "data:image/png;base64,AAAA"
         yield
@@ -484,7 +484,7 @@ class TestPromptBuilderDepth:
         from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
         builder = LHPRVLNPromptBuilder(use_depth=False)
         obs = self._make_obs_with_depth()
-        with patch("easi.tasks.lhpr_vln.prompts._encode_image_base64", return_value="data:image/png;base64,fake"):
+        with patch("easi.tasks.lhpr_vln.prompts.default._encode_image_base64", return_value="data:image/png;base64,fake"):
             messages = builder._wrap_as_user_message("test prompt", obs)
         text_items = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
         assert not any("depth" in t.lower() for t in text_items), \
@@ -494,7 +494,7 @@ class TestPromptBuilderDepth:
         from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
         builder = LHPRVLNPromptBuilder(use_depth=True)
         obs = self._make_obs_with_depth()
-        with patch("easi.tasks.lhpr_vln.prompts._encode_image_base64", return_value="data:image/png;base64,fake"):
+        with patch("easi.tasks.lhpr_vln.prompts.default._encode_image_base64", return_value="data:image/png;base64,fake"):
             messages = builder._wrap_as_user_message("test prompt", obs)
         text_items = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
         assert "[Front depth]" in text_items
@@ -505,7 +505,7 @@ class TestPromptBuilderDepth:
         from easi.tasks.lhpr_vln.prompts import LHPRVLNPromptBuilder
         builder = LHPRVLNPromptBuilder(use_depth=True)
         obs = self._make_obs_no_depth()
-        with patch("easi.tasks.lhpr_vln.prompts._encode_image_base64", return_value="data:image/png;base64,fake"):
+        with patch("easi.tasks.lhpr_vln.prompts.default._encode_image_base64", return_value="data:image/png;base64,fake"):
             messages = builder._wrap_as_user_message("test prompt", obs)
         text_items = [b["text"] for b in messages[0]["content"] if b.get("type") == "text"]
         assert not any("depth" in t.lower() for t in text_items), \
