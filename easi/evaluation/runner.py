@@ -628,6 +628,7 @@ class EvaluationRunner:
         metrics["episode_id"] = episode_id
         metrics["instruction"] = task_description
         metrics["elapsed_seconds"] = round(elapsed, 2)
+        metrics["forced_early_stop"] = getattr(agent, "forced_early_stop", False)
 
         # Attach trajectory and episode for aggregate_results()
         metrics["_trajectory"] = trajectory
@@ -756,6 +757,7 @@ class EvaluationRunner:
                 fallback_action=agent_config.get("fallback_action"),
                 fallback_strategy=agent_config.get("fallback_strategy", "default_action"),
                 max_fallback_retries=agent_config.get("max_fallback_retries", 1),
+                max_consecutive_fallbacks=agent_config.get("max_consecutive_fallbacks", 0),
             )
         else:
             raise ValueError(f"Unknown agent type: {self.agent_type}")

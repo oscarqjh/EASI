@@ -291,15 +291,80 @@ class InternVL3Model(BaseModelServer):
             generation_config["temperature"] = temperature
             generation_config["top_p"] = top_p
 
-        with torch.no_grad():
-            response = self.model.chat(
-                self.tokenizer,
-                pixel_values,
-                question,
-                generation_config,
-                history=history,
-            )
+        skip_special = kwargs.get("skip_special_tokens", True)
 
+        with torch.no_grad():
+            if skip_special:
+                # Default path: use model.chat() which hardcodes
+                # skip_special_tokens=True
+                response = self.model.chat(
+                    self.tokenizer,
+                    pixel_values,
+                    question,
+                    generation_config,
+                    history=history,
+                )
+            else:
+                # SFT path: replicate model.chat() logic but decode
+                # with skip_special_tokens=False to preserve action tokens
+                response = self._chat_keep_special(
+                    pixel_values, question, generation_config, history,
+                )
+
+        return response
+
+    def _chat_keep_special(
+        self,
+        pixel_values,
+        question: str,
+        generation_config: dict,
+        history: list[tuple[str, str]],
+    ) -> str:
+        """Like model.chat() but with skip_special_tokens=False."""
+        import torch
+        from internvl.conversation import get_conv_template
+
+        IMG_START_TOKEN = '<img>'
+        IMG_END_TOKEN = '</img>'
+        IMG_CONTEXT_TOKEN = '<IMG_CONTEXT>'
+
+        template = get_conv_template(self.model.template)
+        template.system_message = self.model.system_message
+        eos_token_id = self.tokenizer.convert_tokens_to_ids(template.sep.strip())
+
+        for old_question, old_answer in history:
+            template.append_message(template.roles[0], old_question)
+            template.append_message(template.roles[1], old_answer)
+        template.append_message(template.roles[0], question)
+        template.append_message(template.roles[1], None)
+        query = template.get_prompt()
+
+        if pixel_values is not None:
+            img_context_token_id = self.tokenizer.convert_tokens_to_ids(IMG_CONTEXT_TOKEN)
+            self.model.img_context_token_id = img_context_token_id
+            num_patches = pixel_values.shape[0]
+            image_tokens = (
+                IMG_START_TOKEN
+                + IMG_CONTEXT_TOKEN * self.model.num_image_token * num_patches
+                + IMG_END_TOKEN
+            )
+            query = query.replace('<image>', image_tokens, 1)
+
+        model_inputs = self.tokenizer(query, return_tensors='pt')
+        input_ids = model_inputs['input_ids'].to(self.model.device)
+        attention_mask = model_inputs['attention_mask'].to(self.model.device)
+        generation_config['eos_token_id'] = eos_token_id
+
+        generation_output = self.model.generate(
+            pixel_values=pixel_values,
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            **generation_config,
+        )
+        response = self.tokenizer.batch_decode(
+            generation_output, skip_special_tokens=False,
+        )[0]
+        response = response.split(template.sep.strip())[0].strip()
         return response
 
     def unload(self) -> None:

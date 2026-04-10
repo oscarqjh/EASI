@@ -152,6 +152,15 @@ class LHPRVLNSFTPromptBuilder:
         """No structured output — model outputs raw action tokens."""
         return None
 
+    def get_reprompt_message(self) -> str:
+        """Correction prompt for failed responses, matching the SFT format."""
+        return (
+            "Your previous response could not be parsed. "
+            "You must output action tokens wrapped in <action> tags. "
+            "For example: <action><|forward|><|forward|><|left|><|forward|><|forward|></action> "
+            "or <action><|stop|></action>"
+        )
+
     # ---- Internal methods ----
 
     def _build_prompt(self, instruction: str, history_count: int) -> str:

@@ -165,7 +165,7 @@ class Qwen3VLModel(BaseModelServer):
         ]
         output_text = self.processor.batch_decode(
             generated_ids_trimmed,
-            skip_special_tokens=True,
+            skip_special_tokens=kwargs.get("skip_special_tokens", True),
             clean_up_tokenization_spaces=False,
         )
 

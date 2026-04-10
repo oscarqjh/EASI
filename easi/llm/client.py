@@ -25,6 +25,11 @@ _LITELLM_PARAMS = frozenset({
     "user", "metadata",
 })
 
+# Parameters passed to vLLM via extra_body (not standard OpenAI params).
+_VLLM_EXTRA_BODY_PARAMS = frozenset({
+    "skip_special_tokens",
+})
+
 litellm = None
 
 
@@ -59,11 +64,13 @@ class LLMClient:
         self.base_url = base_url
         self.num_retries = num_retries
         self.timeout = timeout
-        # Only keep params that litellm/OpenAI API recognises.
-        dropped = {k: v for k, v in kwargs.items() if k not in _LITELLM_PARAMS}
+        # Split kwargs into litellm params, vLLM extra_body, and unknown (dropped).
+        self.default_kwargs = {k: v for k, v in kwargs.items() if k in _LITELLM_PARAMS}
+        self._extra_body = {k: v for k, v in kwargs.items() if k in _VLLM_EXTRA_BODY_PARAMS}
+        dropped = {k: v for k, v in kwargs.items()
+                   if k not in _LITELLM_PARAMS and k not in _VLLM_EXTRA_BODY_PARAMS}
         if dropped:
             logger.debug("Dropping unsupported generation kwargs: %s", dropped)
-        self.default_kwargs = {k: v for k, v in kwargs.items() if k in _LITELLM_PARAMS}
         self._usage = {
             "prompt_tokens": 0,
             "completion_tokens": 0,
@@ -83,6 +90,8 @@ class LLMClient:
             "drop_params": True,
             **self.default_kwargs,
         }
+        if self._extra_body:
+            call_kwargs["extra_body"] = self._extra_body
         if self.base_url:
             call_kwargs["api_base"] = self.base_url
             # Local servers (vLLM, custom) don't need a real API key,

@@ -36,6 +36,12 @@ def generic_aggregate(records: list[EpisodeRecord]) -> dict:
         if isinstance(s, (int, float)):
             steps.append(float(s))
 
+    # Early stops (forced by consecutive fallback limit)
+    early_stops = sum(
+        1 for r in records
+        if r.episode_results.get("forced_early_stop", False)
+    )
+
     result = {"num_episodes": n}
     if successes:
         result["success_rate"] = round(sum(successes) / n, 4)
@@ -43,6 +49,7 @@ def generic_aggregate(records: list[EpisodeRecord]) -> dict:
         result["avg_steps"] = round(sum(steps) / n, 1)
         sorted_steps = sorted(steps)
         result["median_steps"] = round(sorted_steps[len(sorted_steps) // 2], 1)
+    result["early_stop_rate"] = round(early_stops / n, 4) if n else 0
 
     return result
 

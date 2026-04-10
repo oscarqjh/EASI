@@ -77,6 +77,7 @@ class ReActAgent(BaseAgent):
         fallback_action: str | None = None,
         fallback_strategy: str = "default_action",
         max_fallback_retries: int = 1,
+        max_consecutive_fallbacks: int = 0,
     ):
         super().__init__(llm_client=llm_client, action_space=action_space or [])
         self.prompt_builder: PromptBuilderProtocol = prompt_builder or DefaultPromptBuilder()
@@ -86,7 +87,10 @@ class ReActAgent(BaseAgent):
         self._fallback_action_name = fallback_action
         self._fallback_strategy = fallback_strategy
         self._max_fallback_retries = max_fallback_retries
+        self._max_consecutive_fallbacks = max_consecutive_fallbacks  # 0 = disabled
+        self._consecutive_fallbacks: int = 0
         self.triggered_fallback: bool = False
+        self.forced_early_stop: bool = False
         if fallback_strategy not in self._FALLBACK_STRATEGIES:
             raise ValueError(
                 f"Unknown fallback_strategy '{fallback_strategy}'. "
@@ -97,6 +101,8 @@ class ReActAgent(BaseAgent):
         super().reset()
         self.memory.clear()
         self._action_buffer.clear()
+        self._consecutive_fallbacks = 0
+        self.forced_early_stop = False
 
     def update_action_space(self, action_space: list[str]) -> None:
         """Update the action space (e.g., after dynamic expansion per episode)."""
@@ -149,9 +155,22 @@ class ReActAgent(BaseAgent):
             self.memory.record_step(observation, action, llm_response=response)
             self._step_count += 1
             self.triggered_fallback = True
+            self._consecutive_fallbacks += 1
+
+            # Force stop if too many consecutive fallbacks
+            if (self._max_consecutive_fallbacks > 0
+                    and self._consecutive_fallbacks >= self._max_consecutive_fallbacks):
+                logger.warning(
+                    "Forcing stop: %d consecutive fallbacks reached limit (%d)",
+                    self._consecutive_fallbacks, self._max_consecutive_fallbacks,
+                )
+                self.forced_early_stop = True
+                return Action(action_name="stop")
+
             return action
 
         self.triggered_fallback = False
+        self._consecutive_fallbacks = 0
         self.memory.record_step(observation, actions[0], llm_response=response)
         self._step_count += 1
 
@@ -224,6 +243,18 @@ class ReActAgent(BaseAgent):
         """
         retry_messages = list(messages)
 
+        # Get correction prompt from builder, or use default
+        get_correction = getattr(self.prompt_builder, 'get_reprompt_message', None)
+        if get_correction:
+            correction_text = get_correction()
+        else:
+            correction_text = (
+                "Your previous response could not be executed. "
+                "Make sure you reply in proper JSON format and "
+                "do NOT leave the executable_plan field as an empty list. "
+                "You MUST include at least one valid action."
+            )
+
         for attempt in range(1, self._max_fallback_retries + 1):
             # Append the failed response as assistant + correction as user
             retry_messages.append({
@@ -232,15 +263,7 @@ class ReActAgent(BaseAgent):
             })
             retry_messages.append({
                 "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": (
-                        "Your previous response could not be executed. "
-                        "Make sure you reply in proper JSON format and "
-                        "do NOT leave the executable_plan field as an empty list. "
-                        "You MUST include at least one valid action."
-                    ),
-                }],
+                "content": [{"type": "text", "text": correction_text}],
             })
 
             logger.info(
