@@ -32,7 +32,11 @@ def _get_format_unsupported_errors() -> tuple[type[Exception], ...]:
 
 
 def _format_messages_for_log(messages: list[dict]) -> str:
-    """Extract readable text from OpenAI-format messages for logging."""
+    """Extract readable text from OpenAI-format messages for logging.
+
+    Shows image positions inline as [img_N] markers so interleaved
+    placement is visible in the log output.
+    """
     parts = []
     for msg in messages:
         role = msg.get("role", "?")
@@ -40,11 +44,15 @@ def _format_messages_for_log(messages: list[dict]) -> str:
         if isinstance(content, str):
             text = content
         elif isinstance(content, list):
-            text_parts = [p.get("text", "") for p in content if p.get("type") == "text"]
-            n_images = sum(1 for p in content if p.get("type") == "image_url")
+            img_idx = 0
+            text_parts = []
+            for block in content:
+                if block.get("type") == "text":
+                    text_parts.append(block.get("text", ""))
+                elif block.get("type") == "image_url":
+                    img_idx += 1
+                    text_parts.append(f"[img_{img_idx}]")
             text = "".join(text_parts)
-            if n_images:
-                text = f"[{n_images} image(s)]\n{text}"
         else:
             text = str(content)
         parts.append(f"--- {role} ---\n{text}")
