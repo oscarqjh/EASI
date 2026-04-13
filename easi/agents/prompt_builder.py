@@ -7,7 +7,9 @@ and parse_response.
 from __future__ import annotations
 
 import base64
+import io
 import json
+import time
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -17,20 +19,43 @@ from easi.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+_IMAGE_READ_RETRIES = 3
+_IMAGE_READ_BASE_DELAY = 0.1  # seconds, doubles each retry
+
 
 def _encode_image_base64(image_path: str) -> str | None:
     """Read an image file and return base64-encoded data URL.
 
-    Returns None if file doesn't exist or can't be read.
+    Validates the image is a complete PNG/JPEG before encoding.
+    Retries with exponential backoff if the file appears truncated.
+    If still truncated after retries, returns the raw data anyway —
+    the caller (vLLM) will raise an error and the episode will restart.
+
+    Returns None only if the file doesn't exist.
     """
+    from PIL import Image
+
     p = Path(image_path)
     if not p.exists():
         logger.warning("Image file not found: %s", image_path)
         return None
     suffix = p.suffix.lower().lstrip(".")
     mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg"}.get(suffix, "image/png")
-    data = base64.b64encode(p.read_bytes()).decode("utf-8")
-    return f"data:{mime};base64,{data}"
+
+    for attempt in range(_IMAGE_READ_RETRIES):
+        data = p.read_bytes()
+        try:
+            Image.open(io.BytesIO(data)).verify()
+            return f"data:{mime};base64,{base64.b64encode(data).decode('utf-8')}"
+        except Exception:
+            if attempt < _IMAGE_READ_RETRIES - 1:
+                delay = _IMAGE_READ_BASE_DELAY * (2 ** attempt)
+                logger.debug("Image truncated (attempt %d), retrying in %.1fs: %s", attempt + 1, delay, image_path)
+                time.sleep(delay)
+
+    # Return the data as-is — let vLLM raise the error and trigger episode restart
+    logger.warning("Image still truncated after %d retries, sending anyway: %s", _IMAGE_READ_RETRIES, image_path)
+    return f"data:{mime};base64,{base64.b64encode(data).decode('utf-8')}"
 
 
 def validate_action_name(action_name: str, action_space: list[str]) -> str | None:

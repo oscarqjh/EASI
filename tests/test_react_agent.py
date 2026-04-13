@@ -42,8 +42,9 @@ class TestDefaultPromptBuilder:
         assert messages[1]["role"] == "user"
 
     def test_build_messages_includes_image(self, tmp_path):
+        from PIL import Image
         img_path = tmp_path / "test.png"
-        img_path.write_bytes(b'\x89PNG\r\n\x1a\n' + b'\x00' * 100)
+        Image.new("RGB", (4, 4), color="red").save(str(img_path))
         builder = DefaultPromptBuilder()
         memory = AgentMemory(
             task_description="Go to the kitchen.",

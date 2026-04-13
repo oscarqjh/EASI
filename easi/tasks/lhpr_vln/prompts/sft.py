@@ -87,32 +87,23 @@ class LHPRVLNSFTPromptBuilder:
 
         # Sample historical images
         history_paths = self._sample_history()
-        history_count = len(history_paths)
 
-        # Build prompt text (exact training format)
-        prompt = self._build_prompt(memory.task_description, history_count)
-
-        # Build message content: history images + current 3 views + text
-        content: list[dict] = []
-
-        # Historical front-view images
-        for path in history_paths:
-            img_url = _encode_image_base64(path)
-            if img_url:
-                content.append({"type": "image_url", "image_url": {"url": img_url}})
-
-        # Current 3 views (left, front, right)
+        # Collect current view paths
+        current_views: list[str] = []
         if memory.current_observation and memory.current_observation.metadata:
             meta = memory.current_observation.metadata
             for key in ("left_rgb_path", "front_rgb_path", "right_rgb_path"):
                 path = meta.get(key)
                 if path:
-                    img_url = _encode_image_base64(path)
-                    if img_url:
-                        content.append({"type": "image_url", "image_url": {"url": img_url}})
+                    current_views.append(path)
 
-        # Prompt text last
-        content.append({"type": "text", "text": prompt})
+        # Build interleaved content blocks matching InternVL convention.
+        # The chat template converts each image_url block to <image>\n,
+        # so we place them at the exact positions where training had
+        # literal <image> tokens.
+        content: list[dict] = self._build_content(
+            memory.task_description, history_paths, current_views,
+        )
 
         return [{"role": "user", "content": content}]
 
@@ -163,10 +154,23 @@ class LHPRVLNSFTPromptBuilder:
 
     # ---- Internal methods ----
 
-    def _build_prompt(self, instruction: str, history_count: int) -> str:
-        """Build the user prompt matching exact training format."""
-        lines = []
-        lines.append(
+    def _build_content(
+        self,
+        instruction: str,
+        history_paths: list[str],
+        current_views: list[str],
+    ) -> list[dict]:
+        """Build interleaved text + image content blocks.
+
+        Places image_url blocks at the exact positions where training had
+        <image> tokens. The InternVL chat template converts each image_url
+        block to <image>\\n, producing the same token sequence as training.
+        No <image> tokens appear in the text itself.
+        """
+        content: list[dict] = []
+
+        # Preamble
+        content.append({"type": "text", "text": (
             "You are an autonomous navigation robot. You will get a task "
             "with historical pictures and current pictures you see.\n"
             f"Based on this information, you need to decide your next "
@@ -176,24 +180,38 @@ class LHPRVLNSFTPromptBuilder:
             "Here are some examples: "
             "<|left|><|forward|><|forward|><|stop|>, "
             "<|forward|><|forward|><|forward|><|left|><|forward|> or <|stop|>"
-        )
-        if history_count > 0:
-            lines.append(
-                f"# Your historical pictures are: {'<image>' * history_count}"
-            )
-        lines.append(
-            "# Your current observations are left side: <image>, "
-            "front side: <image>, right side: <image>"
-        )
-        lines.append(f"# Your mission is: {instruction}")
-        lines.append(
+        )})
+
+        # Historical images (interleaved)
+        if history_paths:
+            content.append({"type": "text", "text": "\n# Your historical pictures are: "})
+            for path in history_paths:
+                img_url = _encode_image_base64(path)
+                if img_url:
+                    content.append({"type": "image_url", "image_url": {"url": img_url}})
+
+        # Current 3 views (interleaved)
+        view_labels = ["left side", "front side", "right side"]
+        content.append({"type": "text", "text": "\n# Your current observations are "})
+        for i, path in enumerate(current_views):
+            if i > 0:
+                content.append({"type": "text", "text": ", "})
+            content.append({"type": "text", "text": f"{view_labels[i]}: "})
+            img_url = _encode_image_base64(path)
+            if img_url:
+                content.append({"type": "image_url", "image_url": {"url": img_url}})
+
+        # Mission + closing
+        content.append({"type": "text", "text": (
+            f"\n# Your mission is: {instruction}\n"
             "PS: The mission is complex. You may infer several sub-tasks "
             "within the mission, and output <|stop|> when a sub-task is "
             f"achieved. So far, you have output <|stop|> {self._stop_count} "
             "times. Historical information reflects progress up to the "
             "current subgoal. <|NAV|>"
-        )
-        return "\n".join(lines)
+        )})
+
+        return content
 
     def _update_history(self, memory: AgentMemory) -> None:
         """Update history images and stop count from memory steps.
