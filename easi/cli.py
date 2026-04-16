@@ -174,7 +174,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--data-dir",
         type=str,
         default=None,
-        help="Directory for downloading/caching datasets (default: ~/.cache/easi/datasets)",
+        help="Directory for downloading/caching datasets (default: ./datasets)",
     )
     start_parser.add_argument(
         "--episodes", type=str, default=None,
