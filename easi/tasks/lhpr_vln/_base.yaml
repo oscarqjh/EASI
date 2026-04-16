@@ -10,6 +10,7 @@ dataset:
   hf_data_dir: "data"
   zip_files:
     - "hm3d_v0.2_lhpr_scenes.zip"
+    - "maps.zip"
 simulator_configs:
   render_platform: auto
   screen_height: 512
