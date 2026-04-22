@@ -1,0 +1,16 @@
+extends: _base.yaml
+name: lhpr_vln_val_exp
+display_name: "LHPR-VLN Val (Experiment)"
+description: "Temp experiment slot: bridge-side fantasy-vln parity (RGBA + contrast 1.5 + resize 366 via bridge). Short name so autoeval treats this as a fresh task key and reruns checkpoints without dedup against prior runs."
+dataset:
+  split: "unseen_val_filtered"
+simulator_configs:
+  save_rgba: true
+  enhance_images: true
+  enhance_contrast: 1.5
+  enhance_resize_to: 366
+agent:
+  prompt_builder: "easi.tasks.lhpr_vln.prompts.sft.LHPRVLNSFTPromptBuilder"
+  prompt_builder_kwargs:
+    window_size: 5
+    max_history_images: 20
