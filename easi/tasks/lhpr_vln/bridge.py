@@ -95,12 +95,18 @@ class LHPRVLNBridge(BaseBridge):
             sensors=sensors,
         )
 
-        # Get initial observation (step -1 in SceneSimulator)
-        obs, done, info = self._scene_sim.actor("move_forward")
-        # Initialize position tracking for collision detection
+        # SceneSimulator.__init__ already captured the initial observation
+        # (via its own internal ``sim.step("move_forward")``) and populated
+        # ``self.info``. Returning those directly matches fantasy-vln's
+        # behaviour — fantasy's agent loop uses ``task_sim.observations`` as
+        # the very first input without calling ``actor()`` beforehand.
+        # Previously we called ``actor("move_forward")`` here, which applied
+        # an EXTRA translation (another 0.25 m in the agent's facing
+        # direction) before the first agent action, shifting the starting
+        # pose by one forward step relative to fantasy.
         sim_info = self._scene_sim.info or {}
         self._prev_position = sim_info.get("agent_position")
-        return obs
+        return self._scene_sim.observations
 
     def _on_step(self, env, action_text):
         """Step the SceneSimulator and return (obs, reward, done, info)."""
