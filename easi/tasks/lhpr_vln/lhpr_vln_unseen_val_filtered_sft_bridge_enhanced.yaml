@@ -1,0 +1,16 @@
+extends: _base.yaml
+name: lhpr_vln_unseen_val_filtered_sft_bridge_enhanced
+display_name: "LHPR-VLN Unseen Val Filtered (SFT, Bridge-Enhanced)"
+description: "Bridge-side fantasy-vln parity: sim renders → bridge applies contrast 1.5 + resize 366 + RGBA → saves to disk. Paired with baseline SFT prompt builder (no extra in-prompt transform), so the on-disk PNG and the VLM-input pixels match fantasy-vln's display_env pipeline."
+dataset:
+  split: "unseen_val_filtered"
+simulator_configs:
+  save_rgba: true
+  enhance_images: true
+  enhance_contrast: 1.5
+  enhance_resize_to: 366
+agent:
+  prompt_builder: "easi.tasks.lhpr_vln.prompts.sft.LHPRVLNSFTPromptBuilder"
+  prompt_builder_kwargs:
+    window_size: 5
+    max_history_images: 20

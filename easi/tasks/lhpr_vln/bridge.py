@@ -195,15 +195,44 @@ class LHPRVLNBridge(BaseBridge):
 
         from PIL import Image
 
+        # When ``save_rgba`` is set in simulator_configs, keep the full
+        # 4-channel sensor output so training-distribution-faithful
+        # prompt builders (e.g. enhanced_sft) can round-trip RGBA data.
+        save_rgba = bool(self._sim_kwargs.get("save_rgba", False))
+
+        # Optional bridge-side image enhancement (contrast + resize), applied
+        # BEFORE writing to disk. Mirrors fantasy-vln's ``display_env`` so the
+        # PNG on disk matches what fantasy saves. Paired with the baseline
+        # ``LHPRVLNSFTPromptBuilder`` (no extra in-prompt transform) the
+        # model receives pixel-identical input to fantasy's pipeline.
+        enhance_images = bool(self._sim_kwargs.get("enhance_images", False))
+        enhance_contrast = float(self._sim_kwargs.get("enhance_contrast", 1.5))
+        enhance_resize_to = int(self._sim_kwargs.get("enhance_resize_to", 366))
+
+        if enhance_images:
+            from PIL import ImageEnhance  # noqa: F401 — imported lazily
+
         paths = {}
         for view_name, sensor_key in [("left", "color_sensor_l"),
                                        ("front", "color_sensor_f"),
                                        ("right", "color_sensor_r")]:
             if sensor_key not in obs:
                 continue
-            rgb = obs[sensor_key][:, :, :3]
+            arr = obs[sensor_key]
+            if not save_rgba:
+                arr = arr[:, :, :3]
+            mode = "RGBA" if save_rgba and arr.shape[2] == 4 else "RGB"
+            img = Image.fromarray(arr, mode=mode)
+
+            if enhance_images:
+                from PIL import ImageEnhance
+                if enhance_contrast != 1.0:
+                    img = ImageEnhance.Contrast(img).enhance(enhance_contrast)
+                if enhance_resize_to:
+                    img = img.resize((enhance_resize_to, enhance_resize_to))
+
             path = save_dir / ("step_%04d_%s.png" % (self.step_count, view_name))
-            Image.fromarray(rgb).save(str(path))
+            img.save(str(path))
             paths[view_name] = str(path)
 
         # Save depth images when present
