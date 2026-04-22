@@ -1,0 +1,15 @@
+extends: _base.yaml
+name: lhpr_vln_unseen_val_filtered_sft_enhanced
+display_name: "LHPR-VLN Unseen Val Filtered (SFT, Enhanced)"
+description: "Fantasy-vln display_env parity: RGBA sensor capture + contrast 1.5 + resize 366. Training-distribution-faithful eval for the 260414 DFS SFT checkpoints."
+dataset:
+  split: "unseen_val_filtered"
+simulator_configs:
+  save_rgba: true
+agent:
+  prompt_builder: "easi.tasks.lhpr_vln.prompts.enhanced_sft.LHPRVLNEnhancedSFTPromptBuilder"
+  prompt_builder_kwargs:
+    window_size: 5
+    max_history_images: 20
+    enhance_contrast: 1.5
+    resize_to: 366
