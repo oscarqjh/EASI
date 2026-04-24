@@ -121,9 +121,10 @@ METRIC_MAP: dict[str, dict] = {
     },
     "3dsrbench": {
         "data_name": "3DSRBench",
-        "acc_pattern": "*_3DSRBench_acc.csv",
+        "acc_pattern": "*_3DSRBench_full_acc.csv",
         "overall_key": "Overall",
         "scale": 100,
+        "settings": ["vanilla", "circ_eval"],  # extract both settings
         "sub_scores": {
             "height_higher": "height_higher",
             "location_above": "location_above",
@@ -271,9 +272,42 @@ def load_acc_csv(path: Path | str) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 
 def _find_acc_csv(model_dir: Path, pattern: str) -> Path | None:
-    """Find the first matching acc.csv in model_dir (follows symlinks)."""
-    matches = sorted(model_dir.glob(pattern))
-    return matches[0] if matches else None
+    """Find the newest matching acc.csv in model_dir or its subdirectories.
+
+    VLMEvalKit writes result files inside ``T{date}_G{hash}/`` subdirectories
+    and creates symlinks at the model_dir root. We search both levels and
+    return the most recently modified file to handle multiple runs.
+    """
+    matches = list(model_dir.glob(pattern)) + list(model_dir.glob(f"*/{pattern}"))
+    if not matches:
+        return None
+    # Return newest by modification time
+    return max(matches, key=lambda p: p.resolve().stat().st_mtime)
+
+
+def _load_acc_csv_by_setting(path: Path | str) -> dict[str, dict[str, float]]:
+    """Load a multi-setting ``_full_acc.csv`` into ``{setting: {metric: value}}``.
+
+    Returns a dict keyed by setting name.  Falls back to a single
+    ``{"vanilla": ...}`` entry if no ``setting`` column is present.
+    """
+    df = pd.read_csv(path, sep=None, engine="python")
+    if "setting" not in df.columns:
+        # Single-setting file — treat as vanilla
+        return {"vanilla": load_acc_csv(path)}
+    result: dict[str, dict[str, float]] = {}
+    for _, row in df.iterrows():
+        setting = str(row["setting"])
+        metrics: dict[str, float] = {}
+        for col in df.columns:
+            if col == "setting":
+                continue
+            try:
+                metrics[col] = float(row[col])
+            except (ValueError, TypeError):
+                pass
+        result[setting] = metrics
+    return result
 
 
 def _extract_scores(
@@ -299,17 +333,50 @@ def _extract_scores(
     if csv_path is None:
         return None, {}
 
-    metrics = load_acc_csv(csv_path)
     scale = config.get("scale", 1)
+    settings = config.get("settings")
 
-    # Overall score
+    # Multi-setting extraction (e.g., 3DSRBench vanilla + circ_eval)
+    if settings:
+        all_settings = _load_acc_csv_by_setting(csv_path)
+        # Primary setting is the first one listed (used for overall score)
+        primary = settings[0]
+        primary_metrics = all_settings.get(primary, {})
+
+        overall_key = config["overall_key"]
+        overall = primary_metrics.get(overall_key)
+        if overall is not None:
+            overall = round(overall * scale, 4)
+
+        sub_scores: dict[str, float | None] = {}
+        for setting in settings:
+            setting_metrics = all_settings.get(setting, {})
+            prefix = "" if setting == primary else f"{setting}_"
+            # Overall for each setting
+            val = setting_metrics.get(overall_key)
+            if val is not None:
+                sub_scores[f"{prefix}overall"] = round(val * scale, 4)
+            else:
+                sub_scores[f"{prefix}overall"] = None
+            # Sub-scores
+            for payload_key, csv_key in config["sub_scores"].items():
+                val = setting_metrics.get(csv_key)
+                if val is not None:
+                    sub_scores[f"{prefix}{payload_key}"] = round(val * scale, 4)
+                else:
+                    sub_scores[f"{prefix}{payload_key}"] = None
+
+        return overall, sub_scores
+
+    # Standard single-setting extraction
+    metrics = load_acc_csv(csv_path)
+
     overall_key = config["overall_key"]
     overall = metrics.get(overall_key)
     if overall is not None:
         overall = round(overall * scale, 4)
 
-    # Sub-scores
-    sub_scores: dict[str, float | None] = {}
+    sub_scores = {}
     for payload_key, csv_key in config["sub_scores"].items():
         val = metrics.get(csv_key)
         if val is not None:
@@ -359,6 +426,8 @@ def build_payload(
     model_name: str,
     benchmarks: dict[str, str],
     submission_configs: dict | None = None,
+    backend_adapter=None,
+    judged_benchmarks: dict[str, str] | None = None,
 ) -> dict:
     """Build the EASI leaderboard submission payload.
 
@@ -367,6 +436,14 @@ def build_payload(
         model_name: Model name (e.g. ``Qwen2.5-VL-7B-Instruct``)
         benchmarks: ``{benchmark_key: data_name}`` for benchmarks that were run
         submission_configs: User-provided metadata overrides
+        backend_adapter: Optional backend adapter; when provided, delegates score
+            extraction to ``adapter.extract_scores()``.  When ``None``, falls
+            back to the VLMEvalKit-specific logic.
+        judged_benchmarks: Optional ``{benchmark_key: judge_model_name}`` for
+            benchmarks re-evaluated with an LLM judge. When provided together
+            with a backend adapter that supports ``extract_scores_dual``,
+            emits dual keys (``{bench}_exact_matching`` and
+            ``{bench}_{judge_model}``) for each re-evaluated benchmark.
 
     Returns:
         JSON-serializable dict matching the API schema (camelCase fields).
@@ -376,20 +453,39 @@ def build_payload(
     scores: dict[str, float | None] = {}
     sub_scores: dict[str, dict[str, float | None]] = {}
 
-    # Map benchmark keys to METRIC_MAP keys
-    # site_image/site_video -> site (combined)
-    benchmark_keys_to_process: set[str] = set()
-    for key in benchmarks:
-        if key in ("site_image", "site_video"):
-            benchmark_keys_to_process.add("site")
-        elif key in METRIC_MAP:
-            benchmark_keys_to_process.add(key)
+    if backend_adapter is not None:
+        # Adapter path: delegate score extraction to the backend adapter
+        if judged_benchmarks and hasattr(backend_adapter, "extract_scores_dual"):
+            bench_scores = backend_adapter.extract_scores_dual(
+                model_dir, model_name, benchmarks, judged_benchmarks,
+            )
+        else:
+            bench_scores = backend_adapter.extract_scores(
+                model_dir, model_name, benchmarks,
+            )
+        for bench_key, bs in sorted(bench_scores.items()):
+            scores[bench_key] = bs.overall
+            if bs.sub_scores:
+                sub_scores[bench_key] = bs.sub_scores
+        backend_name = backend_adapter.name
+    else:
+        # Legacy VLMEvalKit path
+        backend_name = "vlmevalkit"
 
-    for bench_key in sorted(benchmark_keys_to_process):
-        overall, subs = _extract_scores(bench_key, model_dir, model_name)
-        scores[bench_key] = overall
-        if subs:
-            sub_scores[bench_key] = subs
+        # Map benchmark keys to METRIC_MAP keys
+        # site_image/site_video -> site (combined)
+        benchmark_keys_to_process: set[str] = set()
+        for key in benchmarks:
+            if key in ("site_image", "site_video"):
+                benchmark_keys_to_process.add("site")
+            elif key in METRIC_MAP:
+                benchmark_keys_to_process.add(key)
+
+        for bench_key in sorted(benchmark_keys_to_process):
+            overall, subs = _extract_scores(bench_key, model_dir, model_name)
+            scores[bench_key] = overall
+            if subs:
+                sub_scores[bench_key] = subs
 
     return {
         "modelName": configs.get("modelName", model_name),
@@ -398,7 +494,7 @@ def build_payload(
         "revision": configs.get("revision", "main"),
         "weightType": configs.get("weightType", ""),
         "baseModel": configs.get("baseModel", ""),
-        "backend": configs.get("backend", "vlmevalkit"),
+        "backend": configs.get("backend", backend_name),
         "remarks": configs.get("remarks", ""),
         "scores": scores,
         "subScores": sub_scores,
@@ -413,11 +509,20 @@ def build_results_archive(
     model_dir: Path,
     model_name: str,
     output_dir: Path,
+    backend_adapter=None,
 ) -> Path:
     """Build a zip archive of result files for submission upload.
 
     Copies all relevant result files (acc.csv, extract_matching.xlsx, judge pkl)
     from model_dir into a staging directory, then zips it.
+
+    Args:
+        model_dir: Path to the model's result directory.
+        model_name: Model name used for directory naming inside the zip.
+        output_dir: Directory where the zip file will be written.
+        backend_adapter: Optional backend adapter; when provided, delegates file
+            listing to ``adapter.get_result_files()``.  When ``None``, falls
+            back to the VLMEvalKit glob patterns.
 
     Returns:
         Path to the created zip file.
@@ -427,23 +532,30 @@ def build_results_archive(
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
 
-    # Copy all result files (following symlinks)
-    patterns = [
-        "*_acc.csv",
-        "*_extract_matching.xlsx",
-        "*_extract_matching_acc.csv",
-        "*_result.pkl",
-        "*_result.xlsx",
-        "*_llm_*_judge.pkl",
-    ]
-    copied = set()
-    for pattern in patterns:
-        for src in model_dir.glob(pattern):
-            # Resolve symlinks to get the actual file
-            real_src = src.resolve()
-            if real_src.name not in copied and real_src.is_file():
-                shutil.copy2(real_src, staging / real_src.name)
-                copied.add(real_src.name)
+    if backend_adapter is not None:
+        # Adapter path: delegate file listing to the backend adapter
+        files = backend_adapter.get_result_files(model_dir, model_name)
+        for src in files:
+            if src.is_file():
+                shutil.copy2(src, staging / src.name)
+    else:
+        # Legacy VLMEvalKit path: copy all result files (following symlinks)
+        patterns = [
+            "*_acc.csv",
+            "*_extract_matching.xlsx",
+            "*_extract_matching_acc.csv",
+            "*_result.pkl",
+            "*_result.xlsx",
+            "*_llm_*_judge.pkl",
+        ]
+        copied = set()
+        for pattern in patterns:
+            for src in model_dir.glob(pattern):
+                # Resolve symlinks to get the actual file
+                real_src = src.resolve()
+                if real_src.name not in copied and real_src.is_file():
+                    shutil.copy2(real_src, staging / real_src.name)
+                    copied.add(real_src.name)
 
     # Create zip
     zip_path = output_dir / "easi_results.zip"
